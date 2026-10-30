@@ -7,6 +7,7 @@
   import Knob from "../components/Knob.svelte";
   import Drawer from "../components/Drawer.svelte";
   import Waiting from "../components/Waiting.svelte";
+  import { uptimeFill } from "../lib/home.js";
 
   let { estate, events, now }: { estate: State | undefined; events: Event[]; now: Date } = $props();
   let server = $state<string[]>([]), mood = $state<string[]>([]), q = $state("");
@@ -133,7 +134,7 @@
       {@const u = num(e, "uptime24h")} {@const warm = needsYou(e.status)} {@const ms = num(e, "latencyMs")} {@const seen = time(e, "lastCheck")}
       <button type="button" class="row site" class:now={warm} data-site={e.id} onclick={() => (open = e)}>
         <span class="t">{e.name}<small>{str(e, "group") ?? "site"} · {e.server}{num(e, "httpStatus") ? ` · HTTP ${num(e, "httpStatus")}` : ""}{e.statusReason ? ` · ${e.statusReason}` : ""}</small></span>
-        <span class="up pressed" aria-hidden="true"><i class:warm style={`transform:scaleX(${u === undefined ? 0 : Math.max(0, (u - 90) / 10)})`}></i></span>
+        <span class="up pressed" aria-hidden="true"><i class:warm style={`transform:scaleX(${uptimeFill(u)})`}></i></span>
         <span class="mono pct" class:warm>{u === undefined ? "—" : `${u.toFixed(2)}%`}</span>
         <span class="mono ms">{ms === undefined ? "—" : `${Math.round(ms)} ms`}<small>{seen ? ago(seen, t) : ""}</small></span>
       </button>

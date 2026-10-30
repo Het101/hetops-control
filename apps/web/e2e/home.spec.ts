@@ -26,7 +26,7 @@ test("three stations with their status words", async ({ page }) => {
 test("the struggling app grows ember leaves", async ({ page }) => {
   await expect(page.locator("circle.leaf").first()).toBeAttached();
   expect(await page.locator("circle.leaf.ember").count()).toBeGreaterThan(0);
-  await expect(page.locator(".list .row")).toHaveCount(6);
+  await expect(page.locator(".list[aria-labelledby=\"h-timeline\"] .row")).toHaveCount(6);
 });
 
 test("rail: every page is a named link, tips show on keyboard focus", async ({ page }) => {
@@ -41,9 +41,9 @@ test("rail: every page is a named link, tips show on keyboard focus", async ({ p
 
 test("timeline ember rows come from the event level", async ({ page }) => {
   // two status events moved into attention (chaos-api and the chaos site); the restart and the recovery stay quiet
-  await expect(page.locator(".list .row.now")).toHaveCount(2);
-  await expect(page.locator(".list .row.now").filter({ hasText: "chaos-api (lab) ok → attention" })).toHaveCount(1);
-  await expect(page.locator(".list .row:not(.now)").filter({ hasText: "attention → ok" })).toHaveCount(1);
+  await expect(page.locator(".list[aria-labelledby=\"h-timeline\"] .row.now")).toHaveCount(2);
+  await expect(page.locator(".list[aria-labelledby=\"h-timeline\"] .row.now").filter({ hasText: "chaos-api (lab) ok → attention" })).toHaveCount(1);
+  await expect(page.locator(".list[aria-labelledby=\"h-timeline\"] .row:not(.now)").filter({ hasText: "attention → ok" })).toHaveCount(1);
 });
 
 test("a failing event log is said, not shown as empty", async ({ page }) => {

@@ -14,12 +14,12 @@
   const pct = (v: number | undefined) => v === undefined ? "—" : `${Math.round(v)}%`;
 </script>
 
-<section class="mod raised c5" style="--in:.1s">
+<section class="mod raised c4" style="--in:.1s">
   <h4><span>HOST LOAD</span><span>now</span></h4>
   <div class="dials">
     {#each loads as l (l.id)}
       <Dial id={l.id} label={l.id.toUpperCase()} value={l.cpu} hot={(l.cpu ?? 0) > HOT}>
-        <small>mem {pct(l.mem)} · disk {pct(l.disk)}</small>
+        <small>mem {pct(l.mem)}</small><small>disk {pct(l.disk)}</small>
       </Dial>
     {/each}
   </div>

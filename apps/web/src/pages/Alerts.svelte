@@ -7,6 +7,7 @@
   import Knob from "../components/Knob.svelte";
   import Drawer from "../components/Drawer.svelte";
   import Waiting from "../components/Waiting.svelte";
+  import Budget from "../components/Budget.svelte";
 
   let { estate, events, now }: { estate: State | undefined; events: Event[]; now: Date } = $props();
   let server = $state<string[]>([]), source = $state<string[]>([]), q = $state("");
@@ -22,7 +23,6 @@
   const passing = $derived(checks.filter(c => c.status === "ok").length);
   const firing = $derived(count("critical") + count("warning"));
   const COPY: Record<Severity, string> = { critical: "Critical", warning: "Warning", info: "Info and blind spots" };
-  const budget = (e: Entity) => { const v = e.facts.budgetLeft?.value; return typeof v === "number" ? Math.max(0, Math.min(100, v)) : undefined; };
 </script>
 
 <section class="page-intro">
@@ -43,13 +43,7 @@
     <h4 id="a-budget"><span>ERROR BUDGET</span><span>{slo[0]?.facts.windowDays ? `${slo[0].facts.windowDays.value} d` : ""}</span></h4>
     {#if sloSrc.failing.length}<Waiting title={`Can't read the error budget on ${sloSrc.failing[0]!.server}.`} warm>{sloSrc.failing[0]!.error}</Waiting>
     {:else if !slo.length}<Waiting title="No error budget reporting yet.">The lab's chaos SLO appears here when its source lands.</Waiting>
-    {:else}
-      {#each slo as e (e.id)}
-        {@const left = budget(e)}
-        <div class="budget-num" class:warm={needsYou(e.status)}>{left === undefined ? "—" : Math.round(left)}<span>% left</span></div>
-        <div class="slider pressed"><div class="fill" style={`transform:scaleX(${(left ?? 0) / 100})`}></div><div class="thumb raised" style={`left:${left ?? 0}%`}></div></div>
-        <div class="mono note ends"><span>0</span><span>{e.name}</span><span>100</span></div>
-      {/each}
+    {:else}<Budget {slo} />
     {/if}
   </section>
 

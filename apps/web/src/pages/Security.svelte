@@ -1,23 +1,20 @@
 <script lang="ts">
   import type { Entity, Event, Series } from "@hetops-control/contracts";
   import { num, type State } from "../lib/api.js";
-  import { ago, areas, DAY, facets, hhmm, hotEvent, keyOf, knocks, LAB_AT, landDots, needsYou, project, sourceState, span, str, sumSeries, time } from "../lib/pages.js";
+  import { ago, areas, DAY, facets, hhmm, hotEvent, keyOf, knocks, needsYou, sourceState, span, str, sumSeries, time } from "../lib/pages.js";
   import Glyph from "../components/Glyph.svelte";
   import Drawer from "../components/Drawer.svelte";
   import Waiting from "../components/Waiting.svelte";
-  import { reduced } from "../lib/motion.js";
+  import KnockMap from "../components/KnockMap.svelte";
+  import Terrain from "../components/Terrain.svelte";
 
   let { estate, events, now }: { estate: State | undefined; events: Event[]; now: Date } = $props();
   let open = $state<Entity>(), openEv = $state<Event>();
 
   const t = $derived(now.getTime());
-  const W = 800, H = 340;
-  const dots = landDots(W, H, 4);
-  const lab = project(LAB_AT[0], LAB_AT[1], W, H);
   const decisions = $derived(estate?.entities.filter(e => e.kind === "decision") ?? []);
   const cs = $derived(sourceState(estate, "crowdsec"));
-  const map = $derived(knocks(decisions, W, H));
-  const top = $derived(Math.max(1, ...map.placed.map(p => p.n)));
+  const map = $derived(knocks(decisions, 800, 340));
   const scen = $derived(facets(decisions, d => str(d, "scenario") ?? "unknown").slice(0, 6));
   const recent = $derived([...decisions].sort((a, b) => (num(b, "expiresIn") ?? 0) - (num(a, "expiresIn") ?? 0)).slice(0, 8));
   const bans = $derived(estate?.series.find(s => /crowdsec|bans/.test(s.id)));
@@ -39,17 +36,7 @@
 <div class="grid">
   <section class="mod raised c8 map-mod" style="--in:.04s" aria-labelledby="s-map">
     <h4 id="s-map"><span>WHO KNOCKS · CROWDSEC DECISIONS</span><span>{decisions.length ? `${decisions.length} active` : ""}</span></h4>
-    <svg class="world" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={decisions.length ? `Banned sources by country: ${map.placed.map(p => `${p.country} ${p.n}`).join(", ")}` : "World map; no decisions reported"}>
-      {#each dots as [x, y], i (i)}<circle cx={x} cy={y} r="1.5" fill="#4e4f54"/>{/each}
-      {#each map.placed as p, i (p.country)}
-        {@const r = 3 + 7 * Math.sqrt(p.n / top)}
-        {#if !$reduced}<circle class="knock-ring" cx={p.x} cy={p.y} {r} style={`--dl:${(i * .33) % 2.6}s`}/>{/if}
-        <circle cx={p.x} cy={p.y} r={r * .55} class="knock"><title>{p.country}: {p.n} banned</title></circle>
-        {#if p.n / top > .3}<text x={p.x + r + 3} y={p.y + 3} class="knock-l">{p.country} {p.n}</text>{/if}
-      {/each}
-      <circle cx={lab[0]} cy={lab[1]} r="9" class="lab-ring"/><circle cx={lab[0]} cy={lab[1]} r="4" class="lab-dot"/>
-      <text x={lab[0] + 12} y={lab[1] + 4} class="lab-l">LAB</text>
-    </svg>
+    <KnockMap {decisions} w={800} h={340} step={4} />
     {#if cs.failing.length}<Waiting title={`Can't read CrowdSec on ${cs.failing[0]!.server}.`} warm>{cs.failing[0]!.error}</Waiting>
     {:else if !cs.reporting.length}<div class="overlay"><Waiting title="CrowdSec is not reporting yet.">Bans by country appear on this map when the lab's CrowdSec source lands. The white dot is the lab.</Waiting></div>
     {:else}<p class="note">silver = banned sources, sized by count · white = the lab{map.unplaced ? ` · ${map.unplaced} without a country` : ""}</p>{/if}
@@ -94,13 +81,7 @@
   <section class="mod raised c7" style="--in:.2s" aria-labelledby="s-log">
     <h4 id="s-log"><span>SECURITY LOG STREAM · 24 H</span><span>{secLog ? `${sumSeries(secLog, t - DAY).toLocaleString()} docs` : ""}</span></h4>
     {#if secLog}
-      {@const c = chart(secLog, 640, 140)}
-      <svg class="terrain" viewBox="0 0 640 150" preserveAspectRatio="none" role="img" aria-label={`Security log documents per 10 minutes over 24 hours${c.gaps.length ? `, ${c.gaps.length} gap${c.gaps.length === 1 ? "" : "s"}` : ""}`}>
-        {#each [0, 1, 2, 3] as i (i)}<line x1="0" x2="640" y1={i * 46 + 2} y2={i * 46 + 2} class="grid-l"/>{/each}
-        <g transform="translate(0 4)">{#each c.segments as g, i (i)}<path d={g.area} class="a1"/><path d={g.line} class="l1"/>{/each}
-          {#each c.gaps as [a, b], i (i)}<rect x={a} y="0" width={Math.max(1, b - a)} height="140" class="gap"/>{/each}</g>
-      </svg>
-      <div class="mono note ends"><span>{hhmm(t - DAY)}</span><span>peak {c.top.toLocaleString()} / 10 min{c.gaps.length ? ` · ${c.gaps.length} gap${c.gaps.length === 1 ? "" : "s"} (hatched)` : ""}</span><span>now</span></div>
+      <Terrain series={[secLog]} from={t - DAY} to={t} label="Security log documents per 10 minutes over 24 hours" />
     {:else}<Waiting title="The security log stream is not reporting.">Documents per 10 minutes in logs-lab-security, from the ops Elasticsearch.</Waiting>{/if}
   </section>
 

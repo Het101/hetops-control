@@ -147,7 +147,10 @@ export function roughNight(): State {
     alert("CPUThrottlingHigh", "info", "2026-10-30T05:20:00.000Z", "chaos-console is throttled 34%"),
     { ...base, id: "lab/slo/chaos", kind: "slo", server: "lab", name: "clinic availability", source: "slo", status: "ok",
       facts: { objective: { value: 99.5, unit: "%" }, current: { value: 99.71, unit: "%" }, budgetLeft: { value: 58, unit: "%" }, windowDays: { value: 7, unit: "d" } } },
-    host("lab", false, "2026-10-30T06:00:00.000Z"), host("staging", true, "2026-10-30T06:00:00.000Z"), host("ops", false, "2026-10-30T06:00:00.000Z"));
+    host("lab", false, "2026-10-30T06:00:00.000Z"), host("staging", true, "2026-10-30T06:00:00.000Z"), host("ops", false, "2026-10-30T06:00:00.000Z"),
+    // a Coolify app whose newest commit is not deployed: the one deploy that waits on the owner
+    { ...base, id: "lab/app/coolify/radar-cloud", kind: "app", server: "lab", name: "radar-cloud", source: "coolify", status: "attention",
+      statusReason: "has commit 7a5cba8 waiting for a deploy", facts: { undeployedCommit: { value: "7a5cba8e41" } } });
   // ops: a site down and the security snapshot failed last night
   const www = s.entities.find(e => e.id === "ops/site/products_threadvault")!;
   Object.assign(www, { status: "down", statusReason: "3 failed in a row: [STATUS] == 200" }); www.facts.httpStatus = { value: 502 };
@@ -166,3 +169,9 @@ export const roughEvents: Event[] = [
   { at: "2026-10-30T01:45:02.000Z", server: "ops", source: "snapshots", kind: "status", entity: "ops/backup/nightly-security", level: "attention", summary: "nightly-security failed: repository r2-security is not reachable" },
   ...fixtureEvents,
 ];
+
+/** Two weeks of rollouts and Argo syncs before the fixture's morning, so the Home deploy capsules have history to draw. */
+export const deployHistory: Event[] = Array.from({ length: 13 }, (_, d) => d).flatMap(d =>
+  Array.from({ length: [3, 5, 2, 7, 4, 6, 9, 3, 2, 8, 5, 4, 6][d]! }, (_, k): Event => ({
+    at: new Date(Date.parse(at) - (13 - d) * 86_400_000 - k * 1_800_000).toISOString(), server: k % 3 ? "lab" : "ops", source: k % 2 ? "argo" : "kubernetes",
+    kind: k % 2 ? "sync" : "deploy", summary: `${["clinic", "chaos", "logging", "gatus"][k % 4]} ${k % 2 ? "synced" : "rolled out"} (day ${d})` })));
