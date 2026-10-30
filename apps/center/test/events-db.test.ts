@@ -27,6 +27,16 @@ describe("events db", () => {
     } finally { db.close(); rmSync(dir, { recursive: true, force: true }); }
   });
 
+  it("round-trips a deploy's duration, and omits it when absent", () => {
+    const dir = mkdtempSync(join(tmpdir(), "center-")); const db = new EventsDb(join(dir, "events.db"));
+    try {
+      db.add({ at: "2026-10-30T03:12:00.000Z", server: "lab", source: "coolify", kind: "deploy", summary: "deployed in 74 s", durationMs: 74_000 });
+      db.add({ at: "2026-10-30T03:13:00.000Z", server: "lab", source: "center", kind: "info", summary: "plain" });
+      const [plain, deploy] = db.recent(2);
+      expect(deploy!.durationMs).toBe(74_000); expect(plain).not.toHaveProperty("durationMs");
+    } finally { db.close(); rmSync(dir, { recursive: true, force: true }); }
+  });
+
   it("migrates a database created before level existed and keeps its rows", () => {
     const dir = mkdtempSync(join(tmpdir(), "center-")); const path = join(dir, "events.db");
     const old = new Database(path);

@@ -2,5 +2,6 @@ import { z } from "zod"; import { ServerIdSchema, StatusSchema } from "./entity.
 export const EventSchema = z.object({ at: z.string().datetime(), server: ServerIdSchema, source: z.string(),
   kind: z.enum(["status", "restart", "deploy", "sync", "action", "info"]), summary: z.string(),
   entity: z.string().optional(), actor: z.string().optional(),
-  level: StatusSchema.optional() }); // status events: the status the entity moved to
+  level: StatusSchema.optional(), // status events: the status the entity moved to
+  durationMs: z.number().finite().nonnegative().optional() }); // deploy events: from queued to finished
 export type Event = z.infer<typeof EventSchema>;
