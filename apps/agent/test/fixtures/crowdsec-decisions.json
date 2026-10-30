@@ -1,0 +1,20 @@
+[
+ {
+  "duration": "2m59s",
+  "id": 6,
+  "origin": "cscli",
+  "scenario": "hetops-control contract recording",
+  "scope": "Ip",
+  "type": "ban",
+  "value": "192.0.2.77"
+ },
+ {
+  "duration": "1h29m59s",
+  "id": 7,
+  "origin": "cscli",
+  "scenario": "hetops-control contract recording",
+  "scope": "Range",
+  "type": "captcha",
+  "value": "198.51.100.0/24"
+ }
+]
