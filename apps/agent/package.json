@@ -1,0 +1,3 @@
+{ "name": "@hetops-control/agent", "version": "0.1.0", "private": true, "type": "module",
+  "scripts": { "start": "node --experimental-strip-types src/main.ts" },
+  "dependencies": { "@hetops-control/contracts": "workspace:*", "fastify": "5.1.0" } }
