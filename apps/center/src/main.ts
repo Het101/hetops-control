@@ -6,7 +6,7 @@ import { verifyAccess } from "./access.js";
 import { buildCenter } from "./server.js";
 
 const cfg = loadConfig(); const acc = accessConfig();
-const store = new Store(); const db = new EventsDb(cfg.dbPath);
+const store = new Store(undefined, cfg.agents.map(a => a.server)); const db = new EventsDb(cfg.dbPath);
 const prune = () => { try { db.prune(); } catch (e) { console.error("prune failed:", e instanceof Error ? e.message : String(e)); } };
 prune(); const pruneTimer = setInterval(prune, 86_400_000);
 const links = cfg.agents.map(a => new AgentLink(a.server, a.url, a.token, a.ca));

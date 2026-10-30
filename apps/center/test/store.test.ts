@@ -110,4 +110,11 @@ describe("server roll-up", () => {
     st.apply("lab", { ...with_(e("a", "ok")), sources: [pend, { id: "argo", periodMs: 1, ok: true }] }); expect(lab(st)).toMatchObject({ status: "ok" });
     st.apply("lab", { ...with_(e("a", "ok")), sources: [{ ...pend, error: "boom" }] }); expect(lab(st)).toMatchObject({ status: "attention", statusReason: "1 source failing" });
   });
+  it("reports configured and the last error only while unreachable", () => {
+    const st = new Store(() => at("00"), ["lab"]); st.setError("lab", "connect ECONNREFUSED");
+    expect(st.snapshot().servers).toMatchObject({ lab: { configured: true, lastError: "connect ECONNREFUSED", statusReason: "its agent has not answered yet" },
+      staging: { configured: false, statusReason: "not connected yet" } });
+    expect(st.snapshot().servers.staging.lastError).toBeUndefined();
+    st.apply("lab", state("ok")); expect(st.snapshot().servers.lab.lastError).toBeUndefined();
+  });
 });

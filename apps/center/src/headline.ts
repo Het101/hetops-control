@@ -13,6 +13,8 @@ function detailOf(e: Entity): string {
   return `${e.name} ${e.statusReason ?? e.status}`;
 }
 
+const GRACE_MS = 60_000;
+
 // sev: 3 down, 2 attention or blind (we cannot see it, which is never fine)
 type Item = { sev: 2 | 3; blind: boolean; at: number; line: string; need: Need };
 
@@ -20,6 +22,8 @@ export function headline(s: CenterState): Headline {
   const servers = ServerIdSchema.options;
   // a server that was connected (it has an agent version) and went silent; staging "not connected yet" is neither a need nor a headline
   const lost = servers.filter(id => !s.servers[id].reachable && s.servers[id].agentVersion !== undefined);
+  // configured but never connected, and past the 60 s grace after the center started (its `since`): it is blind to us, which is a need
+  const never = servers.filter(id => { const v = s.servers[id]; return v.configured && !v.reachable && v.agentVersion === undefined && Date.parse(s.generatedAt) - Date.parse(v.since) >= GRACE_MS; });
   const items: Item[] = [];
   for (const e of s.entities) {
     if (e.status !== "down" && e.status !== "attention") continue;
@@ -44,11 +48,14 @@ export function headline(s: CenterState): Headline {
     }
   }
   items.sort((a, b) => b.sev - a.sev || b.at - a.at);
-  const needs: Need[] = [...lost.map(id => ({ entity: id, server: id, text: `We can't see ${id}`, detail: `agent silent since ${hhmm(s.servers[id].since)}` })), ...items.map(i => i.need)];
+  const neverNeeds: Need[] = never.map(id => ({ entity: id, server: id, text: `We can't reach ${id}`,
+    detail: `its agent has not answered since the center started at ${hhmm(s.servers[id].since)}${s.servers[id].lastError ? ` — ${s.servers[id].lastError}` : ""}` }));
+  const needs: Need[] = [...neverNeeds, ...lost.map(id => ({ entity: id, server: id, text: `We can't see ${id}`, detail: `agent silent since ${hhmm(s.servers[id].since)}` })), ...items.map(i => i.need)];
   const top = items.slice(0, 2).map(i => `${i.line}.`);
-  const detail = top.length ? top.join(" ") : lost.length ? lost.map(id => `${id} is not reporting.`).join(" ") : "Every server is reporting.";
+  const gone = [...lost, ...never];
+  const detail = top.length ? top.join(" ") : gone.length ? gone.map(id => `${id} is not reporting.`).join(" ") : "Every server is reporting.";
   const downN = items.filter(i => i.sev === 3).length;
-  if (lost.length) return { title: `We can't see ${lost.join(" and ")}.`, emphasis: `Its agent has been silent since ${hhmm(s.servers[lost[0]!].since)}.`, detail, needs };
+  if (gone.length) return { title: `We can't see ${gone.join(" and ")}.`, emphasis: lost.length ? `Its agent has been silent since ${hhmm(s.servers[lost[0]!].since)}.` : `Its agent has not answered since the center started.`, detail, needs };
   if (downN) return { title: "Something is down.", emphasis: `${things(downN, "needs", "need")} you now.`, detail, needs };
   if (items.some(i => i.blind)) return { title: "Something can't be seen.", emphasis: `${things(items.length, "needs", "need")} you.`, detail, needs };
   if (items.length) return { title: "The estate is healthy.", emphasis: `${things(items.length, "is", "are")} waiting on you.`, detail, needs };

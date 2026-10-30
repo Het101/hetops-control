@@ -1,14 +1,15 @@
 import { ServerIdSchema, worst, type AgentState, type CenterMessage, type CenterState, type Entity, type Event, type ServerId, type ServerView, type Status } from "@hetops-control/contracts";
 
 // skewMs = center clock - agent clock at the last apply; ageing adds it so agent clock drift never fakes staleness
-type Link = { state?: AgentState; skewMs: number; reachable: boolean; since: Date };
+type Link = { state?: AgentState; lastError?: string; skewMs: number; reachable: boolean; since: Date };
 
 /** The merged estate: the latest state per agent, aged at read time so nothing stale ever shows healthy. */
 export class Store {
   private links = new Map<ServerId, Link>();
   private listeners = new Set<(m: CenterMessage) => void>();
 
-  constructor(private now: () => Date = () => new Date()) {
+  /** `configured` = servers with an agent entry (AGENTS); the rest are "not connected yet", not failures. */
+  constructor(private now: () => Date = () => new Date(), private configured: readonly ServerId[] = []) {
     for (const s of ServerIdSchema.options) this.links.set(s, { reachable: false, since: now(), skewMs: 0 });
   }
 
@@ -29,6 +30,9 @@ export class Store {
     this.publish(events);
     return events;
   }
+
+  /** The last link error (message only); shown while the server is unreachable. */
+  setError(server: ServerId, message: string): void { this.links.get(server)!.lastError = message; }
 
   /** One event per outage, however often it is called while the agent stays silent. */
   markUnreachable(server: ServerId, since: Date): Event[] {
@@ -54,7 +58,8 @@ export class Store {
       const srcs = link.reachable ? link.state?.sources ?? [] : []; const pending = (x: { ok: boolean; lastRunAt?: string; error?: string }) => !x.ok && !x.lastRunAt && !x.error;
       const failing = srcs.filter(x => !x.ok && !pending(x)).map(x => ({ id: x.id, ...(x.error ? { error: x.error } : {}) }));
       const starting = srcs.length > 0 && srcs.every(pending);
-      servers[server] = { ...rollUp(link, aged.map(a => a.entity.status), aged.filter(a => a.stale).length, failing.length, starting), reachable: link.reachable,
+      servers[server] = { ...rollUp(link, aged.map(a => a.entity.status), aged.filter(a => a.stale).length, failing.length, starting, this.configured.includes(server)), reachable: link.reachable,
+        configured: this.configured.includes(server), ...(!link.reachable && link.lastError ? { lastError: link.lastError } : {}),
         since: link.since.toISOString(), ...(link.state ? { agentVersion: link.state.version } : {}), ...(failing.length ? { failingSources: failing } : {}) };
     }
     return { generatedAt: new Date(now).toISOString(), servers, entities: entities.map(a => a.entity) };
@@ -86,9 +91,9 @@ function age(e: Entity, link: Link, now: number): Aged {
 }
 
 /** unknown only when we cannot see the server; a failing source or a stale reading means we are partly blind, which is never "ok". */
-function rollUp(link: Link, statuses: Status[], stale: number, failing: number, starting: boolean): Pick<ServerView, "status" | "statusReason"> {
+function rollUp(link: Link, statuses: Status[], stale: number, failing: number, starting: boolean, configured: boolean): Pick<ServerView, "status" | "statusReason"> {
   if (!link.reachable) return { status: "unknown",
-    statusReason: link.state ? `agent unreachable since ${link.since.toISOString().slice(11, 16)} UTC` : "not connected yet" };
+    statusReason: link.state ? `agent unreachable since ${link.since.toISOString().slice(11, 16)} UTC` : configured ? "its agent has not answered yet" : "not connected yet" };
   const known = statuses.filter(s => s !== "unknown");
   const blind = [failing && `${failing} ${failing === 1 ? "source" : "sources"} failing`, stale && `${stale} ${stale === 1 ? "reading" : "readings"} stale`].filter(Boolean).join(", ");
   if (!statuses.length && !failing) return starting ? { status: "unknown", statusReason: "starting" } : { status: "unknown", statusReason: "no data yet" };

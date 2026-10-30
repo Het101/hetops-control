@@ -45,7 +45,7 @@ export class AgentLink {
     let attempt = 0;
     while (live()) {
       try { await this.session(store, keep, () => { attempt = 0; }); }
-      catch (e) { if (live()) console.error(`agent ${this.server}: ${describe(e)}`); }
+      catch (e) { if (live()) { console.error(`agent ${this.server}: ${describe(e)}`); store.setError(this.server, describe(e)); } }
       if (!live()) break;
       for (const ev of store.markUnreachable(this.server, this.lastHeard ?? new Date())) keep(ev);
       const ms = backoffMs(attempt++);

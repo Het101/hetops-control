@@ -72,3 +72,23 @@ test.describe("reduced motion", () => {
     await page.screenshot({ path: "e2e/__screens__/home-1366.png", fullPage: true });
   });
 });
+
+test("a configured server that never connected reads UNREACHABLE", async ({ page }) => {
+  const state = StateSchema.parse({ ...fixtureState, servers: { ...fixtureState.servers, staging: { ...fixtureState.servers.staging, configured: true } } });
+  await page.route("**/api/state", r => r.fulfill({ json: state }));
+  await page.reload();
+  await expect(page.locator('.st[data-server="staging"] i')).toHaveText("● UNREACHABLE");
+  await expect(page.locator('.st[data-server="lab"] i')).not.toHaveText("● UNREACHABLE");
+});
+
+test("rail tips sit above the page content", async ({ page }) => {
+  await page.getByRole("link", { name: "Home" }).hover();
+  const tip = page.getByRole("link", { name: "Home" }).locator(".tip");
+  await expect(tip).toHaveCSS("opacity", "1");
+  await page.waitForTimeout(500); // the tip slides in
+  const b = (await tip.boundingBox())!; const vp = page.viewportSize()!;
+  expect(b.x).toBeGreaterThanOrEqual(0); expect(b.x + b.width).toBeLessThanOrEqual(vp.width);
+  // the tip ignores the pointer, which would hide it from elementFromPoint; make it hittable for the check only
+  await tip.evaluate(el => { el.style.pointerEvents = "auto"; });
+  expect(await tip.evaluate((el, [x, y]) => el.contains(document.elementFromPoint(x!, y!)), [b.x + b.width / 2, b.y + b.height / 2])).toBe(true);
+});

@@ -2,11 +2,11 @@ import { describe, it, expect } from "vitest";
 import type { CenterState, Entity } from "@hetops-control/contracts";
 import { headline } from "../src/headline.js";
 
-const sv = (status: "ok" | "attention" | "down" | "unknown" = "ok", extra = {}) => ({ status, reachable: true, since: "2026-10-30T00:00:00.000Z", ...extra });
+const sv = (status: "ok" | "attention" | "down" | "unknown" = "ok", extra = {}) => ({ status, reachable: true, configured: true, since: "2026-10-30T00:00:00.000Z", ...extra });
 const app = (name: string, status: Entity["status"], facts: Entity["facts"] = {}, reason?: string): Entity => ({ id: `lab/app/${name}`, kind: "app", server: "lab", name,
   status, ...(reason ? { statusReason: reason } : {}), facts, links: [], actions: [], observedAt: "2026-10-30T03:12:00.000Z" });
 const state = (entities: Entity[], servers: Partial<CenterState["servers"]> = {}): CenterState => ({ generatedAt: "2026-10-30T08:00:00.000Z", entities,
-  servers: { lab: sv(), staging: sv("unknown", { reachable: false, statusReason: "not connected yet" }), ops: sv(), ...servers } });
+  servers: { lab: sv(), staging: sv("unknown", { reachable: false, configured: false, statusReason: "not connected yet" }), ops: sv(), ...servers } });
 
 describe("headline", () => {
   it("all ok, staging never connected is not a need", () => {
@@ -45,5 +45,22 @@ describe("headline", () => {
   });
   it("a down cluster entity counts", () => {
     const h = headline(state([{ ...app("c", "down"), kind: "cluster" }])); expect(h.title).toBe("Something is down.");
+  });
+  describe("configured but never connected", () => {
+    const lab = (extra = {}) => sv("unknown", { reachable: false, since: "2026-10-30T07:59:10.000Z", statusReason: "its agent has not answered yet", ...extra });
+    it("is ignored inside the 60 s grace", () => {
+      const s = state([], { lab: lab() }); s.generatedAt = "2026-10-30T08:00:00.000Z"; // 50 s
+      expect(headline(s)).toMatchObject({ title: "The estate is healthy.", needs: [] });
+    });
+    it("is a need after the grace, with the last error", () => {
+      const s = state([], { lab: lab({ since: "2026-10-30T07:58:00.000Z", lastError: "connect ECONNREFUSED" }) });
+      const h = headline(s);
+      expect(h.title).toBe("We can't see lab.");
+      expect(h.needs).toEqual([{ entity: "lab", server: "lab", text: "We can't reach lab",
+        detail: "its agent has not answered since the center started at 07:58 UTC — connect ECONNREFUSED" }]);
+    });
+    it("an unconfigured server stays ignored however long", () => {
+      expect(headline(state([])).needs).toEqual([]);
+    });
   });
 });
