@@ -84,7 +84,7 @@ describe("hardening", () => {
     const reg = new Registry("lab", [bad, badEv], () => t0); const types: string[] = []; reg.on(m => types.push(m.type));
     await reg.runOnce("bad"); await reg.runOnce("badev");
     const [a, b] = reg.state().sources;
-    expect(a!.error).toMatch(/^invalid entity lab\/app\/y: /); expect(a!.error).not.toContain("SECRET-VALUE");
+    expect(a!.error).toMatch(/^1 invalid item dropped, first: invalid entity lab\/app\/y: /); expect(a!.error).not.toContain("SECRET-VALUE");
     expect(b!.error).toMatch(/^invalid event 0: /); expect(types).not.toContain("event");
   });
   it("start() twice does not duplicate timers", async () => {
@@ -122,5 +122,71 @@ describe("shutdown", () => {
     await new Promise(r => sock.once("connect", r));
     const t = Date.now(); await app.close(); sock.destroy();
     expect(Date.now() - t).toBeLessThan(2000);
+  });
+});
+
+describe("registry series", () => {
+  const ser = { id: "lab/x", server: "lab" as const, label: "x", unit: "n", stepMs: 1000, points: [[1, 2]] as [number, number][], observedAt: t0.toISOString() };
+  it("carries series (tagged with the source) and drops them when the source fails", async () => {
+    let fail = false;
+    const src = { id: "s", periodMs: 10_000, async collect() { if (fail) throw new Error("boom"); return { entities: [], series: [ser] }; } };
+    const reg = new Registry("lab", [src], () => t0); await reg.runOnce("s");
+    expect(reg.state().series).toEqual([{ ...ser, source: "s" }]); AgentStateSchema.parse(reg.state());
+    fail = true; await reg.runOnce("s");
+    expect(reg.state().series).toEqual([]); expect(reg.state().sources[0]!.ok).toBe(false);
+  });
+  it("rejects an invalid series as a source failure", async () => {
+    const src = { id: "s", periodMs: 10_000, async collect() { return { entities: [], series: [{ ...ser, stepMs: 0 }] }; } };
+    const reg = new Registry("lab", [src], () => t0); await reg.runOnce("s");
+    expect(reg.state().series).toEqual([]); expect(reg.state().sources[0]!.error).toContain("invalid series");
+  });
+});
+
+describe("registry drops only invalid items", () => {
+  const ent = (id: string, server = "lab") => ({ id, kind: "app" as const, server: server as "lab", name: id, status: "ok" as const, facts: {}, links: [], actions: [], observedAt: t0.toISOString() });
+  it("keeps valid entities, marks the source failing with count, first id and path (no values)", async () => {
+    const src = { id: "s", periodMs: 10_000, async collect() { return { entities: [ent("lab/a"), { ...ent("lab/b"), status: "SECRET" }, ent("lab/c")] as never }; } };
+    const reg = new Registry("lab", [src], () => t0); await reg.runOnce("s");
+    const st = reg.state(); expect(st.entities.map(e => e.id)).toEqual(["lab/a", "lab/c"]);
+    expect(st.sources[0]!.ok).toBe(false); expect(st.sources[0]!.error).toMatch(/1 invalid item dropped.*lab\/b.*status/); expect(st.sources[0]!.error).not.toContain("SECRET");
+  });
+  it("rejects other servers' items and later duplicate ids across sources", async () => {
+    const a = { id: "a", periodMs: 10_000, async collect() { return { entities: [ent("lab/x")] }; } };
+    const b = { id: "b", periodMs: 10_000, async collect() { return { entities: [ent("lab/x"), ent("ops/y", "ops"), ent("lab/z")] }; } };
+    const reg = new Registry("lab", [a, b], () => t0); await reg.runOnce("a"); await reg.runOnce("b");
+    const st = reg.state(); expect(st.entities.map(e => e.id)).toEqual(["lab/x", "lab/z"]);
+    expect(st.entities.find(e => e.id === "lab/x")!.source).toBe("a");
+    expect(st.sources[1]!.ok).toBe(false); expect(st.sources[1]!.error).toContain("1 invalid item dropped"); expect(st.sources[1]!.error).toContain("1 duplicate id dropped");
+  });
+});
+
+describe("registry resolves conflicts by source order", () => {
+  const ent = (id: string) => ({ id, kind: "app" as const, server: "lab" as const, name: id, status: "ok" as const, facts: {}, links: [], actions: [], observedAt: t0.toISOString() });
+  const ser = (id: string) => ({ id, server: "lab" as const, label: "x", unit: "n", stepMs: 1000, points: [[1, 2]] as [number, number][], observedAt: t0.toISOString() });
+  it("caps series at 64 and marks the losing source failing", async () => {
+    const src = { id: "s", periodMs: 10_000, async collect() { return { entities: [], series: Array.from({ length: 65 }, (_, i) => ser(`lab/s${i}`)) }; } };
+    const reg = new Registry("lab", [src], () => t0); await reg.runOnce("s");
+    const st = reg.state(); expect(st.series).toHaveLength(64); AgentStateSchema.parse(st);
+    expect(st.sources[0]).toMatchObject({ ok: false, error: "series cap (64) reached, 1 dropped" });
+  });
+  it("an earlier source keeps an id even when it fails and recovers later", async () => {
+    let aFails = true;
+    const a = { id: "a", periodMs: 10_000, async collect() { if (aFails) throw new Error("down"); return { entities: [ent("lab/x")] }; } };
+    const b = { id: "b", periodMs: 10_000, async collect() { return { entities: [ent("lab/x")] }; } };
+    const reg = new Registry("lab", [a, b], () => t0); await reg.runOnce("a"); await reg.runOnce("b");
+    expect(reg.state().entities[0]!.source).toBe("b"); expect(reg.state().sources[1]!.ok).toBe(true);
+    aFails = false; await reg.runOnce("a");
+    const st = reg.state(); expect(st.entities).toHaveLength(1); expect(st.entities[0]!.source).toBe("a");
+    expect(st.sources[0]!.ok).toBe(true); expect(st.sources[1]!.ok).toBe(false); expect(st.sources[1]!.error).toContain("duplicate id");
+  });
+  it("an id and a series id may be equal (separate namespaces)", async () => {
+    const src = { id: "s", periodMs: 10_000, async collect() { return { entities: [ent("lab/x")], series: [ser("lab/x")] }; } };
+    const reg = new Registry("lab", [src], () => t0); await reg.runOnce("s");
+    expect(reg.state().sources[0]!.ok).toBe(true);
+  });
+  it("quotes only safe ids, otherwise the index", async () => {
+    const src = { id: "s", periodMs: 10_000, async collect() { return { entities: [{ id: "SECRET value with spaces", kind: "app" }] as never }; } };
+    const reg = new Registry("lab", [src], () => t0); await reg.runOnce("s");
+    expect(reg.state().sources[0]!.error).toContain("invalid entity #0"); expect(reg.state().sources[0]!.error).not.toContain("SECRET");
   });
 });

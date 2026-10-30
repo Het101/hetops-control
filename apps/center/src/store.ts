@@ -1,4 +1,4 @@
-import { ServerIdSchema, worst, type AgentState, type CenterMessage, type CenterState, type Entity, type Event, type ServerId, type ServerView, type Status } from "@hetops-control/contracts";
+import { ServerIdSchema, worst, type AgentState, type CenterMessage, type CenterState, type Entity, type Event, type Series, type ServerId, type ServerView, type Status } from "@hetops-control/contracts";
 
 // skewMs = center clock - agent clock at the last apply; ageing adds it so agent clock drift never fakes staleness
 type Link = { state?: AgentState; lastError?: string; skewMs: number; reachable: boolean; since: Date };
@@ -49,11 +49,13 @@ export class Store {
   record(e: Event): void { this.emit({ type: "event", event: e }); }
 
   snapshot(): CenterState {
-    const now = this.now().getTime(); const entities: Aged[] = [];
+    const now = this.now().getTime(); const entities: Aged[] = []; const series: Series[] = [];
     const servers = {} as CenterState["servers"];
     for (const [server, link] of this.links) {
       const aged = (link.state?.entities ?? []).map(e => age(e, link, now));
       entities.push(...aged);
+      // an unreachable agent shows no series; a series older than 3 periods of its source is dropped, never shown stale
+      if (link.reachable) series.push(...(link.state?.series ?? []).filter(x => !seriesStale(x, link, now)));
       // a source that has neither run nor failed yet is pending, not failing
       const srcs = link.reachable ? link.state?.sources ?? [] : []; const pending = (x: { ok: boolean; lastRunAt?: string; error?: string }) => !x.ok && !x.lastRunAt && !x.error;
       const failing = srcs.filter(x => !x.ok && !pending(x)).map(x => ({ id: x.id, ...(x.error ? { error: x.error } : {}) }));
@@ -62,7 +64,7 @@ export class Store {
         configured: this.configured.includes(server), ...(!link.reachable && link.lastError ? { lastError: link.lastError } : {}),
         since: link.since.toISOString(), ...(link.state ? { agentVersion: link.state.version } : {}), ...(failing.length ? { failingSources: failing } : {}) };
     }
-    return { generatedAt: new Date(now).toISOString(), servers, entities: entities.map(a => a.entity) };
+    return { generatedAt: new Date(now).toISOString(), servers, entities: entities.map(a => a.entity), series };
   }
 
   on(fn: (m: CenterMessage) => void): () => void { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; }
@@ -77,6 +79,12 @@ export class Store {
       try { l(m); } catch (e) { console.error("listener failed:", e instanceof Error ? e.message : String(e)); }
     }
   }
+}
+
+function seriesStale(x: Series, link: Link, now: number): boolean {
+  const sources = link.state!.sources;
+  const period = sources.find(s => s.id === x.source)?.periodMs ?? Math.max(0, ...sources.map(s => s.periodMs));
+  return now - (Date.parse(x.observedAt) + link.skewMs) > 3 * period;
 }
 
 type Aged = { entity: Entity; stale: boolean };
