@@ -39,6 +39,17 @@ describe("center http", () => {
     await app.inject("/api/events"); expect(recent).toHaveBeenLastCalledWith(50);
     await app.inject("/api/events?limit=abc"); expect(recent).toHaveBeenLastCalledWith(50);
   });
+  it("/api/series returns series by id, lists missing ones, and caps the request", async () => {
+    const { app, store } = mk(ok); apps.push(app); const now = new Date().toISOString();
+    const series = (id: string) => ({ id, server: "lab" as const, label: id, unit: "docs", stepMs: 600_000, points: [[1, 2], [2, 3]] as [number, number][], observedAt: now, source: "s" });
+    store.apply("lab", { server: "lab", version: "1", generatedAt: now, sources: [{ id: "s", periodMs: 60_000, ok: true, lastRunAt: now }], entities: [], series: [series("lab/a"), series("lab/b")] });
+    const r = (await app.inject("/api/series?id=lab/a&id=lab/x&id=lab/a")).json();
+    expect(r.series.map((x: { id: string }) => x.id)).toEqual(["lab/a"]); expect(r.missing).toEqual(["lab/x"]); expect(r.series[0].points).toEqual([[1, 2], [2, 3]]);
+    expect((await app.inject("/api/series")).statusCode).toBe(400);
+    expect((await app.inject(`/api/series?${Array.from({ length: 17 }, (_, i) => `id=${i}`).join("&")}`)).statusCode).toBe(400);
+    expect((await app.inject(`/api/series?id=${"x".repeat(129)}`)).statusCode).toBe(400);
+    store.markUnreachable("lab", new Date()); expect((await app.inject("/api/series?id=lab/a")).json().missing).toEqual(["lab/a"]);
+  });
   it("503 when the web build is missing, static + index fallback when present", async () => {
     const a = mk(ok); apps.push(a.app); expect((await a.app.inject("/")).statusCode).toBe(503);
     const dir = mkdtempSync(join(tmpdir(), "web-")); writeFileSync(join(dir, "index.html"), "<p>hi</p>"); writeFileSync(join(dir, "a.js"), "1");

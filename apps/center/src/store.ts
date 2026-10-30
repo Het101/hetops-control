@@ -1,4 +1,5 @@
 import { ServerIdSchema, worst, type AgentState, type CenterMessage, type CenterState, type Entity, type Event, type Series, type ServerId, type ServerView, type Status } from "@hetops-control/contracts";
+import { judge } from "./rules.js";
 
 // skewMs = center clock - agent clock at the last apply; ageing adds it so agent clock drift never fakes staleness
 type Link = { state?: AgentState; lastError?: string; skewMs: number; reachable: boolean; since: Date };
@@ -96,7 +97,7 @@ function age(e: Entity, link: Link, now: number): Aged {
   // an entity without a source (older agent) ages by the slowest source, the most lenient choice
   const period = sources.find(s => s.id === e.source)?.periodMs ?? Math.max(0, ...sources.map(s => s.periodMs));
   const ms = now - (Date.parse(e.observedAt) + link.skewMs);
-  return ms > 3 * period ? { entity: { ...e, status: "unknown", statusReason: `stale: no data for ${Math.round(ms / 1000)} s` }, stale: true } : { entity: e, stale: false };
+  return ms > 3 * period ? { entity: { ...e, status: "unknown", statusReason: `stale: no data for ${Math.round(ms / 1000)} s` }, stale: true } : { entity: judge(e, now - link.skewMs), stale: false };
 }
 
 /** unknown only when we cannot see the server; a failing source or a stale reading means we are partly blind, which is never "ok". */

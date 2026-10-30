@@ -6,7 +6,7 @@ import type { Store } from "./store.js";
 import type { EventsDb } from "./events-db.js";
 import { headline } from "./headline.js";
 
-const DEBOUNCE_MS = 250, PING_MS = 15_000;
+const DEBOUNCE_MS = 250, PING_MS = 15_000, SERIES_PER_REQUEST = 16;
 const cookieJwt = (c?: string) => c?.split(";").map(p => p.trim()).find(p => p.startsWith("CF_Authorization="))?.slice("CF_Authorization=".length);
 
 export function buildCenter(o: { store: Store; db: Pick<EventsDb, "recent">; access: (jwt: string | undefined) => Promise<{ email: string }>; webRoot: string; version?: string; logger?: false }) {
@@ -28,6 +28,15 @@ export function buildCenter(o: { store: Store; db: Pick<EventsDb, "recent">; acc
   app.get("/api/events", async req => {
     const n = Number((req.query as { limit?: string }).limit ?? 50);
     return db.recent(Number.isFinite(n) ? Math.min(500, Math.max(1, Math.trunc(n))) : 50);
+  });
+
+  // one or more series by id (?id=a&id=b), from the same aged snapshot as /api/state; ids absent or stale are listed as missing
+  app.get("/api/series", async (req, rep) => {
+    const q = (req.query as { id?: string | string[] }).id;
+    const ids = [...new Set(Array.isArray(q) ? q : q ? [q] : [])];
+    if (!ids.length || ids.length > SERIES_PER_REQUEST || ids.some(i => i.length > 128)) return rep.code(400).send({ error: `give 1-${SERIES_PER_REQUEST} ids of at most 128 characters` });
+    const s = store.snapshot(); const found = s.series.filter(x => ids.includes(x.id));
+    return { generatedAt: s.generatedAt, series: found, missing: ids.filter(i => !found.some(x => x.id === i)) };
   });
 
   const streams = new Set<() => void>();
