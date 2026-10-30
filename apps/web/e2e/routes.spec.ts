@@ -23,8 +23,8 @@ test("every rail item navigates, renders its page and becomes the active one", a
 });
 
 test("pages without a source say so, with no sample data", async ({ page }) => {
-  await page.goto("/backups");
-  await expect(page.locator(".kicker")).toHaveText("BACKUPS");
+  await page.goto("/topology");
+  await expect(page.locator(".kicker")).toHaveText("TOPOLOGY");
   await expect(page.locator(".waiting h4")).toContainText("NO SOURCE REPORTING YET");
   await expect(page.locator(".waiting .row")).toHaveCount(0);
 });
@@ -125,7 +125,7 @@ test("screenshot of Settings", async ({ page }) => {
   await expect(page.getByText("het@hetops.dev")).toBeVisible();
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
   await page.screenshot({ path: "e2e/__screens__/settings.png", fullPage: true });
-  await page.getByRole("link", { name: "Security" }).click();
+  await page.getByRole("link", { name: "Topology" }).click();
   await expect(page.locator(".waiting")).toBeVisible();
   await page.screenshot({ path: "e2e/__screens__/empty-page.png", fullPage: true });
 });

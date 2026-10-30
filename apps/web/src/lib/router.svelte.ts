@@ -3,7 +3,7 @@ export const PAGES = { "/": "Home", "/topology": "Topology", "/timeline": "Timel
   "/backups": "Backups", "/security": "Security", "/settings": "Settings" } as const;
 export type PagePath = keyof typeof PAGES;
 /** The pages whose sources arrive in later tasks: they show an honest empty state. */
-export type Upcoming = Exclude<PagePath, "/" | "/settings">;
+export type Upcoming = Exclude<PagePath, "/" | "/settings" | "/timeline" | "/alerts" | "/apps" | "/backups" | "/security">;
 export const isPage = (p: string): p is PagePath => Object.hasOwn(PAGES, p);
 
 const norm = (p: string) => (p.length > 1 ? p.replace(/\/+$/, "") : p) || "/";

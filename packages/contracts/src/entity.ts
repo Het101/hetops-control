@@ -4,26 +4,33 @@ export const StatusSchema = z.enum(["ok", "attention", "down", "unknown"]);
 /**
  * Entity kinds and the facts each one carries (facts stay an open record; the *Facts types below are what the web reads).
  *  alert    firing: 1 (count), severity: "critical"|"warning"|"info", since: ISO time
- *  site     httpStatus: number, latencyMs: ms, tlsDaysLeft: days, uptime30d: %
- *  backup   ageHours: hours, sizeBytes: bytes, lastOk: ISO time, restoreVerified: boolean
+ *  site     httpStatus: number, latencyMs: ms, tlsDaysLeft: days, uptime30d: %, uptime24h: %, lastCheck: ISO time, group: string
+ *  backup   ageHours: hours, sizeBytes: bytes, lastOk: ISO time, restoreVerified: boolean, nextRun: ISO time, lastFailure: ISO time,
+ *           snapshots: count kept, failed: count, repository: string, indices: comma-separated string
+ *  argo-app sync: string, health: string, revision: short sha
  *  deploy   revision: string, health: string, syncStatus: string, ageMin: minutes
  *  slo      objective: % (target), current: % (measured), budgetLeft: % of error budget, windowDays: days
- *  decision a CrowdSec ban: ip, scenario, origin, expiresIn: seconds
- *  app      undeployedCommit: string (a newer commit than the deployed one, when the platform reports it)
- *  check    drift: boolean (Bedrock found the host differs from its code)
+ *  decision a CrowdSec ban: ip, scenario, origin, expiresIn: seconds, country: ISO 3166 alpha-2
+ *  app      undeployedCommit: string (a newer commit than the deployed one, when the platform reports it),
+ *           namespace, pods (ready, max = desired), podsDesired, restarts24h, lastRestartAt: ISO time
+ *  check    drift: boolean (Bedrock found the host differs from its code), lastRun: ISO time, group, lastCheck, httpStatus, latencyMs, uptime24h
  * The center raises a fresh entity to attention/down when: an alert fires at warning/critical, a backup's lastOk is over 26 h old
  * (or missing), an slo's budgetLeft <= 0, an app has an undeployedCommit, a check reports drift: true.
  */
 export const EntityKindSchema = z.enum(["server", "cluster", "node", "app", "argo-app", "site", "alert", "backup", "check", "deploy", "slo", "decision"]);
 type F<T> = { value: T; unit?: string; max?: number };
 export type AlertFacts = { firing?: F<number>; severity?: F<string>; since?: F<string> };
-export type SiteFacts = { httpStatus?: F<number>; latencyMs?: F<number>; tlsDaysLeft?: F<number>; uptime30d?: F<number> };
-export type BackupFacts = { ageHours?: F<number>; sizeBytes?: F<number>; lastOk?: F<string>; restoreVerified?: F<boolean> };
+export type SiteFacts = { httpStatus?: F<number>; latencyMs?: F<number>; tlsDaysLeft?: F<number>; uptime30d?: F<number>;
+  uptime24h?: F<number>; lastCheck?: F<string>; group?: F<string> };
+export type BackupFacts = { ageHours?: F<number>; sizeBytes?: F<number>; lastOk?: F<string>; restoreVerified?: F<boolean>;
+  nextRun?: F<string>; lastFailure?: F<string>; snapshots?: F<number>; failed?: F<number>; repository?: F<string>; indices?: F<string> };
 export type DeployFacts = { revision?: F<string>; health?: F<string>; syncStatus?: F<string>; ageMin?: F<number> };
 export type SloFacts = { objective?: F<number>; current?: F<number>; budgetLeft?: F<number>; windowDays?: F<number> };
-export type AppFacts = { undeployedCommit?: F<string> };
-export type CheckFacts = { drift?: F<boolean> };
-export type DecisionFacts = { ip?: F<string>; scenario?: F<string>; origin?: F<string>; expiresIn?: F<number> };
+export type AppFacts = { undeployedCommit?: F<string>; namespace?: F<string>; pods?: F<number>; podsDesired?: F<number>;
+  restarts24h?: F<number>; lastRestartAt?: F<string> };
+export type ArgoAppFacts = { sync?: F<string>; health?: F<string>; revision?: F<string> };
+export type CheckFacts = { drift?: F<boolean>; lastRun?: F<string> } & Pick<SiteFacts, "group" | "lastCheck" | "httpStatus" | "latencyMs" | "uptime24h">;
+export type DecisionFacts = { ip?: F<string>; scenario?: F<string>; origin?: F<string>; expiresIn?: F<number>; country?: F<string> };
 export const FactSchema = z.object({ value: z.union([z.number(), z.string(), z.boolean()]), unit: z.string().optional(), max: z.number().optional() });
 export const LinkSchema = z.object({ label: z.string(), href: z.string().url() });
 export const ActionRefSchema = z.object({ id: z.string(), label: z.string(), risk: z.enum(["safe", "disruptive"]) });
