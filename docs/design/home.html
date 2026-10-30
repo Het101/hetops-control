@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HetOps Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#2a2b2f; --bg-deep:#232427; --hi:rgba(255,255,255,.055); --lo:rgba(0,0,0,.42);
+  --ink:#ecebe7; --ink-2:#b4b2ac; --ink-3:#86857f; --quiet:#c9c7c1;
+  --ember-1:#ff9a3c; --ember-2:#f0582a; --ember-3:#c2391a; --ember:#f2702f;
+  --ease:cubic-bezier(.22,1,.36,1); --ease-io:cubic-bezier(.65,0,.35,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+/* raised and pressed surfaces (neumorphic) */
+.raised{background:linear-gradient(145deg,#2f3034,#27282b);box-shadow:-6px -6px 14px var(--hi),8px 10px 22px var(--lo)}
+.pressed{background:linear-gradient(145deg,#25262a,#2d2e32);box-shadow:inset -4px -4px 10px var(--hi),inset 6px 6px 14px var(--lo)}
+.app{display:grid;grid-template-columns:92px 1fr;min-height:100vh;max-width:1500px;margin:0 auto}
+
+/* ---------- rail with animated icons ---------- */
+.rail{display:flex;flex-direction:column;align-items:center;gap:18px;padding:22px 0}
+.logo{width:46px;height:46px;border-radius:50%;margin-bottom:10px;display:grid;place-items:center}
+.logo i{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffc08a,var(--ember-2) 60%,var(--ember-3));box-shadow:0 0 14px rgba(242,112,47,.55);animation:breathe 4.5s var(--ease-io) infinite}
+.nav{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:var(--ink-3);cursor:pointer;transition:transform .35s var(--ease),color .3s,box-shadow .35s var(--ease);position:relative}
+.nav:hover{color:var(--ink);transform:translateY(-1px)}
+.nav.on{color:var(--ember)}
+.nav svg{width:22px;height:22px;overflow:visible}
+.nav svg *{vector-effect:non-scaling-stroke}
+.nav .tip{position:absolute;left:62px;white-space:nowrap;font:500 12px "Plus Jakarta Sans";color:var(--ink);background:#1f2023;padding:5px 10px;border-radius:8px;opacity:0;transform:translateX(-6px);pointer-events:none;transition:opacity .25s,transform .35s var(--ease);box-shadow:0 8px 18px var(--lo)}
+.nav:hover .tip{opacity:1;transform:none}
+.rail .sp{flex:1}
+
+/* icon motions (from the animated icon set) */
+.smoke{opacity:0}
+.nav:hover .smoke,.nav.on .smoke{animation:smoke 1.8s var(--ease) infinite}
+.nav:hover .smoke.s2,.nav.on .smoke.s2{animation-delay:.6s}
+@keyframes smoke{0%{opacity:0;transform:translateY(0) scale(.6)}30%{opacity:.9}100%{opacity:0;transform:translateY(-7px) scale(1.25)}}
+.travel{opacity:0}
+.nav:hover .travel{opacity:1;offset-rotate:0deg;animation:travel 1.6s var(--ease-io) infinite}
+@keyframes travel{from{offset-distance:0%}to{offset-distance:100%}}
+.hand{transform-origin:12px 12px;transform-box:view-box}
+.nav:hover .hand.m{animation:spin 1.2s linear infinite}.nav:hover .hand.h{animation:spin 7.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.wave{opacity:.25;transition:opacity .3s}
+.nav:hover .wave,.nav.on .wave{animation:wave 1.4s var(--ease-io) infinite}
+.nav:hover .wave.w2,.nav.on .wave.w2{animation-delay:.18s}.nav:hover .wave.w3,.nav.on .wave.w3{animation-delay:.36s}
+@keyframes wave{0%,100%{opacity:.2}40%{opacity:1}}
+.dot{transform-box:fill-box;transform-origin:center}
+.nav:hover .dot{animation:bounce .9s var(--ease-io) infinite}
+.nav:hover .dot.d2{animation-delay:.12s}.nav:hover .dot.d3{animation-delay:.24s}
+@keyframes bounce{0%,100%{transform:translateY(0)}45%{transform:translateY(-4px)}}
+.arrow{transition:transform .4s var(--ease)}
+.nav:hover .arrow{animation:drop 1.3s var(--ease) infinite}
+@keyframes drop{0%{transform:translateY(-5px);opacity:0}35%{opacity:1}70%,100%{transform:translateY(1px);opacity:1}}
+.ring{stroke-dasharray:60;stroke-dashoffset:0}
+.nav:hover .ring{animation:draw 1.6s var(--ease) infinite}
+@keyframes draw{0%{stroke-dashoffset:60}60%,100%{stroke-dashoffset:0}}
+.gear{transform-origin:12px 12px;transform-box:view-box;transition:transform .9s var(--ease)}
+.nav:hover .gear{transform:rotate(120deg)}
+
+main{padding:24px 28px 34px 8px}
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;gap:18px;margin-bottom:22px}
+.brand{font:600 13px "IBM Plex Mono";letter-spacing:.16em;color:var(--ink-2)}
+.search{margin-left:auto;display:flex;align-items:center;gap:10px;border-radius:999px;padding:10px 18px;color:var(--ink-3);font-size:13px;width:330px}
+.live{display:flex;align-items:center;gap:9px;font:500 12px "IBM Plex Mono";color:var(--ink-2)}
+.pulse{position:relative;width:9px;height:9px;border-radius:50%;background:var(--quiet)}
+.pulse::after{content:"";position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--quiet);animation:ping 2.4s var(--ease) infinite}
+@keyframes ping{0%{transform:scale(1);opacity:.8}100%{transform:scale(3);opacity:0}}
+
+/* ---------- hero ---------- */
+.hero{position:relative;border-radius:30px;overflow:hidden;min-height:520px}
+.hero-copy{position:absolute;left:34px;top:30px;max-width:540px;z-index:3}
+.date{font:500 12px "IBM Plex Mono";color:var(--ink-3);letter-spacing:.08em}
+.headline{font:600 36px/1.08 Fraunces,Georgia,serif;margin:10px 0 12px;letter-spacing:-.01em}
+.headline em{font-style:normal;background:linear-gradient(90deg,var(--ember-1),var(--ember-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{font-size:14.5px;line-height:1.65;color:var(--ink-2)}
+.needs{position:absolute;right:28px;top:28px;width:350px;z-index:3;border-radius:24px;padding:16px 18px}
+.needs h3{margin:0 0 6px;font:600 12px "IBM Plex Mono";letter-spacing:.14em;color:var(--ember)}
+.need{display:flex;align-items:center;gap:12px;padding:12px 8px;border-radius:16px;margin:0 -8px;transition:background .3s}
+.need:hover{background:rgba(0,0,0,.18)}
+.need .txt{flex:1;font-size:13.5px}
+.need small{display:block;color:var(--ink-3);font-size:11.5px;margin-top:3px}
+.ember-btn{width:44px;height:44px;border-radius:50%;border:none;display:grid;place-items:center;cursor:pointer;
+  background:radial-gradient(circle at 35% 30%,var(--ember-1),var(--ember-2) 60%,var(--ember-3));
+  box-shadow:0 0 0 4px #26272a,0 0 22px rgba(242,88,42,.55),0 8px 16px rgba(0,0,0,.45);
+  transition:transform .3s var(--ease),box-shadow .3s var(--ease);animation:glow 3s var(--ease-io) infinite}
+.ember-btn:hover{transform:scale(1.07)}
+.ember-btn:active{transform:scale(.94)}
+.ember-btn svg{width:16px;height:16px}
+@keyframes glow{0%,100%{box-shadow:0 0 0 4px #26272a,0 0 16px rgba(242,88,42,.45),0 8px 16px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 4px #26272a,0 0 30px rgba(242,88,42,.75),0 8px 16px rgba(0,0,0,.45)}}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+svg.forest{position:absolute;left:0;right:0;bottom:70px;width:100%;height:320px;z-index:1}
+.stations{position:absolute;left:28px;right:28px;bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);z-index:2}
+.st{text-align:center}
+.st b{display:block;font:600 16px Fraunces,serif}
+.st span{font:500 11.5px "IBM Plex Mono";color:var(--ink-3)}
+.st i{font-style:normal;font:600 11px "IBM Plex Mono";letter-spacing:.08em;color:var(--quiet)}
+.st i.warm{color:var(--ember)}
+/* forest motion */
+.canopy{transform-box:fill-box;transform-origin:50% 100%;animation:sway var(--d,7s) var(--ease-io) infinite alternate}
+@keyframes sway{from{transform:rotate(-1.2deg)}to{transform:rotate(1.2deg)}}
+.fall{animation:fall var(--d,6s) linear infinite;animation-delay:var(--dl,0s)}
+@keyframes fall{0%{transform:translate(0,0) rotate(0);opacity:0}10%{opacity:.95}100%{transform:translate(var(--dx,20px),120px) rotate(320deg);opacity:0}}
+.ember-p{animation:rise var(--d,3s) var(--ease) infinite;animation-delay:var(--dl,0s);filter:drop-shadow(0 0 3px #ff7a2a)}
+@keyframes rise{0%{transform:translate(0,0) scale(1);opacity:0}15%{opacity:1}100%{transform:translate(var(--dx,6px),-70px) scale(.3);opacity:0}}
+
+/* ---------- modules ---------- */
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:22px;margin-top:24px}
+.mod{border-radius:26px;padding:20px 22px;position:relative;overflow:hidden;opacity:0;transform:translateY(14px);animation:enter .8s var(--ease) forwards;animation-delay:var(--in,0s)}
+@keyframes enter{to{opacity:1;transform:none}}
+.mod h4{margin:0;font:600 11.5px "IBM Plex Mono";letter-spacing:.13em;color:var(--ink-3);display:flex;justify-content:space-between}
+.note{font-size:12px;color:var(--ink-3);margin-top:6px}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c7{grid-column:span 7}
+.dials{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.dial{text-align:center;font:500 11px "IBM Plex Mono";color:var(--ink-3)}
+.dial .face{width:96px;height:96px;margin:0 auto 8px;border-radius:50%;display:grid;place-items:center;position:relative}
+.dial svg{position:absolute;inset:0}
+.dial b{font:600 20px Fraunces,serif;color:var(--ink);position:relative}
+.arc{transition:stroke-dashoffset 1.6s var(--ease)}
+/* track list (from the player reference) */
+.list .row{display:flex;align-items:center;gap:14px;padding:10px 10px;margin:0 -10px;border-radius:16px;transition:background .3s}
+.list .row:hover{background:rgba(0,0,0,.16)}
+.list .row.now{background:#212225;box-shadow:inset 0 0 0 1px #34353a}
+.row .n{font:500 11.5px "IBM Plex Mono";color:var(--ink-3);width:44px}
+.row .t{flex:1;font-size:13.5px}
+.row .t small{display:block;color:var(--ink-3);font-size:11.5px;margin-top:2px}
+.knob{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--ink-3);cursor:pointer;transition:transform .3s var(--ease),color .3s}
+.knob:hover{color:var(--ink);transform:scale(1.06)}
+.knob svg{width:12px;height:12px}
+.knob.ember{background:radial-gradient(circle at 35% 30%,var(--ember-1),var(--ember-2) 60%,var(--ember-3));box-shadow:0 0 14px rgba(242,88,42,.55);color:#2a1408}
+.slider{height:8px;border-radius:99px;margin:18px 0 6px;position:relative}
+.slider .fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,var(--ember-3),var(--ember-2),var(--ember-1));width:0;transition:width 1.8s var(--ease);box-shadow:0 0 12px rgba(242,88,42,.45)}
+.slider .thumb{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;left:0;transition:left 1.8s var(--ease)}
+.budget-num{font:600 34px Fraunces,serif;margin-top:8px}
+.tag{font:600 10px "IBM Plex Mono";letter-spacing:.08em;padding:3px 8px;border-radius:999px;color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.mod{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ======= RAIL ======= -->
+  <nav class="rail">
+    <div class="logo raised"><i></i></div>
+    <div class="nav on pressed" title="Home"><span class="tip">Home</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 11 12 4l8 7v9H4z"/><path d="M10 20v-5h4v5"/><path d="M16.5 6.5V4.5h1.8v3.6"/>
+        <circle class="smoke" cx="17.4" cy="2.6" r="1"/><circle class="smoke s2" cx="18.2" cy="1.6" r=".8"/>
+      </svg></div>
+    <div class="nav raised" title="Topology"><span class="tip">Topology</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+        <circle cx="5" cy="6" r="2.4"/><circle cx="19" cy="6" r="2.4"/><circle cx="12" cy="18.5" r="2.4"/>
+        <path d="M7.2 7.2 10.6 16.6M16.8 7.2 13.4 16.6M7.4 6h9.2"/>
+        <circle class="travel" r="1.3" fill="currentColor" style="offset-path:path('M7.4 6 H16.6 L13.4 16.6 L10.6 16.6 Z')"/>
+      </svg></div>
+    <div class="nav raised" title="Timeline"><span class="tip">Timeline</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+        <circle cx="12" cy="12" r="8.5"/><path class="hand h" d="M12 12V8"/><path class="hand m" d="M12 12l4 2"/>
+      </svg></div>
+    <div class="nav raised" title="Alerts"><span class="tip">Alerts</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+        <path d="M12 12v9"/><circle cx="12" cy="10.5" r="1.4" fill="currentColor"/>
+        <path class="wave w1" d="M9.2 8a4 4 0 0 0 0 5M14.8 8a4 4 0 0 1 0 5"/>
+        <path class="wave w2" d="M6.6 5.6a7.5 7.5 0 0 0 0 9.8M17.4 5.6a7.5 7.5 0 0 1 0 9.8"/>
+        <path class="wave w3" d="M4 3.2a11 11 0 0 0 0 14.6M20 3.2a11 11 0 0 1 0 14.6"/>
+      </svg></div>
+    <div class="nav raised" title="Apps"><span class="tip">Apps</span>
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle class="dot d1" cx="6" cy="12" r="2.1"/><circle class="dot d2" cx="12" cy="12" r="2.1"/><circle class="dot d3" cx="18" cy="12" r="2.1"/></svg></div>
+    <div class="nav raised" title="Backups"><span class="tip">Backups</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/><g class="arrow"><path d="M12 4v10"/><path d="m8 10 4 4 4-4"/></g>
+      </svg></div>
+    <div class="nav raised" title="Security"><span class="tip">Security</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3.5 19 6v5.5c0 4.2-2.9 7.5-7 9-4.1-1.5-7-4.8-7-9V6z"/><circle class="ring" cx="12" cy="11.5" r="3.2"/>
+      </svg></div>
+    <div class="sp"></div>
+    <div class="nav raised" title="Settings"><span class="tip">Settings</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+        <g class="gear"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M5.5 18.5l1.8-1.8M16.7 7.3l1.8-1.8"/></g>
+      </svg></div>
+  </nav>
+
+  <main>
+    <div class="top">
+      <span class="brand">HETOPS CONTROL</span>
+      <div class="search pressed"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>Search servers, apps, alerts…<span class="mono" style="margin-left:auto">⌘K</span></div>
+      <span class="live"><span class="pulse"></span>live · 2 s ago</span>
+    </div>
+
+    <section class="hero raised">
+      <div class="hero-copy">
+        <div class="date">THU 30 OCT · 07:42 UTC</div>
+        <div class="headline">The estate is healthy.<br><em>Two things are waiting on you.</em></div>
+        <div class="sub">Nightly backups ran at 01:30 and 01:45. Logs arrive at <b class="count" data-to="1300">0</b> a minute on the ops server. The lab's canopy is smouldering a little: chaos-api restarted twice at 03:12.</div>
+      </div>
+      <div class="needs pressed">
+        <h3>NEEDS YOU · 2</h3>
+        <div class="need"><div class="txt">radar-cloud has an undeployed build<small>7a5cba8 · auto-deploy off · waiting 14 h</small></div>
+          <button class="ember-btn" title="Redeploy"><svg viewBox="0 0 24 24" fill="#2a1408"><path d="M8 5v14l11-7z"/></svg></button></div>
+        <div class="need"><div class="txt">restore-drill: measure graceful stop<small>new code needs one more deploy</small></div>
+          <button class="ember-btn" title="Redeploy"><svg viewBox="0 0 24 24" fill="#2a1408"><path d="M8 5v14l11-7z"/></svg></button></div>
+      </div>
+      <svg class="forest" id="forest" viewBox="0 0 1200 320" preserveAspectRatio="xMidYMax meet"></svg>
+      <div class="stations">
+        <div class="st"><b>Lab</b><span>my-workspace · 31 apps · 11 sites</span><br><i class="warm">● SMOULDERING · 2 restarts</i></div>
+        <div class="st"><b>Staging</b><span>vm2 · 14 pods · drift 0</span><br><i>● HEALTHY</i></div>
+        <div class="st"><b>Ops</b><span>hetops-3 · watcher · logs · backups</span><br><i>● HEALTHY</i></div>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="mod raised c4" style="--in:.1s">
+        <h4><span>HOST LOAD</span><span>now</span></h4>
+        <div class="dials">
+          <div class="dial"><div class="face pressed"><svg viewBox="0 0 96 96" data-v="48"></svg><b class="count" data-to="48" data-suffix="%">0</b></div>LAB</div>
+          <div class="dial"><div class="face pressed"><svg viewBox="0 0 96 96" data-v="6"></svg><b class="count" data-to="6" data-suffix="%">0</b></div>STAGING</div>
+          <div class="dial"><div class="face pressed"><svg viewBox="0 0 96 96" data-v="71" data-hot="1"></svg><b class="count" data-to="71" data-suffix="%">0</b></div>OPS</div>
+        </div>
+        <div class="note">CPU · ember above 65% for 10 min</div>
+      </section>
+
+      <section class="mod raised c5" style="--in:.18s">
+        <h4><span>DEPLOYS · 14 DAYS</span><span>median 26 s</span></h4>
+        <svg id="capsules" viewBox="0 0 420 140" width="100%" height="140"></svg>
+        <div class="note">capsule = deploys that day · ember = a deploy waited over 2 min</div>
+      </section>
+
+      <section class="mod raised c3" style="--in:.26s">
+        <h4><span>ERROR BUDGET</span><span>7 d</span></h4>
+        <div class="budget-num"><span class="count" data-to="71">0</span><span style="font-size:18px;color:var(--ink-3)">% left</span></div>
+        <div class="slider pressed"><div class="fill" id="bfill"></div><div class="thumb raised" id="bthumb"></div></div>
+        <div style="display:flex;justify-content:space-between" class="mono note"><span>0</span><span>burn 0.3×</span><span>100</span></div>
+      </section>
+
+      <section class="mod raised c7" style="--in:.34s">
+        <h4><span>LOG FLOW → OPS</span><span>24 h · 1.3k/min</span></h4>
+        <svg id="terrain" viewBox="0 0 640 150" width="100%" height="150" preserveAspectRatio="none"></svg>
+        <div class="note">default stream · security stream · the ember line is the 15:46 outage test, refilled after</div>
+      </section>
+
+      <section class="mod raised c5" style="--in:.42s">
+        <h4><span>WHO KNOCKS · CROWDSEC</span><span>24 h · 37 banned</span></h4>
+        <svg id="map" viewBox="0 0 400 170" width="100%" height="170"></svg>
+        <div class="note">embers = banned sources · white = the lab</div>
+      </section>
+
+      <section class="mod raised c7 list" style="--in:.5s">
+        <h4><span>TIMELINE · ALL SERVERS</span><span>open →</span></h4>
+        <div class="row"><span class="n">07:31</span><span class="t">Gatus: all 17 checks green<small>ops · hetops-3</small></span><span class="tag pressed">OPS</span></div>
+        <div class="row now"><span class="n" style="color:var(--ember)">03:12</span><span class="t">chaos-api restarted twice<small>lab · OOMKilled · 512 Mi limit</small></span><div class="knob ember" title="Open"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div></div>
+        <div class="row"><span class="n">01:45</span><span class="t">Security snapshot to R2<small>ops · 4 indices · 9.4 s</small></span><span class="tag pressed">OPS</span></div>
+        <div class="row"><span class="n">01:30</span><span class="t">Nightly snapshot to disk<small>ops · 7 indices</small></span><span class="tag pressed">OPS</span></div>
+      </section>
+
+      <section class="mod raised c5 list" style="--in:.58s">
+        <h4><span>BACKUPS · LAST RESULT</span><span>run now</span></h4>
+        <div class="row"><span class="t">Logs → hetops-3 disk<small>01:30 · ok</small></span><div class="knob raised"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div></div>
+        <div class="row"><span class="t">Security → R2<small>01:45 · ok</small></span><div class="knob raised"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div></div>
+        <div class="row"><span class="t">DNS Intelligence<small>04:06 · ok</small></span><div class="knob raised"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div></div>
+        <div class="row now"><span class="t">Restore Drill<small style="color:var(--ember)">due 08:00 · last ok 6 h ago</small></span><div class="knob ember"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function rng(seed){return()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646}}
+const NS="http://www.w3.org/2000/svg";
+function el(tag,a,p){const e=document.createElementNS(NS,tag);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e}
+
+/* ---------------- the forest ---------------- */
+const servers=[
+ {x:200,seed:7,apps:[["clinic",9,0],["argo",7,0],["monitoring",8,0],["logging",3,0],["chaos",4,2],["crowdsec",3,0],["gateway",2,0],["timeline",2,0],["coolify",6,0]]},
+ {x:600,seed:21,apps:[["system",6,0],["calico",3,0],["coredns",2,0],["smoke",2,0]]},
+ {x:1000,seed:42,apps:[["argo",7,0],["gatus",1,0],["logging",5,0],["storage",1,0],["tunnel",1,0],["sealed",1,0]]}];
+const svg=document.getElementById("forest"),defs=el("defs",{},svg);
+const gl=el("radialGradient",{id:"glow"},defs);el("stop",{offset:"0","stop-color":"#4a4b51","stop-opacity":".55"},gl);el("stop",{offset:"1","stop-color":"#4a4b51","stop-opacity":"0"},gl);
+const eg=el("radialGradient",{id:"emberLeaf"},defs);el("stop",{offset:"0","stop-color":"#ffb26b"},eg);el("stop",{offset:".6","stop-color":"#f0582a"},eg);el("stop",{offset:"1","stop-color":"#a8301a"},eg);
+const ground=el("g",{},svg);
+for(let i=0;i<240;i++){const x=i*5,h=4+Math.abs(Math.sin(i*.21)*10+Math.sin(i*.07)*14);
+  const r=el("rect",{x,y:300-h,width:3,height:h,rx:1.5,fill:i%37===0?"#f2702f":"#46474c"},ground);
+  if(!reduce){r.style.transformBox="fill-box";r.style.transformOrigin="50% 100%";r.animate([{transform:"scaleY(.35)"},{transform:"scaleY(1)"}],{duration:1400+((i*37)%700),delay:i*4,easing:"cubic-bezier(.22,1,.36,1)",fill:"backwards"})}}
+el("line",{x1:0,y1:300,x2:1200,y2:300,stroke:"#4b4c51"},svg);
+servers.forEach((s,si)=>{
+  const R=rng(s.seed);el("ellipse",{cx:s.x,cy:200,rx:200,ry:125,fill:"url(#glow)"},svg);
+  for(let i=0;i<5;i++){const dx=(R()-.5)*90;el("path",{d:`M${s.x} 300 q ${dx/2} 10 ${dx} ${16+R()*10}`,stroke:"#44454a","stroke-width":2,fill:"none"},svg)}
+  const tt={x:s.x+(R()-.5)*6,y:172};
+  el("path",{d:`M${s.x-9} 300 C ${s.x-6} 250, ${tt.x-5} 210, ${tt.x} ${tt.y} C ${tt.x+5} 210, ${s.x+6} 250, ${s.x+9} 300 Z`,fill:"#1d1e21"},svg);
+  const canopy=el("g",{class:"canopy",style:`--d:${6+si*1.3}s`},svg);
+  const n=s.apps.length;
+  s.apps.forEach((a,i)=>{
+    const[name,pods,rs]=a;const ang=(-160+(140/(n-1||1))*i)*Math.PI/180+(R()-.5)*.15;const len=55+R()*45+pods*3;
+    const sx=tt.x,sy=tt.y+10+R()*18,ex=sx+Math.cos(ang)*len,ey=sy+Math.sin(ang)*len*.8,cx=sx+Math.cos(ang)*len*.5+(R()-.5)*20,cy=sy+Math.sin(ang)*len*.3;
+    el("path",{d:`M${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`,stroke:"#232427","stroke-width":2+pods*.35,fill:"none","stroke-linecap":"round"},canopy);
+    for(let p=0;p<pods*5;p++){const r=6+R()*9,lx=ex+(R()-.5)*(26+pods*4),ly=ey+(R()-.5)*(22+pods*3);const sick=rs>0&&p<rs*6;
+      const pal=["#5f6065","#7b7c81","#9c9b98","#c4c2bd","#d9d7d1"];
+      el("circle",{cx:lx,cy:ly,r,fill:sick?"url(#emberLeaf)":pal[Math.floor(R()*pal.length)],opacity:sick?.95:.5+R()*.42,style:sick?"filter:drop-shadow(0 0 5px rgba(242,88,42,.7))":""},canopy)}
+    if(rs>0&&!reduce){
+      for(let f=0;f<rs*3;f++){const fl=el("ellipse",{cx:ex+(R()-.5)*30,cy:ey+10,rx:3.4,ry:1.9,fill:"#f2702f",class:"fall",style:`--d:${5+R()*3}s;--dl:${f*1.4}s;--dx:${(R()-.3)*60}px`},svg)}
+      for(let e=0;e<rs*9;e++){el("circle",{cx:ex+(R()-.5)*40,cy:ey+(R()-.5)*20,r:1+R()*1.6,fill:"#ffb066",class:"ember-p",style:`--d:${2.2+R()*2}s;--dl:${R()*3}s;--dx:${(R()-.5)*30}px`},svg)}
+    }
+  });
+});
+
+/* ---------------- dials ---------------- */
+document.querySelectorAll(".dial svg").forEach((d,k)=>{
+  const v=+d.dataset.v,hot=d.dataset.hot,cx=48,cy=48,r=40,C=2*Math.PI*r,span=.75;
+  el("circle",{cx,cy,r,stroke:"#1f2023","stroke-width":6,fill:"none","stroke-dasharray":`${C*span} ${C}`,"stroke-linecap":"round",transform:`rotate(135 ${cx} ${cy})`},d);
+  for(let t=0;t<=12;t++){const a=(135+270*t/12)*Math.PI/180;el("line",{x1:cx+(r-9)*Math.cos(a),y1:cy+(r-9)*Math.sin(a),x2:cx+(r-6)*Math.cos(a),y2:cy+(r-6)*Math.sin(a),stroke:"#56575c","stroke-width":1},d)}
+  if(hot){const lg=el("linearGradient",{id:"hg"+k,x1:"0",x2:"1"},d);el("stop",{offset:"0","stop-color":"#c2391a"},lg);el("stop",{offset:"1","stop-color":"#ff9a3c"},lg)}
+  const arc=el("circle",{class:"arc",cx,cy,r,stroke:hot?`url(#hg${k})`:"#d8d6d0","stroke-width":6,fill:"none","stroke-dasharray":`${C*span} ${C}`,"stroke-dashoffset":C*span,"stroke-linecap":"round",transform:`rotate(135 ${cx} ${cy})`,style:hot?"filter:drop-shadow(0 0 5px rgba(242,88,42,.6))":""},d);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>arc.setAttribute("stroke-dashoffset",C*span*(1-v/100))));
+});
+
+/* ---------------- capsules ---------------- */
+(()=>{const s=document.getElementById("capsules");const data=[3,5,2,7,4,6,9,3,2,8,5,4,6,3],slow=[3,9];
+ const g=el("linearGradient",{id:"cap",x1:"0",y1:"1",x2:"0",y2:"0"},s);el("stop",{offset:"0","stop-color":"#c2391a"},g);el("stop",{offset:"1","stop-color":"#ff9a3c"},g);
+ data.forEach((v,i)=>{const x=10+i*29,h=14+v*11,hot=slow.includes(i);
+  el("rect",{x:x-1,y:2,width:18,height:132,rx:9,fill:"#232427"},s);
+  const b=el("rect",{x,y:133-h,width:16,height:h,rx:8,fill:hot?"url(#cap)":"#b9b7b1",style:hot?"filter:drop-shadow(0 0 7px rgba(242,88,42,.6))":""},s);
+  if(!reduce){b.style.transformBox="fill-box";b.style.transformOrigin="50% 100%";b.animate([{transform:"scaleY(0)"},{transform:"scaleY(1)"}],{duration:1100,delay:350+i*55,easing:"cubic-bezier(.22,1,.36,1)",fill:"backwards"})}})})();
+
+/* ---------------- budget slider ---------------- */
+requestAnimationFrame(()=>requestAnimationFrame(()=>{document.getElementById("bfill").style.width="71%";document.getElementById("bthumb").style.left="71%"}));
+
+/* ---------------- terrain ---------------- */
+(()=>{const s=document.getElementById("terrain"),W=640,H=150;
+ const series=(seed,amp,base)=>{const R=rng(seed);return Array.from({length:97},(_,i)=>{let v=base+Math.sin(i/9)*amp+Math.sin(i/3.3)*amp*.35+R()*amp*.4;if(i>=62&&i<=66)v=base*.15;if(i>66&&i<70)v=base*1.9;return v})};
+ for(let i=0;i<=4;i++)el("line",{x1:0,y1:i*37,x2:W,y2:i*37,stroke:"#36373b"},s);
+ const clip=el("clipPath",{id:"reveal"},s);const cr=el("rect",{x:0,y:0,width:reduce?W:0,height:H},clip);
+ const g=el("g",{"clip-path":"url(#reveal)"},s);
+ const area=(pts,fill,stroke)=>{const st=W/(pts.length-1);let d=`M0 ${H} `;pts.forEach((v,i)=>d+=`L${i*st} ${H-v} `);d+=`L${W} ${H} Z`;el("path",{d,fill,stroke,"stroke-width":1.4},g)};
+ area(series(3,26,92),"rgba(185,183,177,.22)","#c4c2bd");area(series(9,10,34),"rgba(95,96,101,.65)","#8a8b90");
+ el("line",{x1:W*62/96,y1:0,x2:W*62/96,y2:H,stroke:"#f2702f","stroke-dasharray":"3 4",style:"filter:drop-shadow(0 0 4px rgba(242,112,47,.7))"},g);
+ if(!reduce)cr.animate([{width:"0"},{width:W+"px"}],{duration:2200,delay:500,easing:"cubic-bezier(.65,0,.35,1)",fill:"forwards"});})();
+
+/* ---------------- map ---------------- */
+(()=>{const s=document.getElementById("map");
+ const land=[[-170,-50,15,72],[-82,-34,-56,13],[-18,52,-35,37],[-10,40,36,71],[40,150,5,75],[95,155,-45,-10],[68,90,6,30]];
+ const isLand=(lo,la)=>land.some(([a,b,c,d])=>lo>=a&&lo<=b&&la>=c&&la<=d);
+ for(let la=75;la>=-55;la-=6)for(let lo=-175;lo<=175;lo+=6){if(!isLand(lo,la))continue;el("circle",{cx:(lo+180)/360*400,cy:(80-la)/140*170,r:1.4,fill:"#4e4f54"},s)}
+ [[37.6,55.7,9],[116.4,39.9,8],[-77,38.9,5],[4.9,52.4,4],[103.8,1.35,4],[-46.6,-23.5,3],[77.2,28.6,2],[139.7,35.7,2]].forEach(([lo,la,n],i)=>{
+  const x=(lo+180)/360*400,y=(80-la)/140*170;
+  const ring=el("circle",{cx:x,cy:y,r:3,fill:"none",stroke:"#f2702f","stroke-width":1.2},s);
+  if(!reduce){ring.style.transformBox="fill-box";ring.style.transformOrigin="center";ring.animate([{transform:"scale(1)",opacity:.9},{transform:`scale(${2+n*.35})`,opacity:0}],{duration:2600,delay:i*330,iterations:Infinity,easing:"cubic-bezier(.22,1,.36,1)"})}
+  el("circle",{cx:x,cy:y,r:2.3,fill:"#ff8a3d",style:"filter:drop-shadow(0 0 4px #f0582a)"},s)});
+ el("circle",{cx:(72.9+180)/360*400,cy:(80-19.1)/140*170,r:3.6,fill:"#ecebe7",style:"filter:drop-shadow(0 0 6px #ffffff99)"},s);})();
+
+/* ---------------- count-up numbers ---------------- */
+document.querySelectorAll(".count").forEach(e=>{const to=+e.dataset.to,suf=e.dataset.suffix||"";if(reduce){e.textContent=to.toLocaleString()+suf;return}
+ const t0=performance.now(),dur=1500;const tick=t=>{const p=Math.min(1,(t-t0)/dur),v=Math.round(to*(1-Math.pow(1-p,4)));e.textContent=v.toLocaleString()+suf;if(p<1)requestAnimationFrame(tick)};requestAnimationFrame(tick)});
+</script>
+</body>
+</html>
