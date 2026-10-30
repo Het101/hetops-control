@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest"; import { Store } from "../src/store.js";
+import { describe, it, expect } from "vitest"; import { CenterStateSchema } from "@hetops-control/contracts"; import { Store } from "../src/store.js";
 const at = (s: string) => new Date(`2026-10-30T12:00:${s}Z`);
 const state = (status: "ok" | "attention", observed = "2026-10-30T12:00:00Z") => ({ server: "lab" as const, version: "0.1.0", generatedAt: observed,
   sources: [{ id: "kubernetes", periodMs: 10000, ok: true, lastRunAt: observed }],
@@ -145,5 +145,15 @@ describe("store series ageing edges", () => {
     st.apply("lab", { ...state("ok"), sources: [{ id: "k", periodMs: 10000, ok: true }, { id: "argo", periodMs: 60000, ok: true }], series: [base] });
     now = new Date("2026-10-30T12:03:00Z"); expect(st.snapshot().series).toHaveLength(1);
     now = new Date("2026-10-30T12:03:00.001Z"); expect(st.snapshot().series).toHaveLength(0);
+  });
+});
+
+describe("store many series", () => {
+  it("more than 64 series across two agents is still a valid CenterState", () => {
+    const st = new Store(() => at("00"));
+    const mk = (server: "lab" | "ops") => ({ ...state("ok"), server, series: Array.from({ length: 64 }, (_, i) => ({ id: `${server}/s${i}`, server, label: "l", unit: "n", stepMs: 1000, points: [] as [number, number][], observedAt: "2026-10-30T12:00:00Z", source: "kubernetes" })),
+      entities: [] });
+    st.apply("lab", mk("lab")); st.apply("ops", mk("ops"));
+    const snap = st.snapshot(); expect(snap.series).toHaveLength(128); CenterStateSchema.parse(snap);
   });
 });

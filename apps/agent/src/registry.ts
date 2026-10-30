@@ -1,4 +1,4 @@
-import { EntitySchema, EventSchema, SeriesSchema, type AgentState, type Entity, type Event, type Series, type ServerId, type SourceReport, type StreamMessage } from "@hetops-control/contracts";
+import { MAX_SERIES, EntitySchema, EventSchema, SeriesSchema, type AgentState, type Entity, type Event, type Series, type ServerId, type SourceReport, type StreamMessage } from "@hetops-control/contracts";
 
 export type SourceContext = { server: ServerId; now: () => Date };
 export interface Source { id: string; periodMs: number; collect(ctx: SourceContext): Promise<{ entities: Entity[]; events?: Event[]; series?: Series[] }> }
@@ -42,15 +42,14 @@ export class Registry {
       const timeout = new Promise<never>((_, rej) => { timer = setTimeout(() => rej(new Error(`timed out after ${ms}ms`)), ms); });
       const out = await Promise.race([call, timeout]);
       // invalid items are dropped one by one (the good data stays visible) and the source is marked failing below
-      const taken = new Set<string>(); for (const [k, d] of this.data) if (k !== id) for (const x of [...d.entities, ...d.series]) taken.add(x.id);
       const bad: string[] = [];
       const keep = <T extends { id: string; server: ServerId }>(kind: string, items: unknown[], schema: { safeParse(v: unknown): { success: true; data: T } | { success: false; error: { issues: { path: PropertyKey[]; code: string }[] } } }): T[] => {
         const ok: T[] = [];
         items.forEach((x, i) => {
-          const r = schema.safeParse(x); const rawId = (x as { id?: unknown })?.id; const name = typeof rawId === "string" ? rawId : String(i);
-          const why = !r.success ? describe(r.error) : r.data.server !== this.server ? "server mismatch" : taken.has(r.data.id) ? "duplicate id" : "";
+          const r = schema.safeParse(x); const rawId = (x as { id?: unknown })?.id; const name = typeof rawId === "string" && rawId.length <= 128 && /^[A-Za-z0-9_./:@-]+$/.test(rawId) ? rawId : `#${i}`;
+          const why = !r.success ? describe(r.error) : r.data.server !== this.server ? "server mismatch" : "";
           if (why || !r.success) { bad.push(`${kind} ${name}: ${why}`); return; }
-          taken.add(r.data.id); ok.push(r.data);
+          ok.push(r.data);
         });
         return ok;
       };
@@ -72,11 +71,31 @@ export class Registry {
     for (const event of events) this.emit({ type: "event", event });
   }
 
+  /**
+   * Resolved here, not at collect time, so the outcome never depends on timing: sources are walked in configured order,
+   * an id held by an earlier source always wins (per kind: entities and series are separate namespaces), series stop at MAX_SERIES.
+   * Every source that lost items is reported failing, so the UI shows it blind while the kept data stays visible.
+   */
   state(): AgentState {
-    const all = [...this.data.values()];
+    const entities: Entity[] = []; const series: Series[] = []; const reports: SourceReport[] = [];
+    const ents = new Set<string>(); const sers = new Set<string>();
+    for (const src of this.sources) {
+      const d = this.data.get(src.id)!; const notes: string[] = []; if (d.report.error) notes.push(d.report.error);
+      const dups: string[] = []; let capped = 0;
+      for (const e of d.entities) { if (ents.has(e.id)) dups.push(`entity ${e.id}`); else { ents.add(e.id); entities.push(e); } }
+      for (const x of d.series) {
+        if (sers.has(x.id)) dups.push(`series ${x.id}`);
+        else if (series.length >= MAX_SERIES) capped++;
+        else { sers.add(x.id); series.push(x); }
+      }
+      // ids already passed the id pattern at collect time, so they are safe to quote
+      if (dups.length) notes.push(`${dups.length} duplicate id${dups.length === 1 ? "" : "s"} dropped (held by an earlier source), first: ${dups[0]}`);
+      if (capped) notes.push(`series cap (${MAX_SERIES}) reached, ${capped} dropped`);
+      reports.push(notes.length ? { ...d.report, ok: false, error: notes.join("; ") } : d.report);
+    }
+    const byId = (a: { id: string }, b: { id: string }) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
     return { server: this.server, version: process.env.VERSION ?? "dev", generatedAt: this.now().toISOString(),
-      entities: all.flatMap(d => d.entities).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)),
-      sources: all.map(d => d.report), series: all.flatMap(d => d.series).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)) };
+      entities: entities.sort(byId), sources: reports, series: series.sort(byId) };
   }
 
   on(listener: (m: StreamMessage) => void): () => void {

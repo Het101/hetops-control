@@ -10,4 +10,6 @@ export const SeriesSchema = z.object({
 });
 /** most series one agent (or the center) may carry; each can be 2000 points and the state is re-sent on every run */
 export const MAX_SERIES = 64;
+/** the center merges every agent's series, so its bound is derived from the server list and never truncates silently */
+export const MAX_CENTER_SERIES = MAX_SERIES * ServerIdSchema.options.length;
 export type Series = z.infer<typeof SeriesSchema>;
