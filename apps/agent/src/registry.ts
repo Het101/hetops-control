@@ -1,4 +1,4 @@
-import { EntitySchema, type AgentState, type Entity, type Event, type ServerId, type SourceReport, type StreamMessage } from "@hetops-control/contracts";
+import { EntitySchema, EventSchema, type AgentState, type Entity, type Event, type ServerId, type SourceReport, type StreamMessage } from "@hetops-control/contracts";
 
 export type SourceContext = { server: ServerId; now: () => Date };
 export interface Source { id: string; periodMs: number; collect(ctx: SourceContext): Promise<{ entities: Entity[]; events?: Event[] }> }
@@ -14,12 +14,9 @@ export class Registry {
   }
 
   start(): void {
+    if (this.timers.length) return; // idempotent
     for (const s of this.sources) {
-      const tick = () => {
-        if (this.running.has(s.id)) return; // never overlap runs of one source
-        this.running.add(s.id);
-        void this.runOnce(s.id).finally(() => this.running.delete(s.id));
-      };
+      const tick = () => { void this.runOnce(s.id); };
       tick();
       this.timers.push(setInterval(tick, s.periodMs));
     }
@@ -27,22 +24,38 @@ export class Registry {
 
   stop(): void { this.timers.forEach(clearInterval); this.timers = []; }
 
+  listenerCount(): number { return this.listeners.size; }
+
   async runOnce(id: string): Promise<void> {
     const src = this.sources.find(s => s.id === id);
     if (!src) throw new Error(`unknown source ${id}`);
+    if (this.running.has(id)) return; // never overlap runs of one source, even after a timeout
+    this.running.add(id);
     const lastRunAt = this.now().toISOString();
     const ms = Math.min(src.periodMs, 30_000);
     let events: Event[] = [];
     let timer: NodeJS.Timeout | undefined;
+    // held until the original collect settles; a late result is discarded
+    const call = (async () => src.collect({ server: this.server, now: this.now }))();
+    void call.then(() => this.running.delete(id), () => this.running.delete(id));
     try {
       const timeout = new Promise<never>((_, rej) => { timer = setTimeout(() => rej(new Error(`timed out after ${ms}ms`)), ms); });
-      const out = await Promise.race([src.collect({ server: this.server, now: this.now }), timeout]);
-      const entities = out.entities.map(e => EntitySchema.parse(e));
+      const out = await Promise.race([call, timeout]);
+      const entities = out.entities.map((e, i) => {
+        const r = EntitySchema.safeParse(e);
+        if (!r.success) throw new Error(`invalid entity ${(e as { id?: unknown })?.id ?? i}: ${describe(r.error)}`);
+        return r.data;
+      });
+      const evs = (out.events ?? []).map((e, i) => {
+        const r = EventSchema.safeParse(e);
+        if (!r.success) throw new Error(`invalid event ${i}: ${describe(r.error)}`);
+        return r.data;
+      });
       this.data.set(id, { entities, report: { id, periodMs: src.periodMs, ok: true, lastRunAt } });
-      events = out.events ?? [];
+      events = evs;
     } catch (err) {
       // message only, never stack or payload; the source's entities disappear
-      this.data.set(id, { entities: [], report: { id, periodMs: src.periodMs, ok: false, lastRunAt, error: err instanceof Error ? err.message : String(err) } });
+      this.data.set(id, { entities: [], report: { id, periodMs: src.periodMs, ok: false, lastRunAt, error:  err instanceof Error ? err.message : String(err) } });
     } finally { clearTimeout(timer); }
     this.emit({ type: "state", state: this.state() });
     for (const event of events) this.emit({ type: "event", event });
@@ -60,5 +73,12 @@ export class Registry {
     return () => { this.listeners.delete(listener); };
   }
 
-  private emit(m: StreamMessage) { for (const l of this.listeners) l(m); }
+  private emit(m: StreamMessage) {
+    for (const l of [...this.listeners]) {
+      try { l(m); } catch (e) { console.error("listener failed:", e instanceof Error ? e.message : String(e)); }
+    }
+  }
 }
+
+// paths and issue codes only, never the rejected values
+const describe = (e: { issues: { path: PropertyKey[]; code: string }[] }) => e.issues.map(i => `${i.path.join(".") || "(root)"} ${i.code}`).join("; ");

@@ -48,3 +48,58 @@ describe("agent", () => {
     ac.abort(); await app.close();
   });
 });
+
+import { loadConfig } from "../src/config.js";
+import { writeFileSync, mkdtempSync } from "node:fs"; import { tmpdir } from "node:os"; import { join } from "node:path";
+
+describe("hardening", () => {
+  const tok = (() => { const f = join(mkdtempSync(join(tmpdir(), "agent-")), "t"); writeFileSync(f, "tok\n"); return f; })();
+  const env = (o: Record<string, string>) => ({ SERVER: "lab", AGENT_TOKEN_FILE: tok, ...o }) as NodeJS.ProcessEnv;
+  it("refuses an empty token", () => {
+    expect(() => buildServer(new Registry("lab", [], () => t0), "")).toThrow(/empty/);
+  });
+  it("refuses partial TLS and bad ports", () => {
+    expect(() => loadConfig(env({ TLS_CERT_FILE: "/x" }))).toThrow(/together/);
+    for (const p of ["0", "70000", "abc", "1.5"]) expect(() => loadConfig(env({ PORT: p }))).toThrow(/PORT/);
+    expect(loadConfig(env({ PORT: "17443" })).port).toBe(17443);
+  });
+  it("survives a throwing listener", async () => {
+    const reg = new Registry("lab", [fake()], () => t0); const got: string[] = [];
+    reg.on(() => { throw new Error("boom"); }); reg.on(m => got.push(m.type));
+    await reg.runOnce("fake"); expect(got).toContain("state");
+  });
+  it("does not overlap after a timeout and discards the late result", async () => {
+    let calls = 0, release!: () => void;
+    const slow = { id: "slow", periodMs: 20, collect: () => { calls++; return new Promise<{ entities: never[] }>(r => { release = () => r({ entities: [] }); }); } };
+    const reg = new Registry("lab", [slow], () => t0);
+    await reg.runOnce("slow"); expect(reg.state().sources[0]).toMatchObject({ ok: false, error: "timed out after 20ms" });
+    await reg.runOnce("slow"); expect(calls).toBe(1);
+    release(); await new Promise(r => setTimeout(r, 5));
+    expect(reg.state().sources[0]).toMatchObject({ ok: false });
+    await reg.runOnce("slow"); expect(calls).toBe(2);
+  });
+  it("does not echo payload values in invalid entity errors, and rejects bad events", async () => {
+    const bad = { id: "bad", periodMs: 10_000, async collect() { return { entities: [{ id: "lab/app/y", kind: "app", server: "lab", name: "SECRET-VALUE", status: "weird" }] as never }; } };
+    const badEv = { id: "badev", periodMs: 10_000, async collect() { return { entities: [], events: [{ summary: "x" }] as never }; } };
+    const reg = new Registry("lab", [bad, badEv], () => t0); const types: string[] = []; reg.on(m => types.push(m.type));
+    await reg.runOnce("bad"); await reg.runOnce("badev");
+    const [a, b] = reg.state().sources;
+    expect(a!.error).toMatch(/^invalid entity lab\/app\/y: /); expect(a!.error).not.toContain("SECRET-VALUE");
+    expect(b!.error).toMatch(/^invalid event 0: /); expect(types).not.toContain("event");
+  });
+  it("start() twice does not duplicate timers", async () => {
+    let calls = 0; const s = { id: "s", periodMs: 30, async collect() { calls++; return { entities: [] }; } };
+    const reg = new Registry("lab", [s], () => t0); reg.start(); reg.start();
+    await new Promise(r => setTimeout(r, 100)); reg.stop();
+    expect(calls).toBeLessThanOrEqual(5); // one timer: ~1 immediate + ~3 ticks (two timers would be ~8)
+  });
+  it("cleans up SSE listeners after a client abort", async () => {
+    const reg = new Registry("lab", [fake()], () => t0); await reg.runOnce("fake");
+    const app = buildServer(reg, "s3cret"); await app.listen({ port: 0, host: "127.0.0.1" });
+    const port = (app.server.address() as { port: number }).port; const ac = new AbortController();
+    const res = await fetch(`http://127.0.0.1:${port}/v1/stream`, { headers: { authorization: "Bearer s3cret" }, signal: ac.signal });
+    await res.body!.getReader().read(); expect(reg.listenerCount()).toBe(1);
+    ac.abort(); await new Promise(r => setTimeout(r, 100));
+    expect(reg.listenerCount()).toBe(0); await app.close();
+  });
+});

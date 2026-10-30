@@ -10,25 +10,30 @@ export interface KubeReader {
 
 // Thin wrapper over client-node; not unit-tested (needs a cluster). In-cluster config when run as a pod, kubeconfig otherwise.
 export function realKube(): KubeReader {
-  const kc = new k8s.KubeConfig(); kc.loadFromDefault();
-  const core = kc.makeApiClient(k8s.CoreV1Api), apps = kc.makeApiClient(k8s.AppsV1Api);
-  const custom = kc.makeApiClient(k8s.CustomObjectsApi), ver = kc.makeApiClient(k8s.VersionApi);
+  // lazy: outside a cluster the clients can't be built, and the sources should report that instead of the agent crashing
+  const build = () => {
+    const kc = new k8s.KubeConfig(); kc.loadFromDefault();
+    return { core: kc.makeApiClient(k8s.CoreV1Api), apps: kc.makeApiClient(k8s.AppsV1Api),
+      custom: kc.makeApiClient(k8s.CustomObjectsApi), ver: kc.makeApiClient(k8s.VersionApi) };
+  };
+  let cl: ReturnType<typeof build> | undefined;
+  const c = () => (cl ??= build());
   // list responses omit each item's kind, so set it
   const kind = (k: string) => (l: { items: object[] }) => l.items.map(i => ({ ...i, kind: k }));
   return {
-    listNodes: async () => (await core.listNode()).items,
-    listPods: async () => (await core.listPodForAllNamespaces()).items,
+    listNodes: async () => (await c().core.listNode()).items,
+    listPods: async () => (await c().core.listPodForAllNamespaces()).items,
     listWorkloads: async () => (await Promise.all([
-      apps.listDeploymentForAllNamespaces().then(kind("Deployment")),
-      apps.listStatefulSetForAllNamespaces().then(kind("StatefulSet")),
-      apps.listDaemonSetForAllNamespaces().then(kind("DaemonSet")),
+      c().apps.listDeploymentForAllNamespaces().then(kind("Deployment")),
+      c().apps.listStatefulSetForAllNamespaces().then(kind("StatefulSet")),
+      c().apps.listDaemonSetForAllNamespaces().then(kind("DaemonSet")),
     ])).flat(),
-    listArgoApps: async () => (await custom.listNamespacedCustomObject({ group: "argoproj.io", version: "v1alpha1", namespace: "argocd", plural: "applications" })).items,
+    listArgoApps: async () => (await c().custom.listNamespacedCustomObject({ group: "argoproj.io", version: "v1alpha1", namespace: "argocd", plural: "applications" })).items,
     nodeSummary: async (name) => {
-      const r: unknown = await core.connectGetNodeProxyWithPath({ name, path: "stats/summary" });
+      const r: unknown = await c().core.connectGetNodeProxyWithPath({ name, path: "stats/summary" });
       return typeof r === "string" ? JSON.parse(r) : r;
     },
-    version: async () => (await ver.getCode()).gitVersion,
+    version: async () => (await c().ver.getCode()).gitVersion,
   };
 }
 

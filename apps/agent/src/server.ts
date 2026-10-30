@@ -3,6 +3,7 @@ import type { Registry } from "./registry.js";
 import { bearerOk } from "./auth.js";
 
 export function buildServer(reg: Registry, token: string, opts: { https?: { cert: string; key: string } } = {}) {
+  if (!token) throw new Error("agent token must not be empty");
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info", redact: ["req.headers.authorization"] }, ...(opts.https ? { https: opts.https } : {}) });
   app.get("/healthz", async () => ({ ok: true }));
   app.addHook("onRequest", async (req, rep) => {
@@ -21,7 +22,7 @@ export function buildServer(reg: Registry, token: string, opts: { https?: { cert
     const done = () => { off(); clearInterval(ping); streams.delete(end); };
     const end = () => { done(); rep.raw.end(); };
     streams.add(end);
-    req.raw.on("close", done);
+    req.raw.on("close", done); rep.raw.on("close", done);
   });
   return app;
 }
