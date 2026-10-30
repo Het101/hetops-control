@@ -1,7 +1,9 @@
-import { z } from "zod"; import { ActionRefSchema, EntitySchema, ServerIdSchema, StatusSchema, type ServerId } from "./entity.js"; import { EventSchema } from "./event.js"; import { MAX_CENTER_SERIES, SeriesSchema } from "./series.js";
+import { z } from "zod"; import { ActionRefSchema, EntitySchema, ServerIdSchema, StatusSchema, type ServerId } from "./entity.js"; import { EventSchema } from "./event.js"; import { MAX_CENTER_SERIES, SeriesSchema } from "./series.js"; import { SourceReportSchema } from "./agent-api.js";
 export const ServerViewSchema = z.object({ status: StatusSchema, statusReason: z.string().optional(), reachable: z.boolean(), configured: z.boolean(), lastError: z.string().optional(),
   since: z.string().datetime(), agentVersion: z.string().optional(),
-  failingSources: z.array(z.object({ id: z.string(), error: z.string().optional() })).optional() });
+  failingSources: z.array(z.object({ id: z.string(), error: z.string().optional() })).optional(),
+  // every source the reachable agent reports (Settings lists them); absent while unreachable
+  sources: z.array(SourceReportSchema).optional() });
 // one required key per server id (never-connected ones show as unknown); a z.record would make every key optional
 const serverKeys = Object.fromEntries(ServerIdSchema.options.map(s => [s, ServerViewSchema])) as Record<ServerId, typeof ServerViewSchema>;
 export const CenterStateSchema = z.object({ generatedAt: z.string().datetime(), servers: z.object(serverKeys).strict(), entities: z.array(EntitySchema), series: z.array(SeriesSchema).max(MAX_CENTER_SERIES) });
@@ -14,3 +16,6 @@ export type CenterMessage = z.infer<typeof CenterMessageSchema>;
 export const NeedSchema = z.object({ entity: z.string(), server: ServerIdSchema, text: z.string(), detail: z.string(), action: ActionRefSchema.optional() });
 export const HeadlineSchema = z.object({ title: z.string(), emphasis: z.string().optional(), detail: z.string(), needs: z.array(NeedSchema) });
 export type Need = z.infer<typeof NeedSchema>; export type Headline = z.infer<typeof HeadlineSchema>;
+// who is signed in (the Access email) and which build the center runs
+export const MeSchema = z.object({ email: z.string(), version: z.string() });
+export type Me = z.infer<typeof MeSchema>;

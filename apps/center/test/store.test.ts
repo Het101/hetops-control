@@ -101,6 +101,12 @@ describe("server roll-up", () => {
     st.apply("lab", { ...with_(e("a", "ok")), sources: [bad] }); expect(lab(st)).toMatchObject({ status: "attention", statusReason: "1 source failing" });
     st.apply("lab", { ...with_(e("a", "down")), sources: [bad] }); expect(lab(st).status).toBe("down");
   });
+  it("lists every source of a reachable agent, none while unreachable", () => {
+    const st = new Store(() => at("00")); const bad = { id: "argo", periodMs: 60000, ok: false, error: "forbidden" };
+    st.apply("lab", { ...with_(), sources: [{ id: "kubernetes", periodMs: 10000, ok: true }, bad] });
+    expect(lab(st).sources).toEqual([{ id: "kubernetes", periodMs: 10000, ok: true }, bad]);
+    st.markUnreachable("lab", new Date()); expect(lab(st).sources).toBeUndefined();
+  });
   it("reachable with no data and no failing source stays unknown", () => {
     const st = new Store(() => at("00")); st.apply("lab", with_()); expect(lab(st)).toMatchObject({ status: "unknown", statusReason: "no data yet" });
   });

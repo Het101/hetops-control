@@ -62,7 +62,8 @@ export class Store {
       const starting = srcs.length > 0 && srcs.every(pending);
       servers[server] = { ...rollUp(link, aged.map(a => a.entity.status), aged.filter(a => a.stale).length, failing.length, starting, this.configured.includes(server)), reachable: link.reachable,
         configured: this.configured.includes(server), ...(!link.reachable && link.lastError ? { lastError: link.lastError } : {}),
-        since: link.since.toISOString(), ...(link.state ? { agentVersion: link.state.version } : {}), ...(failing.length ? { failingSources: failing } : {}) };
+        since: link.since.toISOString(), ...(link.state ? { agentVersion: link.state.version } : {}), ...(failing.length ? { failingSources: failing } : {}),
+        ...(srcs.length ? { sources: srcs } : {}) };
     }
     return { generatedAt: new Date(now).toISOString(), servers, entities: entities.map(a => a.entity), series };
   }

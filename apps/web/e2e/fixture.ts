@@ -1,5 +1,6 @@
-import type { Entity, Event } from "@hetops-control/contracts";
-import type { State } from "../src/lib/api.js";
+import type { Page } from "@playwright/test";
+import type { Entity, Event, SourceReport } from "@hetops-control/contracts";
+import { StateSchema, type State } from "../src/lib/api.js";
 
 // a realistic morning on the estate: lab busy with one smouldering app, ops quiet, staging not connected yet
 const at = "2026-10-30T07:42:00.000Z";
@@ -33,12 +34,15 @@ const opsApps: [string, string, number][] = [
   ["logging", "vector", 2], ["storage", "local-path-provisioner", 1], ["tunnel", "cloudflared", 2], ["sealed-secrets", "sealed-secrets", 1],
 ];
 
+const src = (id: string, periodMs: number, lastRunAt = "2026-10-30T07:41:55.000Z"): SourceReport => ({ id, periodMs, ok: true, lastRunAt });
+const sources = [src("kubernetes", 10_000), src("hostload", 15_000), src("argo", 60_000)];
+
 export const fixtureState: State = {
   generatedAt: at,
   servers: {
-    lab: { status: "attention", statusReason: "chaos-api: 2 restarts in 24h", reachable: true, configured: true, since: "2026-10-29T22:10:00.000Z", agentVersion: "0.1.0" },
+    lab: { status: "attention", statusReason: "chaos-api: 2 restarts in 24h", reachable: true, configured: true, since: "2026-10-29T22:10:00.000Z", agentVersion: "0.1.0", sources },
     staging: { status: "unknown", statusReason: "not connected yet", reachable: false, configured: false, since: "2026-10-30T06:00:00.000Z" },
-    ops: { status: "ok", reachable: true, configured: true, since: "2026-10-29T22:10:00.000Z", agentVersion: "0.1.0" },
+    ops: { status: "ok", reachable: true, configured: true, since: "2026-10-29T22:10:00.000Z", agentVersion: "0.1.0", sources },
   },
   series: [],
   entities: [
@@ -63,3 +67,14 @@ export const fixtureEvents: Event[] = [
   { at: "2026-10-29T22:10:00.000Z", server: "ops", source: "center", kind: "info", summary: "ops reachable again" },
   { at: "2026-10-29T22:10:00.000Z", server: "lab", source: "center", kind: "info", summary: "lab reachable again" },
 ];
+
+/** The center, mocked: the state, the last events, who is signed in, and a stream that sends one state then ends (the page re-opens it). */
+export async function mockApi(page: Page, state: State = fixtureState) {
+  const parsed = StateSchema.parse(state);
+  await page.route("**/api/state", r => r.fulfill({ json: parsed }));
+  await page.route("**/api/events?*", r => r.fulfill({ json: fixtureEvents }));
+  await page.route("**/api/me", r => r.fulfill({ json: { email: "het@hetops.dev", version: "8b74612" } }));
+  await page.route("**/api/stream", r => r.fulfill({ contentType: "text/event-stream", body: `data: ${JSON.stringify({ type: "state", state: parsed })}
+
+` }));
+}

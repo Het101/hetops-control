@@ -1,12 +1,14 @@
-import { get, readable } from "svelte/store";
+import { derived, get, readable } from "svelte/store";
+import { prefs, reduces } from "./prefs.js";
 
 const query = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : undefined;
-/** Follows the OS setting live; every CSS animation is also switched off by the reduced-motion rule in tokens.css. */
-export const reduced = readable(query?.matches ?? false, set => {
+const os = readable(query?.matches ?? false, set => {
   const change = (e: MediaQueryListEvent) => set(e.matches);
   query?.addEventListener("change", change);
   return () => query?.removeEventListener("change", change);
 });
+/** Follows the OS setting live unless Settings overrides it; tokens.css switches CSS animation off by the same rule. */
+export const reduced = derived([os, prefs], ([o, p]) => reduces(p.motion, o));
 export const ease = "cubic-bezier(.22,1,.36,1)";
 const easeOut = (p: number) => 1 - Math.pow(1 - p, 4); // the mock's count-up curve
 

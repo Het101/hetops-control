@@ -13,6 +13,6 @@
 
 <div class="hero-copy">
   <div class="date">{date}</div>
-  <div class="headline">{headline.title}{#if headline.emphasis}<br><em>{headline.emphasis}</em>{/if}</div>
+  <h1 class="headline" tabindex="-1">{headline.title}{#if headline.emphasis}<br><em>{headline.emphasis}</em>{/if}</h1>
   <div class="sub">{#each parts as p, i}{#if i % 2}<b use:countUp={Number(p)}></b>{:else}{p}{/if}{/each}</div>
 </div>

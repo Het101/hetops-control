@@ -26,6 +26,12 @@ describe("center http", () => {
     expect(r.statusCode).toBe(200); expect(r.json().headline.title).toBeTypeOf("string"); expect(seen).toEqual(["tok"]);
     await app.inject({ url: "/api/state", headers: { "cf-access-jwt-assertion": "hdr" } }); expect(seen[1]).toBe("hdr");
   });
+  it("/api/me returns the Access email and the build", async () => {
+    const store = new Store(); const app = buildCenter({ store, db: { recent: () => [] } as never, access: async () => ({ email: "het@x.dev" }), webRoot: "/nope", version: "abc123", logger: false }); apps.push(app);
+    expect((await app.inject("/api/me")).json()).toEqual({ email: "het@x.dev", version: "abc123" });
+    const { app: b } = mk(ok); apps.push(b); expect((await b.inject("/api/me")).json()).toEqual({ email: "t@x.dev", version: "dev" });
+    const { app: c } = mk(no); apps.push(c); expect((await c.inject("/api/me")).statusCode).toBe(403);
+  });
   it("caps events limit at 500", async () => {
     const { app, recent } = mk(ok); apps.push(app);
     await app.inject("/api/events?limit=9999"); expect(recent).toHaveBeenLastCalledWith(500);

@@ -9,20 +9,22 @@ import { headline } from "./headline.js";
 const DEBOUNCE_MS = 250, PING_MS = 15_000;
 const cookieJwt = (c?: string) => c?.split(";").map(p => p.trim()).find(p => p.startsWith("CF_Authorization="))?.slice("CF_Authorization=".length);
 
-export function buildCenter(o: { store: Store; db: Pick<EventsDb, "recent">; access: (jwt: string | undefined) => Promise<{ email: string }>; webRoot: string; logger?: false }) {
+export function buildCenter(o: { store: Store; db: Pick<EventsDb, "recent">; access: (jwt: string | undefined) => Promise<{ email: string }>; webRoot: string; version?: string; logger?: false }) {
   const { store, db } = o;
   const app = Fastify({ forceCloseConnections: true, logger: o.logger === false ? false : { level: process.env.LOG_LEVEL ?? "info", redact: ["req.headers.authorization", "req.headers.cookie", 'req.headers["cf-access-jwt-assertion"]'] } });
   const state = () => { const s = store.snapshot(); return { ...s, headline: headline(s) }; };
 
+  const who = new WeakMap<object, string>(); // the Access email, per request
   app.get("/healthz", async () => ({ ok: true }));
   app.addHook("onRequest", async (req, rep) => {
     if (req.url === "/healthz") return;
     const h = req.headers["cf-access-jwt-assertion"];
-    try { await o.access(typeof h === "string" ? h : cookieJwt(req.headers.cookie)); }
+    try { who.set(req, (await o.access(typeof h === "string" ? h : cookieJwt(req.headers.cookie))).email); }
     catch (e) { req.log.warn({ failure: e instanceof Error ? e.name : "unknown" }, "access denied"); return rep.code(403).send({ error: "forbidden" }); }
   });
 
   app.get("/api/state", async () => state());
+  app.get("/api/me", async req => ({ email: who.get(req) ?? "", version: o.version ?? "dev" }));
   app.get("/api/events", async req => {
     const n = Number((req.query as { limit?: string }).limit ?? 50);
     return db.recent(Number.isFinite(n) ? Math.min(500, Math.max(1, Math.trunc(n))) : 50);
