@@ -56,7 +56,7 @@ export const fixtureState: State = {
 
 export const fixtureEvents: Event[] = [
   { at: "2026-10-30T07:31:00.000Z", server: "ops", source: "argo", kind: "sync", summary: "logging synced to 4c1e9a2" },
-  { at: "2026-10-30T03:12:00.000Z", server: "lab", source: "kubernetes", kind: "status", entity: "lab/app/chaos/chaos-api", summary: "chaos-api (lab) ok → attention: 2 restarts in 24h" },
+  { at: "2026-10-30T03:12:00.000Z", server: "lab", source: "kubernetes", kind: "status", entity: "lab/app/chaos/chaos-api", level: "attention", summary: "chaos-api (lab) ok → attention: 2 restarts in 24h" },
   { at: "2026-10-30T03:11:58.000Z", server: "lab", source: "kubernetes", kind: "restart", entity: "lab/app/chaos/chaos-api", summary: "chaos-api restarted (OOMKilled)" },
   { at: "2026-10-30T01:45:00.000Z", server: "ops", source: "kubernetes", kind: "deploy", summary: "vector rolled out 2/2" },
   { at: "2026-10-29T22:10:00.000Z", server: "ops", source: "center", kind: "info", summary: "ops reachable again" },

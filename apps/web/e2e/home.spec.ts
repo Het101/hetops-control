@@ -37,6 +37,26 @@ test("the struggling app grows ember leaves", async ({ page }) => {
   await expect(page.locator(".list .row")).toHaveCount(6);
 });
 
+test("rail: pages to come are named, focusable and explain themselves", async ({ page }) => {
+  const topology = page.getByRole("button", { name: "Topology: arrives in stage 1b" });
+  await expect(topology).toHaveAttribute("aria-disabled", "true");
+  await topology.focus();
+  await page.keyboard.press("Tab"); await page.keyboard.press("Shift+Tab"); // keyboard focus, so :focus-visible applies
+  await expect(topology.locator(".tip")).toHaveCSS("opacity", "1");
+  await expect(page.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
+});
+
+test("timeline ember rows come from the event level", async ({ page }) => {
+  await expect(page.locator(".list .row.now")).toHaveCount(1);
+  await expect(page.locator(".list .row.now")).toContainText("chaos-api (lab) ok → attention");
+});
+
+test("a failing event log is said, not shown as empty", async ({ page }) => {
+  await page.route("**/api/events?*", r => r.fulfill({ status: 503, json: { error: "down" } }));
+  await page.reload();
+  await expect(page.locator(".list .empty.warm")).toBeVisible();
+});
+
 test.describe("reduced motion", () => {
   test("no animation runs", async ({ page }) => {
     await expect(page.locator("circle.leaf").first()).toBeAttached();
@@ -48,5 +68,7 @@ test.describe("reduced motion", () => {
     await expect(page.locator("circle.leaf").first()).toBeAttached();
     await page.evaluate(() => document.fonts.ready.then(() => undefined));
     await page.screenshot({ path: "e2e/__screens__/home.png", fullPage: true });
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await page.screenshot({ path: "e2e/__screens__/home-1366.png", fullPage: true });
   });
 });

@@ -1,7 +1,7 @@
-/* Tokens, surfaces, type and motion: verbatim from docs/design/home.html (the approved mock); additions for live data at the end. */
+/* Tokens, surfaces, type and motion: verbatim from docs/design/home.html (the approved mock), except --ink-3 lifted to 4.5:1 (was #86857f) and no drop-shadow filter on the animated .ember-p; additions for live data at the end. */
 :root{
   --bg:#2a2b2f; --bg-deep:#232427; --hi:rgba(255,255,255,.055); --lo:rgba(0,0,0,.42);
-  --ink:#ecebe7; --ink-2:#b4b2ac; --ink-3:#86857f; --quiet:#c9c7c1;
+  --ink:#ecebe7; --ink-2:#b4b2ac; --ink-3:#9a9993; --quiet:#c9c7c1;
   --ember-1:#ff9a3c; --ember-2:#f0582a; --ember-3:#c2391a; --ember:#f2702f;
   --ease:cubic-bezier(.22,1,.36,1); --ease-io:cubic-bezier(.65,0,.35,1);
 }
@@ -97,7 +97,7 @@ svg.forest{position:absolute;left:0;right:0;bottom:70px;width:100%;height:320px;
 @keyframes sway{from{transform:rotate(-1.2deg)}to{transform:rotate(1.2deg)}}
 .fall{animation:fall var(--d,6s) linear infinite;animation-delay:var(--dl,0s)}
 @keyframes fall{0%{transform:translate(0,0) rotate(0);opacity:0}10%{opacity:.95}100%{transform:translate(var(--dx,20px),120px) rotate(320deg);opacity:0}}
-.ember-p{animation:rise var(--d,3s) var(--ease) infinite;animation-delay:var(--dl,0s);filter:drop-shadow(0 0 3px #ff7a2a)}
+.ember-p{animation:rise var(--d,3s) var(--ease) infinite;animation-delay:var(--dl,0s)}
 @keyframes rise{0%{transform:translate(0,0) scale(1);opacity:0}15%{opacity:1}100%{transform:translate(var(--dx,6px),-70px) scale(.3);opacity:0}}
 
 /* ---------- modules ---------- */
@@ -132,13 +132,20 @@ svg.forest{position:absolute;left:0;right:0;bottom:70px;width:100%;height:320px;
 .live.warm{color:var(--ember)}
 .live.warm .pulse{background:var(--ember)}.live.warm .pulse::after{border-color:var(--ember)}
 a.nav{text-decoration:none}
+button.nav{border:0;padding:0;font:inherit}
+.nav:focus-visible .tip{opacity:1;transform:none}
+.nav:focus-visible,.ember-btn:focus-visible{outline:2px solid var(--quiet);outline-offset:3px}
 .nav[aria-disabled="true"]{cursor:default}
 .nav .tip small{color:var(--ink-3);margin-left:6px}
 .needs h3.calm{color:var(--ink-3)}
 .need-none{font-size:13.5px;color:var(--ink-2);padding:12px 0 4px}
-.ember-btn:disabled{cursor:not-allowed}
-.ember-btn:disabled:hover,.ember-btn:disabled:active{transform:none}
+/* an action that is not wired yet: dimmed and still, but focusable so its title can be reached */
+.ember-btn[aria-disabled="true"]{cursor:not-allowed;animation:none;opacity:.5}
+.ember-btn[aria-disabled="true"]:hover,.ember-btn[aria-disabled="true"]:active{transform:none}
 .bare{opacity:.45}
+.dormant{opacity:.55}
+.grid{align-items:start}
+.list .empty.warm{color:var(--ember)}
 /* ground blades grow in once, as the mock's WAAPI entrance did */
 .blade{transform-box:fill-box;transform-origin:50% 100%;animation:grow var(--d,1.6s) var(--ease) backwards;animation-delay:var(--dl,0s)}
 @keyframes grow{from{transform:scaleY(.35)}}

@@ -21,7 +21,7 @@ export class Store {
     for (const e of s.entities) {
       const was = prev.get(e.id);
       // a new entity is not a change; a removed one simply leaves the snapshot with this state
-      if (was && was !== e.status) events.push({ at, server, source: e.source ?? "center", kind: "status", entity: e.id,
+      if (was && was !== e.status) events.push({ at, server, source: e.source ?? "center", kind: "status", entity: e.id, level: e.status,
         summary: `${e.name} (${server}) ${was} → ${e.status}${e.statusReason ? `: ${e.statusReason}` : ""}` });
     }
     if (!link.reachable) { link.reachable = true; link.since = receivedAt; }

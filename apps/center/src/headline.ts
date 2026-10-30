@@ -1,9 +1,6 @@
-import { ServerIdSchema, type ActionRefSchema, type CenterState, type Entity, type ServerId } from "@hetops-control/contracts";
-import type { z } from "zod";
+import { ServerIdSchema, type CenterState, type Entity, type Headline, type Need, type ServerId } from "@hetops-control/contracts";
 
-export type ActionRef = z.infer<typeof ActionRefSchema>;
-export type Need = { entity: string; server: ServerId; text: string; detail: string; action?: ActionRef };
-export type Headline = { title: string; emphasis?: string; detail: string; needs: Need[] };
+export type { Headline, Need };
 
 // every time is UTC and says so
 const hhmm = (iso: unknown) => typeof iso === "string" && !Number.isNaN(Date.parse(iso)) ? `${new Date(iso).toISOString().slice(11, 16)} UTC` : "an unknown time";
