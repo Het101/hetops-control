@@ -3,11 +3,7 @@
   import type { Event } from "@hetops-control/contracts";
   import { follow, mergeEvents, SILENCE_MS, type State } from "./lib/api.js";
   import Rail from "./components/Rail.svelte";
-  import Headline from "./components/Headline.svelte";
-  import NeedsYou from "./components/NeedsYou.svelte";
-  import Forest from "./components/Forest.svelte";
-  import HostLoad from "./components/HostLoad.svelte";
-  import Timeline from "./components/Timeline.svelte";
+  import Home from "./pages/Home.svelte";
   import Settings from "./pages/Settings.svelte";
   import TimelinePage from "./pages/Timeline.svelte";
   import Alerts from "./pages/Alerts.svelte";
@@ -63,17 +59,7 @@
     </div>
 
     {#if route.path === "/"}
-      {#if estate}
-        <section class="hero raised">
-          <Headline headline={estate.headline} {now} />
-          <NeedsYou needs={estate.headline.needs} />
-          <Forest state={estate} />
-        </section>
-        <div class="grid">
-          <HostLoad state={estate} />
-          <Timeline events={events.slice(0, SHOWN)} error={eventsError} />
-        </div>
-      {/if}
+      {#if estate}<Home {estate} {events} {eventsError} {now} shown={SHOWN} />{/if}
     {:else if route.path === "/timeline"}
       <TimelinePage {estate} {events} error={eventsError} {now} />
     {:else if route.path === "/alerts"}

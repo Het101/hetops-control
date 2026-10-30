@@ -76,7 +76,7 @@ test("back and forward walk the history", async ({ page }) => {
 
 test("keyboard: Enter on a focused rail item navigates", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "Security" }).focus();
+  await page.getByRole("link", { name: "Security", exact: true }).focus();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL("/security");
 });
