@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json && tsc --noEmit"
   },
   "dependencies": {
     "@hetops-control/contracts": "workspace:*",
