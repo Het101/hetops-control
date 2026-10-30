@@ -4,7 +4,7 @@ import { bearerOk } from "./auth.js";
 
 export function buildServer(reg: Registry, token: string, opts: { https?: { cert: string; key: string } } = {}) {
   if (!token) throw new Error("agent token must not be empty");
-  const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info", redact: ["req.headers.authorization"] }, ...(opts.https ? { https: opts.https } : {}) });
+  const app = Fastify({ forceCloseConnections: true, logger: { level: process.env.LOG_LEVEL ?? "info", redact: ["req.headers.authorization"] }, ...(opts.https ? { https: opts.https } : {}) });
   app.get("/healthz", async () => ({ ok: true }));
   app.addHook("onRequest", async (req, rep) => {
     if (req.url !== "/healthz" && !bearerOk(req.headers.authorization, token)) return rep.code(401).send({ error: "unauthorized" });

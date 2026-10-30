@@ -11,7 +11,7 @@ const cookieJwt = (c?: string) => c?.split(";").map(p => p.trim()).find(p => p.s
 
 export function buildCenter(o: { store: Store; db: Pick<EventsDb, "recent">; access: (jwt: string | undefined) => Promise<{ email: string }>; webRoot: string; logger?: false }) {
   const { store, db } = o;
-  const app = Fastify({ logger: o.logger === false ? false : { level: process.env.LOG_LEVEL ?? "info", redact: ["req.headers.authorization", "req.headers.cookie", 'req.headers["cf-access-jwt-assertion"]'] } });
+  const app = Fastify({ forceCloseConnections: true, logger: o.logger === false ? false : { level: process.env.LOG_LEVEL ?? "info", redact: ["req.headers.authorization", "req.headers.cookie", 'req.headers["cf-access-jwt-assertion"]'] } });
   const state = () => { const s = store.snapshot(); return { ...s, headline: headline(s) }; };
 
   app.get("/healthz", async () => ({ ok: true }));

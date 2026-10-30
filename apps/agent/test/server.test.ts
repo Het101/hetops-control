@@ -112,3 +112,15 @@ describe("hardening", () => {
     expect(reg.listenerCount()).toBe(0); await app.close();
   });
 });
+
+describe("shutdown", () => {
+  it("close() does not wait for a connection that never sent a request", async () => {
+    const { connect } = await import("node:net");
+    const app = buildServer(new Registry("lab", [], () => t0), "tok"); app.log.level = "silent";
+    await app.listen({ port: 0, host: "127.0.0.1" });
+    const sock = connect((app.server.address() as { port: number }).port, "127.0.0.1");
+    await new Promise(r => sock.once("connect", r));
+    const t = Date.now(); await app.close(); sock.destroy();
+    expect(Date.now() - t).toBeLessThan(2000);
+  });
+});
