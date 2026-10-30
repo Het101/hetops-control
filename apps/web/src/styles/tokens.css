@@ -14,7 +14,7 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Plus Jakar
 .app{display:grid;grid-template-columns:92px 1fr;min-height:100vh;max-width:1500px;margin:0 auto}
 
 /* ---------- rail with animated icons ---------- */
-.rail{display:flex;flex-direction:column;align-items:center;gap:18px;padding:22px 0}
+.rail{position:relative;z-index:20;display:flex;flex-direction:column;align-items:center;gap:18px;padding:22px 0}
 .logo{width:46px;height:46px;border-radius:50%;margin-bottom:10px;display:grid;place-items:center}
 .logo i{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffc08a,var(--ember-2) 60%,var(--ember-3));box-shadow:0 0 14px rgba(242,112,47,.55);animation:breathe 4.5s var(--ease-io) infinite}
 .nav{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:var(--ink-3);cursor:pointer;transition:transform .35s var(--ease),color .3s,box-shadow .35s var(--ease);position:relative}

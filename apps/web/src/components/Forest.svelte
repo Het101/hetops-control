@@ -34,8 +34,8 @@
       : view.statusReason ?? "no agent yet";
     const base = { id, name: NAME[id], line, bare: !view.reachable };
     const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
-    // never connected is a fact, not an alarm; lost after a connection is
-    if (!view.reachable) return view.agentVersion ? { ...base, word: "UNREACHABLE", warm: true } : { ...base, word: "NOT CONNECTED", warm: false };
+    // never connected: an alarm only if the center has an agent configured for it; lost after a connection always is
+    if (!view.reachable) return view.agentVersion ? { ...base, word: "UNREACHABLE", warm: true } : { ...base, word: view.configured ? "UNREACHABLE" : "NOT CONNECTED", warm: view.configured };
     if (view.status === "down" || list.some(e => e.status === "down")) return { ...base, word: "DOWN", warm: true };
     if (restarts > 0) return { ...base, word: `SMOULDERING · ${plural(restarts, "restart")}`, warm: true };
     const failing = view.failingSources?.length ?? 0, stale = Number(/(\d+) readings? stale/.exec(view.statusReason ?? "")?.[1] ?? 0);

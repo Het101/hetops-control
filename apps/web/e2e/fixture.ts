@@ -36,9 +36,9 @@ const opsApps: [string, string, number][] = [
 export const fixtureState: State = {
   generatedAt: at,
   servers: {
-    lab: { status: "attention", statusReason: "chaos-api: 2 restarts in 24h", reachable: true, since: "2026-10-29T22:10:00.000Z", agentVersion: "0.1.0" },
-    staging: { status: "unknown", statusReason: "not connected yet", reachable: false, since: "2026-10-30T06:00:00.000Z" },
-    ops: { status: "ok", reachable: true, since: "2026-10-29T22:10:00.000Z", agentVersion: "0.1.0" },
+    lab: { status: "attention", statusReason: "chaos-api: 2 restarts in 24h", reachable: true, configured: true, since: "2026-10-29T22:10:00.000Z", agentVersion: "0.1.0" },
+    staging: { status: "unknown", statusReason: "not connected yet", reachable: false, configured: false, since: "2026-10-30T06:00:00.000Z" },
+    ops: { status: "ok", reachable: true, configured: true, since: "2026-10-29T22:10:00.000Z", agentVersion: "0.1.0" },
   },
   entities: [
     cluster("lab", "v1.31.4+k3s1", 1, 34, 35), node("lab", "my-workspace", 48, 63, 41),
