@@ -48,10 +48,40 @@ describe("kubernetes source", () => {
     current = structuredClone(pods.items);                                     // same name back: counts from 0
     expect((await src.collect(ctx)).events ?? []).toHaveLength(1);
   });
-  it("limits apps to the given namespaces", async () => {
-    const { entities } = await kubernetesSource(kube() as any, { namespaces: ["argocd"] }).collect(ctx);
+  it("limits apps, restart tracking and events to the given namespaces", async () => {
+    let current: any[] = pods.items;
+    const src = kubernetesSource(kube({ listPods: async () => current }) as any, { namespaces: ["argocd"] });
+    const { entities } = await src.collect(ctx);
     const apps = entities.filter(e => e.kind === "app");
     expect(apps.length).toBe(workloads.items.filter(w => w.metadata.namespace === "argocd").length);
     expect(apps.every(e => e.facts.namespace?.value === "argocd")).toBe(true);
+    current = structuredClone(pods.items);
+    const out = current.find(p => p.metadata.namespace !== "argocd"), inside = current.find(p => p.metadata.namespace === "argocd");
+    out.status.containerStatuses[0].restartCount += 1; inside.status.containerStatuses[0].restartCount += 1;
+    const events = (await src.collect(ctx)).events ?? [];
+    expect(events).toHaveLength(1);
+    expect(events[0]!.summary).toContain(`argocd/${inside.metadata.name}/`);
+  });
+  it("reads a DaemonSet's ready and desired counts", async () => {
+    const w = structuredClone(workloads.items); const ds = w.find(x => x.kind === "DaemonSet")! as any;
+    ds.status = { numberReady: 1, desiredNumberScheduled: 2 };
+    const { entities } = await kubernetesSource(kube({ listWorkloads: async () => w }) as any).collect(ctx);
+    const app = entities.find(e => e.id === `lab/app/${ds.metadata.namespace}/${ds.metadata.name}`)!;
+    expect(app.facts.pods?.value).toBe(1); expect(app.facts.podsDesired?.value).toBe(2);
+    expect(app.status).toBe("attention");
+  });
+  it("counts a Job pod in the cluster but gives it no app; its restart event has no entity", async () => {
+    let current: any[] = pods.items;
+    const src = kubernetesSource(kube({ listPods: async () => current }) as any);
+    const first = await src.collect(ctx);
+    expect(first.entities.find(e => e.kind === "cluster")!.facts.podsTotal?.value).toBe(pods.items.length);
+    current = structuredClone(pods.items);
+    const job = current.find(p => p.metadata.ownerReferences?.some((o: any) => o.kind === "Job"));
+    expect(job).toBeDefined();
+    expect(first.entities.some(e => e.kind === "app" && e.name.startsWith(job.metadata.ownerReferences[0].name))).toBe(false);
+    job.status.containerStatuses[0].restartCount += 1;
+    const events = (await src.collect(ctx)).events ?? [];
+    expect(events).toHaveLength(1);
+    expect(events[0]!.entity).toBeUndefined();
   });
 });

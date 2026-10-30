@@ -67,7 +67,11 @@
    },
    "status": {
     "sync": {
-     "status": "Synced"
+     "status": "Synced",
+     "revisions": [
+      "0.24.2",
+      "35bd7f5f4675698cda636279ddaf8a1cb92d2de4"
+     ]
     },
     "health": {
      "status": "Healthy"
@@ -81,7 +85,11 @@
    },
    "status": {
     "sync": {
-     "status": "Synced"
+     "status": "Synced",
+     "revisions": [
+      "9.2.0",
+      "35bd7f5f4675698cda636279ddaf8a1cb92d2de4"
+     ]
     },
     "health": {
      "status": "Healthy"
@@ -95,7 +103,12 @@
    },
    "status": {
     "sync": {
-     "status": "Synced"
+     "status": "Synced",
+     "revisions": [
+      "2.7.2",
+      "35bd7f5f4675698cda636279ddaf8a1cb92d2de4",
+      "35bd7f5f4675698cda636279ddaf8a1cb92d2de4"
+     ]
     },
     "health": {
      "status": "Healthy"
@@ -124,7 +137,13 @@
    },
    "status": {
     "sync": {
-     "status": "Synced"
+     "status": "Synced",
+     "revisions": [
+      "2026.9.3",
+      "2026.9.3",
+      "35bd7f5f4675698cda636279ddaf8a1cb92d2de4",
+      "35bd7f5f4675698cda636279ddaf8a1cb92d2de4"
+     ]
     },
     "health": {
      "status": "Healthy"
@@ -153,7 +172,11 @@
    },
    "status": {
     "sync": {
-     "status": "Synced"
+     "status": "Synced",
+     "revisions": [
+      "3.5.0",
+      "35bd7f5f4675698cda636279ddaf8a1cb92d2de4"
+     ]
     },
     "health": {
      "status": "Healthy"
@@ -167,7 +190,12 @@
    },
    "status": {
     "sync": {
-     "status": "Synced"
+     "status": "Synced",
+     "revisions": [
+      "91.5.2",
+      "35bd7f5f4675698cda636279ddaf8a1cb92d2de4",
+      "35bd7f5f4675698cda636279ddaf8a1cb92d2de4"
+     ]
     },
     "health": {
      "status": "Healthy"

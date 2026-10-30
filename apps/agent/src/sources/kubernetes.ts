@@ -63,6 +63,7 @@ export function kubernetesSource(api: KubeReader, opts: { namespaces?: string[] 
       const first = !baseline, next = new Map<string, number>(), events: Event[] = [];
       const last = new Map<string, string>();
       for (const p of pods) {
+        if (!inScope(p.metadata.namespace)) continue;   // out-of-scope pods: no baseline, no restart log, no events
         const app = owner(p);
         for (const c of p.status?.containerStatuses ?? []) {
           const key = `${p.metadata.namespace}/${p.metadata.name}/${c.name}`, count = c.restartCount ?? 0;
