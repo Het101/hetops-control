@@ -9,11 +9,17 @@
   import HostLoad from "./components/HostLoad.svelte";
   import Timeline from "./components/Timeline.svelte";
   import Settings from "./pages/Settings.svelte";
+  import TimelinePage from "./pages/Timeline.svelte";
+  import Alerts from "./pages/Alerts.svelte";
+  import Apps from "./pages/Apps.svelte";
+  import Backups from "./pages/Backups.svelte";
+  import Security from "./pages/Security.svelte";
   import Upcoming from "./pages/Upcoming.svelte";
   import NotFound from "./pages/NotFound.svelte";
   import { isPage, PAGES, route, type Upcoming as UpcomingPath } from "./lib/router.svelte.js";
 
-  const SHOWN = 6, DOWN_MS = 10_000;
+  // Home shows the latest 6; the Timeline page keeps the most the center serves
+  const SHOWN = 6, KEEP = 500, DOWN_MS = 10_000;
   let estate = $state<State>();
   let events = $state<Event[]>([]);
   let eventsError = $state(false);
@@ -24,11 +30,11 @@
   $effect(() => {
     const stop = follow({
       state: s => { estate = s; lastMsg = Date.now(); },
-      event: e => { events = mergeEvents(events, [e], SHOWN); lastMsg = Date.now(); },
-      events: list => { events = mergeEvents(events, list, SHOWN); eventsError = false; },
+      event: e => { events = mergeEvents(events, [e], KEEP); lastMsg = Date.now(); },
+      events: list => { events = mergeEvents(events, list, KEEP); eventsError = false; },
       eventsFailed: err => { console.warn(err); eventsError = true; },
       link: open => { if (open) downSince = undefined; else downSince ??= Date.now(); },
-    }, SHOWN);
+    }, KEEP);
     const tick = setInterval(() => (now = new Date()), 1000);
     return () => { stop(); clearInterval(tick); };
   });
@@ -65,13 +71,23 @@
         </section>
         <div class="grid">
           <HostLoad state={estate} />
-          <Timeline {events} error={eventsError} />
+          <Timeline events={events.slice(0, SHOWN)} error={eventsError} />
         </div>
       {/if}
+    {:else if route.path === "/timeline"}
+      <TimelinePage {estate} {events} error={eventsError} {now} />
+    {:else if route.path === "/alerts"}
+      <Alerts {estate} {events} {now} />
+    {:else if route.path === "/apps"}
+      <Apps {estate} {events} {now} />
+    {:else if route.path === "/backups"}
+      <Backups {estate} {events} {now} />
+    {:else if route.path === "/security"}
+      <Security {estate} {events} {now} />
     {:else if route.path === "/settings"}
       <Settings {estate} {now} />
     {:else if isPage(route.path)}
-      <Upcoming path={route.path as UpcomingPath} /><!-- "/" and "/settings" are matched above -->
+      <Upcoming path={route.path as UpcomingPath} /><!-- every other page is matched above -->
     {:else}
       <NotFound path={route.path} />
     {/if}
