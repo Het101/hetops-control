@@ -18,7 +18,7 @@ async function setup(token = "s3cret") {
   const port = (app.server.address() as { port: number }).port;
   const dir = mkdtempSync(join(tmpdir(), "center-")); const db = new EventsDb(join(dir, "events.db"));
   const store = new Store(); const link = new AgentLink("lab", `http://127.0.0.1:${port}`, token);
-  cleanup = async () => { link.stop(); await app.close(); db.close(); rmSync(dir, { recursive: true, force: true }); };
+  cleanup = async () => { link.stop(); app.server.closeAllConnections(); /* the faked setTimeout can leave an aborted fetch's socket open */ await app.close(); db.close(); rmSync(dir, { recursive: true, force: true }); };
   link.start(store, db);
   return { reg, app, store, db };
 }
