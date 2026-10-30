@@ -39,6 +39,10 @@ export function realKube(): KubeReader {
 
 const DAY = 24 * 3600_000;
 
+// client-node deserialises timestamps to Date, kubectl JSON has strings; a fact value must be a primitive, so normalise to an ISO string (undefined when unreadable)
+const ts = (v: unknown): string | undefined =>
+  v instanceof Date ? (Number.isNaN(v.getTime()) ? undefined : v.toISOString()) : typeof v === "string" && !Number.isNaN(Date.parse(v)) ? v : undefined;
+
 export function kubernetesSource(api: KubeReader, opts: { namespaces?: string[] } = {}): Source {
   let baseline: Map<string, number> | undefined;     // ns/pod/container -> restartCount at the previous run
   let recent: { app: string; at: number }[] = [];    // restarts seen in the last 24 h, per app id
@@ -68,7 +72,8 @@ export function kubernetesSource(api: KubeReader, opts: { namespaces?: string[] 
         for (const c of p.status?.containerStatuses ?? []) {
           const key = `${p.metadata.namespace}/${p.metadata.name}/${c.name}`, count = c.restartCount ?? 0;
           next.set(key, count);
-          const finished: string | undefined = c.lastState?.terminated?.finishedAt;
+          // restart time: when the last container exited; else when it started; else (restarted, no lastState recorded) when the current one started
+          const finished = ts(c.lastState?.terminated?.finishedAt) ?? ts(c.lastState?.terminated?.startedAt) ?? (count > 0 ? ts(c.state?.running?.startedAt) : undefined);
           if (app && finished && finished > (last.get(app) ?? "")) last.set(app, finished);
           if (first) {
             // ponytail: first run only knows the last restart, so restarts24h starts as a lower bound
