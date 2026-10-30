@@ -84,7 +84,7 @@ describe("hardening", () => {
     const reg = new Registry("lab", [bad, badEv], () => t0); const types: string[] = []; reg.on(m => types.push(m.type));
     await reg.runOnce("bad"); await reg.runOnce("badev");
     const [a, b] = reg.state().sources;
-    expect(a!.error).toMatch(/^invalid entity lab\/app\/y: /); expect(a!.error).not.toContain("SECRET-VALUE");
+    expect(a!.error).toMatch(/^1 invalid item dropped, first: invalid entity lab\/app\/y: /); expect(a!.error).not.toContain("SECRET-VALUE");
     expect(b!.error).toMatch(/^invalid event 0: /); expect(types).not.toContain("event");
   });
   it("start() twice does not duplicate timers", async () => {
