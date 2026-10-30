@@ -22,3 +22,33 @@ describe("contracts", () => {
     expect(AgentStateSchema.parse(s).sources[1]!.error).toBe("forbidden");
   });
 });
+
+import { SeriesSchema, CenterStateSchema, EntityKindSchema } from "../src/index.js";
+const series = { id: "ops/logs/default", server: "ops", label: "log lines", unit: "lines/min", stepMs: 60000,
+  points: [[1761820000000, 4], [1761820060000, 7]], observedAt: "2026-10-30T11:33:44Z" };
+describe("series", () => {
+  it("accepts a valid series", () => { expect(SeriesSchema.parse(series)).toEqual(series); });
+  it("rejects bad points, step, server", () => {
+    expect(() => SeriesSchema.parse({ ...series, points: [[1, "x"]] })).toThrow();
+    expect(() => SeriesSchema.parse({ ...series, points: [[1, 2, 3]] })).toThrow();
+    expect(() => SeriesSchema.parse({ ...series, stepMs: 0 })).toThrow();
+    expect(() => SeriesSchema.parse({ ...series, server: "mars" })).toThrow();
+  });
+  it("caps points at 2000", () => {
+    const pts = (n: number) => Array.from({ length: n }, (_, i) => [i, i]);
+    expect(SeriesSchema.safeParse({ ...series, points: pts(2000) }).success).toBe(true);
+    expect(SeriesSchema.safeParse({ ...series, points: pts(2001) }).success).toBe(false);
+  });
+  it("an agent state without series still validates (old agents)", () => {
+    const s = { server: "lab", version: "1", generatedAt: "2026-10-30T11:33:44Z", entities: [], sources: [] };
+    expect(AgentStateSchema.parse(s).series).toBeUndefined();
+    expect(AgentStateSchema.parse({ ...s, series: [series] }).series).toHaveLength(1);
+  });
+  it("center state requires series and knows the new kinds", () => {
+    const v = { status: "unknown", reachable: false, configured: false, since: "2026-10-30T11:33:44Z" };
+    const c = { generatedAt: "2026-10-30T11:33:44Z", servers: { lab: v, staging: v, ops: v }, entities: [] };
+    expect(CenterStateSchema.safeParse(c).success).toBe(false);
+    expect(CenterStateSchema.safeParse({ ...c, series: [] }).success).toBe(true);
+    for (const k of ["alert", "site", "backup", "deploy", "slo", "decision"]) expect(EntityKindSchema.safeParse(k).success).toBe(true);
+  });
+});

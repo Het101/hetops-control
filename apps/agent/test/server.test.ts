@@ -124,3 +124,20 @@ describe("shutdown", () => {
     expect(Date.now() - t).toBeLessThan(2000);
   });
 });
+
+describe("registry series", () => {
+  const ser = { id: "lab/x", server: "lab" as const, label: "x", unit: "n", stepMs: 1000, points: [[1, 2]] as [number, number][], observedAt: t0.toISOString() };
+  it("carries series (tagged with the source) and drops them when the source fails", async () => {
+    let fail = false;
+    const src = { id: "s", periodMs: 10_000, async collect() { if (fail) throw new Error("boom"); return { entities: [], series: [ser] }; } };
+    const reg = new Registry("lab", [src], () => t0); await reg.runOnce("s");
+    expect(reg.state().series).toEqual([{ ...ser, source: "s" }]); AgentStateSchema.parse(reg.state());
+    fail = true; await reg.runOnce("s");
+    expect(reg.state().series).toEqual([]); expect(reg.state().sources[0]!.ok).toBe(false);
+  });
+  it("rejects an invalid series as a source failure", async () => {
+    const src = { id: "s", periodMs: 10_000, async collect() { return { entities: [], series: [{ ...ser, stepMs: 0 }] }; } };
+    const reg = new Registry("lab", [src], () => t0); await reg.runOnce("s");
+    expect(reg.state().series).toEqual([]); expect(reg.state().sources[0]!.error).toContain("invalid series");
+  });
+});

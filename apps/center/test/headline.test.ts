@@ -5,7 +5,7 @@ import { headline } from "../src/headline.js";
 const sv = (status: "ok" | "attention" | "down" | "unknown" = "ok", extra = {}) => ({ status, reachable: true, configured: true, since: "2026-10-30T00:00:00.000Z", ...extra });
 const app = (name: string, status: Entity["status"], facts: Entity["facts"] = {}, reason?: string): Entity => ({ id: `lab/app/${name}`, kind: "app", server: "lab", name,
   status, ...(reason ? { statusReason: reason } : {}), facts, links: [], actions: [], observedAt: "2026-10-30T03:12:00.000Z" });
-const state = (entities: Entity[], servers: Partial<CenterState["servers"]> = {}): CenterState => ({ generatedAt: "2026-10-30T08:00:00.000Z", entities,
+const state = (entities: Entity[], servers: Partial<CenterState["servers"]> = {}): CenterState => ({ generatedAt: "2026-10-30T08:00:00.000Z", entities, series: [],
   servers: { lab: sv(), staging: sv("unknown", { reachable: false, configured: false, statusReason: "not connected yet" }), ops: sv(), ...servers } });
 
 describe("headline", () => {

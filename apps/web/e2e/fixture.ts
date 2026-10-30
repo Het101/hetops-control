@@ -40,6 +40,7 @@ export const fixtureState: State = {
     staging: { status: "unknown", statusReason: "not connected yet", reachable: false, configured: false, since: "2026-10-30T06:00:00.000Z" },
     ops: { status: "ok", reachable: true, configured: true, since: "2026-10-29T22:10:00.000Z", agentVersion: "0.1.0" },
   },
+  series: [],
   entities: [
     cluster("lab", "v1.31.4+k3s1", 1, 34, 35), node("lab", "my-workspace", 48, 63, 41),
     ...labApps.map(([ns, n, p, r, l]) => app("lab", ns, n, p, r, l)), argo("lab", "clinic"), argo("lab", "chaos"),

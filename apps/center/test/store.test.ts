@@ -118,3 +118,22 @@ describe("server roll-up", () => {
     st.apply("lab", state("ok")); expect(st.snapshot().servers.lab.lastError).toBeUndefined();
   });
 });
+
+describe("store series", () => {
+  const ser = { id: "ops/logs/default", server: "lab" as const, label: "log lines", unit: "lines/min", stepMs: 60000, points: [[1, 2]] as [number, number][],
+    observedAt: "2026-10-30T12:00:00Z", source: "kubernetes" };
+  const withSeries = () => ({ ...state("ok"), series: [ser] });
+  it("has series [] with no agents and for agents without series", () => {
+    expect(new Store(() => at("00")).snapshot().series).toEqual([]);
+    const st = new Store(() => at("00")); st.apply("lab", state("ok")); expect(st.snapshot().series).toEqual([]);
+  });
+  it("merges series and drops them when aged past 3 periods", () => {
+    let now = at("00"); const st = new Store(() => now); st.apply("lab", withSeries());
+    expect(st.snapshot().series).toEqual([ser]);
+    now = new Date("2026-10-30T12:00:31Z"); expect(st.snapshot().series).toEqual([]);
+  });
+  it("drops series of an unreachable agent", () => {
+    const st = new Store(() => at("00")); st.apply("lab", withSeries()); st.markUnreachable("lab", at("05"));
+    expect(st.snapshot().series).toEqual([]);
+  });
+});

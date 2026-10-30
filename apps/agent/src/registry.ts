@@ -1,16 +1,16 @@
-import { EntitySchema, EventSchema, type AgentState, type Entity, type Event, type ServerId, type SourceReport, type StreamMessage } from "@hetops-control/contracts";
+import { EntitySchema, EventSchema, SeriesSchema, type AgentState, type Entity, type Event, type Series, type ServerId, type SourceReport, type StreamMessage } from "@hetops-control/contracts";
 
 export type SourceContext = { server: ServerId; now: () => Date };
-export interface Source { id: string; periodMs: number; collect(ctx: SourceContext): Promise<{ entities: Entity[]; events?: Event[] }> }
+export interface Source { id: string; periodMs: number; collect(ctx: SourceContext): Promise<{ entities: Entity[]; events?: Event[]; series?: Series[] }> }
 
 export class Registry {
-  private data = new Map<string, { entities: Entity[]; report: SourceReport }>();
+  private data = new Map<string, { entities: Entity[]; series: Series[]; report: SourceReport }>();
   private listeners = new Set<(m: StreamMessage) => void>();
   private timers: NodeJS.Timeout[] = [];
   private running = new Set<string>();
 
   constructor(private server: ServerId, private sources: Source[], private now: () => Date = () => new Date()) {
-    for (const s of sources) this.data.set(s.id, { entities: [], report: { id: s.id, periodMs: s.periodMs, ok: false } });
+    for (const s of sources) this.data.set(s.id, { entities: [], series: [], report: { id: s.id, periodMs: s.periodMs, ok: false } });
   }
 
   start(): void {
@@ -51,11 +51,16 @@ export class Registry {
         if (!r.success) throw new Error(`invalid event ${i}: ${describe(r.error)}`);
         return r.data;
       });
-      this.data.set(id, { entities, report: { id, periodMs: src.periodMs, ok: true, lastRunAt } });
+      const series = (out.series ?? []).map((x, i) => {
+        const r = SeriesSchema.safeParse(x);
+        if (!r.success) throw new Error(`invalid series ${(x as { id?: unknown })?.id ?? i}: ${describe(r.error)}`);
+        return { ...r.data, source: id };
+      });
+      this.data.set(id, { entities, series, report: { id, periodMs: src.periodMs, ok: true, lastRunAt } });
       events = evs;
     } catch (err) {
       // message only, never stack or payload; the source's entities disappear
-      this.data.set(id, { entities: [], report: { id, periodMs: src.periodMs, ok: false, lastRunAt, error:  err instanceof Error ? err.message : String(err) } });
+      this.data.set(id, { entities: [], series: [], report: { id, periodMs: src.periodMs, ok: false, lastRunAt, error:  err instanceof Error ? err.message : String(err) } });
     } finally { clearTimeout(timer); }
     this.emit({ type: "state", state: this.state() });
     for (const event of events) this.emit({ type: "event", event });
@@ -65,7 +70,7 @@ export class Registry {
     const all = [...this.data.values()];
     return { server: this.server, version: process.env.VERSION ?? "dev", generatedAt: this.now().toISOString(),
       entities: all.flatMap(d => d.entities).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)),
-      sources: all.map(d => d.report) };
+      sources: all.map(d => d.report), series: all.flatMap(d => d.series).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)) };
   }
 
   on(listener: (m: StreamMessage) => void): () => void {
