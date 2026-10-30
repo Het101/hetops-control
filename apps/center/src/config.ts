@@ -21,3 +21,13 @@ export function loadConfig(env = process.env) {
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("PORT must be an integer between 1 and 65535");
   return { agents, dbPath: env.DB_PATH ?? "/data/events.db", port, host: env.HOST ?? "0.0.0.0" };
 }
+
+/** Cloudflare Access settings; CONTROL_DEV=1 skips them, but only when listening on loopback. */
+export function accessConfig(env = process.env): { dev: true } | { dev: false; teamDomain: string; aud: string } {
+  if (env.CONTROL_DEV === "1") {
+    if (env.HOST !== "127.0.0.1") throw new Error("CONTROL_DEV=1 is only allowed with HOST=127.0.0.1");
+    return { dev: true };
+  }
+  if (!env.ACCESS_TEAM_DOMAIN || !env.ACCESS_AUD) throw new Error("ACCESS_TEAM_DOMAIN and ACCESS_AUD are required");
+  return { dev: false, teamDomain: env.ACCESS_TEAM_DOMAIN, aud: env.ACCESS_AUD };
+}
