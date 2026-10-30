@@ -12,7 +12,9 @@ export const StatusSchema = z.enum(["ok", "attention", "down", "unknown"]);
  *  slo      objective: % (target), current: % (measured), budgetLeft: % of error budget, windowDays: days
  *  decision a CrowdSec ban: ip, scenario, origin, expiresIn: seconds, country: ISO 3166 alpha-2
  *  app      undeployedCommit: string (a newer commit than the deployed one, when the platform reports it),
- *           namespace, pods (ready, max = desired), podsDesired, restarts24h, lastRestartAt: ISO time
+ *           namespace, pods (ready, max = desired), podsDesired, restarts24h, lastRestartAt: ISO time;
+ *           a Coolify app (source "coolify"): state, fqdn (host name), lastDeployAt: ISO time, lastDeployDuration: s,
+ *           commit: short sha, commitMessage, branch, repository
  *  check    drift: boolean (Bedrock found the host differs from its code), lastRun: ISO time, group, lastCheck, httpStatus, latencyMs, uptime24h
  * The center raises a fresh entity to attention/down when: an alert fires at warning/critical, a backup's lastOk is over 26 h old
  * (or missing), an slo's budgetLeft <= 0, an app has an undeployedCommit, a check reports drift: true.
@@ -27,7 +29,8 @@ export type BackupFacts = { ageHours?: F<number>; sizeBytes?: F<number>; lastOk?
 export type DeployFacts = { revision?: F<string>; health?: F<string>; syncStatus?: F<string>; ageMin?: F<number> };
 export type SloFacts = { objective?: F<number>; current?: F<number>; budgetLeft?: F<number>; windowDays?: F<number> };
 export type AppFacts = { undeployedCommit?: F<string>; namespace?: F<string>; pods?: F<number>; podsDesired?: F<number>;
-  restarts24h?: F<number>; lastRestartAt?: F<string> };
+  restarts24h?: F<number>; lastRestartAt?: F<string>; state?: F<string>; fqdn?: F<string>; lastDeployAt?: F<string>;
+  lastDeployDuration?: F<number>; commit?: F<string>; commitMessage?: F<string>; branch?: F<string>; repository?: F<string> };
 export type ArgoAppFacts = { sync?: F<string>; health?: F<string>; revision?: F<string> };
 export type CheckFacts = { drift?: F<boolean>; lastRun?: F<string> } & Pick<SiteFacts, "group" | "lastCheck" | "httpStatus" | "latencyMs" | "uptime24h">;
 export type DecisionFacts = { ip?: F<string>; scenario?: F<string>; origin?: F<string>; expiresIn?: F<number>; country?: F<string> };

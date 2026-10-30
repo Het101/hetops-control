@@ -3,6 +3,7 @@ import { alertmanagerSource, realAlertmanager } from "./alertmanager.js";
 import { argoSource } from "./argo.js";
 import { bedrockSource, realBedrock } from "./bedrock.js";
 import { realChaos, sloSource } from "./chaos.js";
+import { coolifySource, realCoolify } from "./coolify.js";
 import { crowdsecSource, realCrowdsec } from "./crowdsec.js";
 import { elasticsearchSource, realEs, snapshotsSource } from "./elasticsearch.js";
 import { gatusSource, realGatus } from "./gatus.js";
@@ -22,5 +23,6 @@ export const buildSources = (kube: KubeReader, env: NodeJS.ProcessEnv = process.
     ...(env.TIMELINE_URL ? [timelineSource(realTimeline(origin(env.TIMELINE_URL)))] : []),
     ...(env.CROWDSEC_URL ? [crowdsecSource(realCrowdsec(origin(env.CROWDSEC_URL),
       env.CROWDSEC_KEY_FILE ?? "/secrets/crowdsec/key", env.CROWDSEC_CA_FILE ?? "/etc/crowdsec-ca/ca.crt"))] : []),
-    ...(env.BEDROCK_DIR ? [bedrockSource(realBedrock(env.BEDROCK_DIR))] : [])];
+    ...(env.BEDROCK_DIR ? [bedrockSource(realBedrock(env.BEDROCK_DIR))] : []),
+    ...(env.COOLIFY_URL ? [coolifySource(realCoolify(origin(env.COOLIFY_URL), env.COOLIFY_TOKEN_FILE ?? "/secrets/coolify/token"))] : [])];
 };
