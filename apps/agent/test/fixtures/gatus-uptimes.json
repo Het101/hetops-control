@@ -1,0 +1,20 @@
+{
+ "logs_elasticsearch-health": "1.000000",
+ "logs_logs-arriving-from-the-lab": "1.000000",
+ "logs_nightly-snapshot-(all-logs--local)": "1.000000",
+ "logs_nightly-snapshot-(security--r2)": "1.000000",
+ "products_analytics": "1.000000",
+ "products_dns-intelligence": "1.000000",
+ "products_n8n": "1.000000",
+ "products_radar-cloud": "0.999285",
+ "products_restore-drill": "1.000000",
+ "sites_dashboard": "1.000000",
+ "sites_hub": "1.000000",
+ "sites_portfolio": "1.000000",
+ "sites_tallybank": "1.000000",
+ "sites_tools": "1.000000",
+ "watchers_hetops-control": "0.996805",
+ "watchers_lab-alerting": "1.000000",
+ "watchers_lab-gateway": "1.000000",
+ "watchers_status-page": "1.000000"
+}
