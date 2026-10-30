@@ -9,9 +9,9 @@ import { headline } from "./headline.js";
 const DEBOUNCE_MS = 250, PING_MS = 15_000;
 const cookieJwt = (c?: string) => c?.split(";").map(p => p.trim()).find(p => p.startsWith("CF_Authorization="))?.slice("CF_Authorization=".length);
 
-export function buildCenter(o: { store: Store; db: Pick<EventsDb, "recent">; access: (jwt: string | undefined) => Promise<{ email: string }>; webRoot: string }) {
+export function buildCenter(o: { store: Store; db: Pick<EventsDb, "recent">; access: (jwt: string | undefined) => Promise<{ email: string }>; webRoot: string; logger?: false }) {
   const { store, db } = o;
-  const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info", redact: ["req.headers.authorization", "req.headers.cookie", 'req.headers["cf-access-jwt-assertion"]'] } });
+  const app = Fastify({ logger: o.logger === false ? false : { level: process.env.LOG_LEVEL ?? "info", redact: ["req.headers.authorization", "req.headers.cookie", 'req.headers["cf-access-jwt-assertion"]'] } });
   const state = () => { const s = store.snapshot(); return { ...s, headline: headline(s) }; };
 
   app.get("/healthz", async () => ({ ok: true }));
@@ -33,7 +33,7 @@ export function buildCenter(o: { store: Store; db: Pick<EventsDb, "recent">; acc
   app.addHook("preClose", async () => { for (const end of [...streams]) end(); });
   app.get("/api/stream", (req, rep) => {
     rep.hijack();
-    rep.raw.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-store", connection: "keep-alive" });
+    rep.raw.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-store", connection: "keep-alive", "x-accel-buffering": "no" });
     const send = (m: unknown) => { rep.raw.write(`data: ${JSON.stringify(m)}\n\n`); };
     const sendState = () => send({ type: "state", state: state() });
     let debounce: NodeJS.Timeout | undefined;
@@ -50,11 +50,12 @@ export function buildCenter(o: { store: Store; db: Pick<EventsDb, "recent">; acc
     req.raw.on("close", done); rep.raw.on("close", done);
   });
 
+  const spa = (req: { method: string; url: string }) => (req.method === "GET" || req.method === "HEAD") && req.url !== "/api" && !req.url.startsWith("/api/") && !req.url.startsWith("/api?");
   if (existsSync(join(o.webRoot, "index.html"))) {
     void app.register(fastifyStatic, { root: o.webRoot });
-    app.setNotFoundHandler((req, rep) => req.method === "GET" && !req.url.startsWith("/api/") ? rep.sendFile("index.html") : rep.code(404).send({ error: "not found" }));
+    app.setNotFoundHandler((req, rep) => spa(req) ? rep.sendFile("index.html") : rep.code(404).send({ error: "not found" }));
   } else {
-    app.setNotFoundHandler((req, rep) => req.method === "GET" && !req.url.startsWith("/api/") ? rep.code(503).type("text/plain").send("web build missing") : rep.code(404).send({ error: "not found" }));
+    app.setNotFoundHandler((req, rep) => spa(req) ? rep.code(503).type("text/plain").send("web build missing") : rep.code(404).send({ error: "not found" }));
   }
   return app;
 }

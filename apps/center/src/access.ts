@@ -9,7 +9,8 @@ export async function verifyAccess(jwt: string | undefined, cfg: { teamDomain: s
   const url = cfg.jwksUrl ?? `https://${cfg.teamDomain}/cdn-cgi/access/certs`;
   let jwks = jwksByUrl.get(url);
   if (!jwks) jwksByUrl.set(url, jwks = createRemoteJWKSet(new URL(url)));
-  const { payload } = await jwtVerify(jwt, jwks, { audience: cfg.aud, issuer: `https://${cfg.teamDomain}` });
+  const { payload } = await jwtVerify(jwt, jwks, { audience: cfg.aud, issuer: `https://${cfg.teamDomain}`, algorithms: ["RS256"], clockTolerance: 30 });
+  // stage 1 serves people only: service tokens carry no email and are refused
   if (typeof payload.email !== "string" || !payload.email) throw new Error("token has no email");
   return { email: payload.email };
 }

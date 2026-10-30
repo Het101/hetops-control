@@ -50,8 +50,9 @@ export class Store {
     for (const [server, link] of this.links) {
       const aged = (link.state?.entities ?? []).map(e => age(e, link, now));
       entities.push(...aged);
-      servers[server] = { ...rollUp(link, aged.map(a => a.entity.status), aged.filter(a => a.stale).length), reachable: link.reachable,
-        since: link.since.toISOString(), ...(link.state ? { agentVersion: link.state.version } : {}) };
+      const failing = link.reachable ? (link.state?.sources ?? []).filter(x => !x.ok).map(x => ({ id: x.id, ...(x.error ? { error: x.error } : {}) })) : [];
+      servers[server] = { ...rollUp(link, aged.map(a => a.entity.status), aged.filter(a => a.stale).length, failing.length), reachable: link.reachable,
+        since: link.since.toISOString(), ...(link.state ? { agentVersion: link.state.version } : {}), ...(failing.length ? { failingSources: failing } : {}) };
     }
     return { generatedAt: new Date(now).toISOString(), servers, entities: entities.map(a => a.entity) };
   }
@@ -81,12 +82,14 @@ function age(e: Entity, link: Link, now: number): Aged {
   return ms > 3 * period ? { entity: { ...e, status: "unknown", statusReason: `stale: no data for ${Math.round(ms / 1000)} s` }, stale: true } : { entity: e, stale: false };
 }
 
-/** unknown only when we cannot see the server; otherwise the worst known reading, and stale readings are worth attention. */
-function rollUp(link: Link, statuses: Status[], stale: number): Pick<ServerView, "status" | "statusReason"> {
+/** unknown only when we cannot see the server; a failing source or a stale reading means we are partly blind, which is never "ok". */
+function rollUp(link: Link, statuses: Status[], stale: number, failing: number): Pick<ServerView, "status" | "statusReason"> {
   if (!link.reachable) return { status: "unknown",
-    statusReason: link.state ? `agent unreachable since ${link.since.toISOString().slice(11, 16)}` : "not connected yet" };
-  if (!statuses.length) return { status: "unknown", statusReason: "no data yet" };
+    statusReason: link.state ? `agent unreachable since ${link.since.toISOString().slice(11, 16)} UTC` : "not connected yet" };
   const known = statuses.filter(s => s !== "unknown");
-  if (stale && (!known.length || worst(known) === "ok")) return { status: "attention", statusReason: `${stale} readings stale` };
-  return known.length ? { status: worst(known) } : { status: "unknown", statusReason: "no known readings" };
+  const blind = [failing && `${failing} ${failing === 1 ? "source" : "sources"} failing`, stale && `${stale} ${stale === 1 ? "reading" : "readings"} stale`].filter(Boolean).join(", ");
+  if (!statuses.length && !failing) return { status: "unknown", statusReason: "no data yet" };
+  const top = worst(known);
+  if (blind && (!known.length || top === "ok" || top === "unknown")) return { status: "attention", statusReason: blind };
+  return known.length ? { status: top } : { status: "unknown", statusReason: "no known readings" };
 }

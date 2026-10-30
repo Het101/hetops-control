@@ -68,7 +68,7 @@ describe("server roll-up", () => {
   });
   it("unreachable: unknown with the time it went silent", () => {
     const st = new Store(() => at("10")); st.apply("lab", with_(e("a", "ok"))); st.markUnreachable("lab", at("05"));
-    expect(lab(st)).toMatchObject({ status: "unknown", statusReason: "agent unreachable since 12:00", reachable: false });
+    expect(lab(st)).toMatchObject({ status: "unknown", statusReason: "agent unreachable since 12:00 UTC", reachable: false });
   });
   it("reachable with no entities: unknown, no data yet", () => {
     const st = new Store(() => at("00")); st.apply("lab", with_());
@@ -92,6 +92,16 @@ describe("server roll-up", () => {
   });
   it("all readings stale: attention", () => {
     let now = at("00"); const st = new Store(() => now); st.apply("lab", with_(e("a", "ok")));
-    now = at("45"); expect(lab(st)).toMatchObject({ status: "attention", statusReason: "1 readings stale" });
+    now = at("45"); expect(lab(st)).toMatchObject({ status: "attention", statusReason: "1 reading stale" });
+  });
+  it("a failing source lifts a reachable server to attention, with or without entities", () => {
+    const st = new Store(() => at("00")); const bad = { id: "kubernetes", periodMs: 10000, ok: false, error: "forbidden" };
+    st.apply("lab", { ...with_(), sources: [bad] });
+    expect(lab(st)).toMatchObject({ status: "attention", statusReason: "1 source failing", failingSources: [{ id: "kubernetes", error: "forbidden" }] });
+    st.apply("lab", { ...with_(e("a", "ok")), sources: [bad] }); expect(lab(st)).toMatchObject({ status: "attention", statusReason: "1 source failing" });
+    st.apply("lab", { ...with_(e("a", "down")), sources: [bad] }); expect(lab(st).status).toBe("down");
+  });
+  it("reachable with no data and no failing source stays unknown", () => {
+    const st = new Store(() => at("00")); st.apply("lab", with_()); expect(lab(st)).toMatchObject({ status: "unknown", statusReason: "no data yet" });
   });
 });

@@ -9,7 +9,7 @@ import { accessConfig } from "../src/config.js";
 
 const ok = async () => ({ email: "t@x.dev" }); const no = async () => { throw new Error("nope"); };
 const mk = (access: (jwt?: string) => Promise<{ email: string }>, webRoot = "/does/not/exist", recent = vi.fn(() => [])) => {
-  const store = new Store(); const app = buildCenter({ store, db: { recent } as never, access, webRoot }); return { app, store, recent };
+  const store = new Store(); const app = buildCenter({ store, db: { recent } as never, access, webRoot, logger: false }); return { app, store, recent };
 };
 const apps: { close(): Promise<unknown> }[] = [];
 afterEach(async () => { await Promise.all(apps.splice(0).map(a => a.close())); });
@@ -39,6 +39,8 @@ describe("center http", () => {
     const b = mk(ok, dir); apps.push(b.app);
     expect((await b.app.inject("/a.js")).body).toBe("1"); expect((await b.app.inject("/deep/route")).body).toBe("<p>hi</p>");
     expect((await b.app.inject("/api/nothing")).statusCode).toBe(404);
+    const api = await b.app.inject("/api"); expect(api.statusCode).toBe(404); expect(api.json()).toEqual({ error: "not found" });
+    expect((await b.app.inject({ method: "HEAD", url: "/deep/route" })).statusCode).toBe(200);
   });
   it("streams state on connect and events, and closes cleanly", async () => {
     const { app, store } = mk(ok); await app.listen({ port: 0, host: "127.0.0.1" });

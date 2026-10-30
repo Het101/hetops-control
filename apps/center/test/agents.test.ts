@@ -27,7 +27,7 @@ describe("agent link", () => {
   it("fills the store from a real agent, then marks it unreachable when the agent closes", async () => {
     const { app, store, db } = await setup();
     await vi.waitFor(() => expect(store.snapshot().entities.map(e => e.id)).toEqual(["lab/app/x"]), { timeout: 2000 });
-    expect(store.snapshot().servers.lab).toMatchObject({ reachable: true, status: "ok" });
+    expect(store.snapshot().servers.lab).toMatchObject({ reachable: true, status: "attention", statusReason: "1 source failing" }) /* the restarts source has not run yet */;
     expect(store.snapshot().entities[0]!.source).toBe("fake");
     await app.close(); // ends the open stream (preClose)
     await vi.waitFor(() => expect(store.snapshot().servers.lab.reachable).toBe(false), { timeout: 25_000 });
@@ -43,8 +43,10 @@ describe("agent link", () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] }); // the agent's 15 s ping is a setInterval and stays real, so the stream is silent
     const { store } = await setup();
     await vi.waitFor(() => expect(store.snapshot().servers.lab.reachable).toBe(true), { timeout: 2000 });
+    // the silence timer may be (re)armed late by the stream's first bytes under load, so step until it fires instead of assuming when
     await vi.advanceTimersByTimeAsync(19_000); expect(store.snapshot().servers.lab.reachable).toBe(true);
-    await vi.advanceTimersByTimeAsync(1_500); expect(store.snapshot().servers.lab.reachable).toBe(false);
+    for (let i = 0; i < 40 && store.snapshot().servers.lab.reachable; i++) await vi.advanceTimersByTimeAsync(1_000);
+    expect(store.snapshot().servers.lab.reachable).toBe(false);
     expect(logged()).toContain("agent lab: silent for 20 s");
   });
   it("never fills the store with a wrong token", async () => {

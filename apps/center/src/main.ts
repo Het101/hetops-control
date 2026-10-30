@@ -16,5 +16,6 @@ const app = buildCenter({ store, db, webRoot: process.env.WEB_ROOT ?? "/app/web"
 await app.listen({ port: cfg.port, host: cfg.host });
 for (const sig of ["SIGTERM", "SIGINT"] as const) process.on(sig, () => {
   clearInterval(pruneTimer); for (const l of links) l.stop();
-  void app.close().then(() => { db.close(); process.exit(0); });
+  setTimeout(() => process.exit(1), 10_000).unref();
+  app.close().then(() => { db.close(); process.exit(0); }, () => process.exit(1));
 });
