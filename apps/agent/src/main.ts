@@ -1,10 +1,11 @@
 import { loadConfig } from "./config.js";
 import { Registry } from "./registry.js";
 import { buildServer } from "./server.js";
-import { sources } from "./sources/index.js";
+import { buildSources } from "./sources/index.js";
+import { realKube } from "./sources/kubernetes.js";
 
 const cfg = loadConfig();
-const reg = new Registry(cfg.server, sources);
+const reg = new Registry(cfg.server, buildSources(realKube()));
 reg.start();
 const app = buildServer(reg, cfg.token, cfg.https ? { https: cfg.https } : {});
 await app.listen({ port: cfg.port, host: cfg.host });

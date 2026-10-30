@@ -1,0 +1,623 @@
+{
+ "items": [
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "argocd-applicationset-controller",
+    "namespace": "argocd"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "argocd-dex-server",
+    "namespace": "argocd"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "argocd-notifications-controller",
+    "namespace": "argocd"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "argocd-redis",
+    "namespace": "argocd"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "argocd-repo-server",
+    "namespace": "argocd"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "argocd-server",
+    "namespace": "argocd"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "cert-manager",
+    "namespace": "cert-manager"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "cert-manager-cainjector",
+    "namespace": "cert-manager"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "cert-manager-webhook",
+    "namespace": "cert-manager"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "chaos-api",
+    "namespace": "chaos"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "api",
+    "namespace": "clinic"
+   },
+   "spec": {
+    "replicas": 3
+   },
+   "status": {
+    "readyReplicas": 3
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "web",
+    "namespace": "clinic"
+   },
+   "spec": {
+    "replicas": 2
+   },
+   "status": {
+    "readyReplicas": 2
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "worker",
+    "namespace": "clinic"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "crowdsec-lapi",
+    "namespace": "crowdsec"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "falco-falcosidekick",
+    "namespace": "falco"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "calico-kube-controllers",
+    "namespace": "kube-system"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "coredns",
+    "namespace": "kube-system"
+   },
+   "spec": {
+    "replicas": 2
+   },
+   "status": {
+    "readyReplicas": 2
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "metrics-server",
+    "namespace": "kube-system"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "sealed-secrets-controller",
+    "namespace": "kube-system"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "linkerd-destination",
+    "namespace": "linkerd"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "linkerd-identity",
+    "namespace": "linkerd"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "linkerd-proxy-injector",
+    "namespace": "linkerd"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "local-path-provisioner",
+    "namespace": "local-path-storage"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "lab-kibana-kb",
+    "namespace": "logging",
+    "ownerReferences": [
+     {
+      "kind": "Kibana",
+      "name": "lab-kibana"
+     }
+    ]
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "kps-grafana",
+    "namespace": "monitoring"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "kps-kube-prometheus-stack-operator",
+    "namespace": "monitoring"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "kps-kube-state-metrics",
+    "namespace": "monitoring"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "lab-nginx",
+    "namespace": "nginx-gateway",
+    "ownerReferences": [
+     {
+      "kind": "Gateway",
+      "name": "lab"
+     }
+    ]
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "ngf-nginx-gateway-fabric",
+    "namespace": "nginx-gateway"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "cloudflared",
+    "namespace": "platform"
+   },
+   "spec": {
+    "replicas": 2
+   },
+   "status": {
+    "readyReplicas": 2
+   }
+  },
+  {
+   "kind": "Deployment",
+   "metadata": {
+    "name": "timeline",
+    "namespace": "timeline"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "StatefulSet",
+   "metadata": {
+    "name": "argocd-application-controller",
+    "namespace": "argocd"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "StatefulSet",
+   "metadata": {
+    "name": "postgres",
+    "namespace": "clinic-data"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "StatefulSet",
+   "metadata": {
+    "name": "elastic-operator",
+    "namespace": "logging"
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "StatefulSet",
+   "metadata": {
+    "name": "lab-logs-es-default",
+    "namespace": "logging",
+    "ownerReferences": [
+     {
+      "kind": "Elasticsearch",
+      "name": "lab-logs"
+     }
+    ]
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "StatefulSet",
+   "metadata": {
+    "name": "alertmanager-kps-kube-prometheus-stack-alertmanager",
+    "namespace": "monitoring",
+    "ownerReferences": [
+     {
+      "kind": "Alertmanager",
+      "name": "kps-kube-prometheus-stack-alertmanager"
+     }
+    ]
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "StatefulSet",
+   "metadata": {
+    "name": "prometheus-kps-kube-prometheus-stack-prometheus",
+    "namespace": "monitoring",
+    "ownerReferences": [
+     {
+      "kind": "Prometheus",
+      "name": "kps-kube-prometheus-stack-prometheus"
+     }
+    ]
+   },
+   "spec": {
+    "replicas": 1
+   },
+   "status": {
+    "readyReplicas": 1
+   }
+  },
+  {
+   "kind": "DaemonSet",
+   "metadata": {
+    "name": "crowdsec-agent",
+    "namespace": "crowdsec"
+   },
+   "spec": {},
+   "status": {
+    "numberReady": 1,
+    "desiredNumberScheduled": 1
+   }
+  },
+  {
+   "kind": "DaemonSet",
+   "metadata": {
+    "name": "falco",
+    "namespace": "falco"
+   },
+   "spec": {},
+   "status": {
+    "numberReady": 1,
+    "desiredNumberScheduled": 1
+   }
+  },
+  {
+   "kind": "DaemonSet",
+   "metadata": {
+    "name": "calico-node",
+    "namespace": "kube-system"
+   },
+   "spec": {},
+   "status": {
+    "numberReady": 1,
+    "desiredNumberScheduled": 1
+   }
+  },
+  {
+   "kind": "DaemonSet",
+   "metadata": {
+    "name": "kube-proxy",
+    "namespace": "kube-system"
+   },
+   "spec": {},
+   "status": {
+    "numberReady": 1,
+    "desiredNumberScheduled": 1
+   }
+  },
+  {
+   "kind": "DaemonSet",
+   "metadata": {
+    "name": "linkerd-cni",
+    "namespace": "linkerd-cni"
+   },
+   "spec": {},
+   "status": {
+    "numberReady": 1,
+    "desiredNumberScheduled": 1
+   }
+  },
+  {
+   "kind": "DaemonSet",
+   "metadata": {
+    "name": "lab-filebeat-beat-filebeat",
+    "namespace": "logging",
+    "ownerReferences": [
+     {
+      "kind": "Beat",
+      "name": "lab-filebeat"
+     }
+    ]
+   },
+   "spec": {},
+   "status": {
+    "numberReady": 1,
+    "desiredNumberScheduled": 1
+   }
+  },
+  {
+   "kind": "DaemonSet",
+   "metadata": {
+    "name": "ops-filebeat-beat-filebeat",
+    "namespace": "logging",
+    "ownerReferences": [
+     {
+      "kind": "Beat",
+      "name": "ops-filebeat"
+     }
+    ]
+   },
+   "spec": {},
+   "status": {
+    "numberReady": 1,
+    "desiredNumberScheduled": 1
+   }
+  },
+  {
+   "kind": "DaemonSet",
+   "metadata": {
+    "name": "kps-prometheus-node-exporter",
+    "namespace": "monitoring"
+   },
+   "spec": {},
+   "status": {
+    "numberReady": 1,
+    "desiredNumberScheduled": 1
+   }
+  }
+ ]
+}

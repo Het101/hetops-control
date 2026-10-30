@@ -1,0 +1,20 @@
+{
+ "node": {
+  "nodeName": "my-workspace",
+  "cpu": {
+   "time": "2026-10-30T11:43:42Z",
+   "usageNanoCores": 1245731278
+  },
+  "memory": {
+   "time": "2026-10-30T11:43:42Z",
+   "workingSetBytes": 12956254208,
+   "availableBytes": 12181082112
+  },
+  "fs": {
+   "time": "2026-10-30T11:43:42Z",
+   "usedBytes": 70056194048,
+   "capacityBytes": 154894188544,
+   "availableBytes": 84821217280
+  }
+ }
+}

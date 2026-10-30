@@ -1,0 +1,223 @@
+{
+ "items": [
+  {
+   "metadata": {
+    "name": "cert-manager",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced",
+     "revision": "v1.21.3"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  },
+  {
+   "metadata": {
+    "name": "chaos",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced",
+     "revision": "35bd7f5f4675698cda636279ddaf8a1cb92d2de4"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  },
+  {
+   "metadata": {
+    "name": "clinic",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced",
+     "revision": "35bd7f5f4675698cda636279ddaf8a1cb92d2de4"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  },
+  {
+   "metadata": {
+    "name": "clinic-data",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced",
+     "revision": "35bd7f5f4675698cda636279ddaf8a1cb92d2de4"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  },
+  {
+   "metadata": {
+    "name": "crowdsec",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  },
+  {
+   "metadata": {
+    "name": "falco",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  },
+  {
+   "metadata": {
+    "name": "gateway",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  },
+  {
+   "metadata": {
+    "name": "gateway-api",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced",
+     "revision": "e7677b70ae75d14a4448fba94870e7deea6cf0ad"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  },
+  {
+   "metadata": {
+    "name": "linkerd",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  },
+  {
+   "metadata": {
+    "name": "linkerd-cni",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced",
+     "revision": "2026.9.3"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  },
+  {
+   "metadata": {
+    "name": "logging",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  },
+  {
+   "metadata": {
+    "name": "monitoring",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  },
+  {
+   "metadata": {
+    "name": "platform",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced",
+     "revision": "35bd7f5f4675698cda636279ddaf8a1cb92d2de4"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  },
+  {
+   "metadata": {
+    "name": "root",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced",
+     "revision": "35bd7f5f4675698cda636279ddaf8a1cb92d2de4"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  },
+  {
+   "metadata": {
+    "name": "timeline",
+    "namespace": "argocd"
+   },
+   "status": {
+    "sync": {
+     "status": "Synced",
+     "revision": "35bd7f5f4675698cda636279ddaf8a1cb92d2de4"
+    },
+    "health": {
+     "status": "Healthy"
+    }
+   }
+  }
+ ]
+}

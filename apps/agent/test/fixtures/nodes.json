@@ -1,0 +1,16 @@
+{
+ "items": [
+  {
+   "metadata": {
+    "name": "my-workspace"
+   },
+   "status": {
+    "capacity": {
+     "cpu": "4",
+     "memory": "24548180Ki",
+     "pods": "110"
+    }
+   }
+  }
+ ]
+}

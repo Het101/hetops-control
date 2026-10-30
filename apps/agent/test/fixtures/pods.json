@@ -1,0 +1,1691 @@
+{
+ "items": [
+  {
+   "metadata": {
+    "name": "argocd-application-controller-0",
+    "namespace": "argocd",
+    "ownerReferences": [
+     {
+      "kind": "StatefulSet",
+      "name": "argocd-application-controller"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "argocd-application-controller",
+      "restartCount": 2,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "argocd-applicationset-controller-59688c7d5f-vg7ch",
+    "namespace": "argocd",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "argocd-applicationset-controller-59688c7d5f"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "argocd-applicationset-controller",
+      "restartCount": 4,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "argocd-dex-server-bcb7c78c4-bkhh8",
+    "namespace": "argocd",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "argocd-dex-server-bcb7c78c4"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "dex",
+      "restartCount": 4,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Error"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "argocd-notifications-controller-66bf95f497-nl8mf",
+    "namespace": "argocd",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "argocd-notifications-controller-66bf95f497"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "argocd-notifications-controller",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "argocd-redis-56cb45754c-bhwsh",
+    "namespace": "argocd",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "argocd-redis-56cb45754c"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "redis",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "argocd-repo-server-5fdb4c9cb9-56h7n",
+    "namespace": "argocd",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "argocd-repo-server-5fdb4c9cb9"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "argocd-repo-server",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "argocd-server-df596fd5f-vzbgw",
+    "namespace": "argocd",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "argocd-server-df596fd5f"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "argocd-server",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "cert-manager-8658b5984b-92jjj",
+    "namespace": "cert-manager",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "cert-manager-8658b5984b"
+     }
+    ],
+    "labels": {
+     "app": "cert-manager"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "cert-manager-controller",
+      "restartCount": 1,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:54:54Z",
+        "reason": "Unknown"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "cert-manager-cainjector-9766686f7-4m5mq",
+    "namespace": "cert-manager",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "cert-manager-cainjector-9766686f7"
+     }
+    ],
+    "labels": {
+     "app": "cainjector"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "cert-manager-cainjector",
+      "restartCount": 1,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:54:54Z",
+        "reason": "Unknown"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "cert-manager-webhook-778f657457-p6dqn",
+    "namespace": "cert-manager",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "cert-manager-webhook-778f657457"
+     }
+    ],
+    "labels": {
+     "app": "webhook"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "cert-manager-webhook",
+      "restartCount": 1,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "chaos-api-66f8dbfd6d-xc7t6",
+    "namespace": "chaos",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "chaos-api-66f8dbfd6d"
+     }
+    ],
+    "labels": {
+     "app": "chaos-api"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "chaos-api",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "chaos-selftest-29879850-gpwmv",
+    "namespace": "chaos",
+    "ownerReferences": [
+     {
+      "kind": "Job",
+      "name": "chaos-selftest-29879850"
+     }
+    ],
+    "labels": {
+     "app": "chaos-selftest"
+    }
+   },
+   "status": {
+    "phase": "Succeeded",
+    "containerStatuses": [
+     {
+      "name": "selftest",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "chaos-selftest-29881290-tgv8k",
+    "namespace": "chaos",
+    "ownerReferences": [
+     {
+      "kind": "Job",
+      "name": "chaos-selftest-29881290"
+     }
+    ],
+    "labels": {
+     "app": "chaos-selftest"
+    }
+   },
+   "status": {
+    "phase": "Succeeded",
+    "containerStatuses": [
+     {
+      "name": "selftest",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "chaos-selftest-29882730-zc7xz",
+    "namespace": "chaos",
+    "ownerReferences": [
+     {
+      "kind": "Job",
+      "name": "chaos-selftest-29882730"
+     }
+    ],
+    "labels": {
+     "app": "chaos-selftest"
+    }
+   },
+   "status": {
+    "phase": "Succeeded",
+    "containerStatuses": [
+     {
+      "name": "selftest",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "chaos-selftest-29884170-flg6j",
+    "namespace": "chaos",
+    "ownerReferences": [
+     {
+      "kind": "Job",
+      "name": "chaos-selftest-29884170"
+     }
+    ],
+    "labels": {
+     "app": "chaos-selftest"
+    }
+   },
+   "status": {
+    "phase": "Succeeded",
+    "containerStatuses": [
+     {
+      "name": "selftest",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "chaos-selftest-29885610-g7552",
+    "namespace": "chaos",
+    "ownerReferences": [
+     {
+      "kind": "Job",
+      "name": "chaos-selftest-29885610"
+     }
+    ],
+    "labels": {
+     "app": "chaos-selftest"
+    }
+   },
+   "status": {
+    "phase": "Succeeded",
+    "containerStatuses": [
+     {
+      "name": "selftest",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "chaos-selftest-29887050-dk8s6",
+    "namespace": "chaos",
+    "ownerReferences": [
+     {
+      "kind": "Job",
+      "name": "chaos-selftest-29887050"
+     }
+    ],
+    "labels": {
+     "app": "chaos-selftest"
+    }
+   },
+   "status": {
+    "phase": "Succeeded",
+    "containerStatuses": [
+     {
+      "name": "selftest",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "chaos-selftest-29888490-gc5t5",
+    "namespace": "chaos",
+    "ownerReferences": [
+     {
+      "kind": "Job",
+      "name": "chaos-selftest-29888490"
+     }
+    ],
+    "labels": {
+     "app": "chaos-selftest"
+    }
+   },
+   "status": {
+    "phase": "Succeeded",
+    "containerStatuses": [
+     {
+      "name": "selftest",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "postgres-0",
+    "namespace": "clinic-data",
+    "ownerReferences": [
+     {
+      "kind": "StatefulSet",
+      "name": "postgres"
+     }
+    ],
+    "labels": {
+     "app": "postgres"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "exporter",
+      "restartCount": 0
+     },
+     {
+      "name": "postgres",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "api-7dbd6d5b94-276vp",
+    "namespace": "clinic",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "api-7dbd6d5b94"
+     }
+    ],
+    "labels": {
+     "app": "api"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "api",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "api-7dbd6d5b94-99nfx",
+    "namespace": "clinic",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "api-7dbd6d5b94"
+     }
+    ],
+    "labels": {
+     "app": "api"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "api",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "api-7dbd6d5b94-gxqh4",
+    "namespace": "clinic",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "api-7dbd6d5b94"
+     }
+    ],
+    "labels": {
+     "app": "api"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "api",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "nightly-report-29888760-8g8f5",
+    "namespace": "clinic",
+    "ownerReferences": [
+     {
+      "kind": "Job",
+      "name": "nightly-report-29888760"
+     }
+    ],
+    "labels": {
+     "app": "nightly-report"
+    }
+   },
+   "status": {
+    "phase": "Succeeded",
+    "containerStatuses": [
+     {
+      "name": "report",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "web-5cb6c6846f-5h4w6",
+    "namespace": "clinic",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "web-5cb6c6846f"
+     }
+    ],
+    "labels": {
+     "app": "web"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "web",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "web-5cb6c6846f-s8s6q",
+    "namespace": "clinic",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "web-5cb6c6846f"
+     }
+    ],
+    "labels": {
+     "app": "web"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "web",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "worker-68f46847c7-bnhnw",
+    "namespace": "clinic",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "worker-68f46847c7"
+     }
+    ],
+    "labels": {
+     "app": "worker"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "worker",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "cloudflare-bouncer-29889342-b8c29",
+    "namespace": "crowdsec",
+    "ownerReferences": [
+     {
+      "kind": "Job",
+      "name": "cloudflare-bouncer-29889342"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Succeeded",
+    "containerStatuses": [
+     {
+      "name": "bouncer",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "crowdsec-agent-tp6qv",
+    "namespace": "crowdsec",
+    "ownerReferences": [
+     {
+      "kind": "DaemonSet",
+      "name": "crowdsec-agent"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "crowdsec-agent",
+      "restartCount": 1,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "crowdsec-lapi-565985595c-h2wpg",
+    "namespace": "crowdsec",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "crowdsec-lapi-565985595c"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "crowdsec-lapi",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "falco-falcosidekick-859dd798bc-c75j4",
+    "namespace": "falco",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "falco-falcosidekick-859dd798bc"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "falcosidekick",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Error"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "falco-qgsbj",
+    "namespace": "falco",
+    "ownerReferences": [
+     {
+      "kind": "DaemonSet",
+      "name": "falco"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "falco",
+      "restartCount": 2,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Completed"
+       }
+      }
+     },
+     {
+      "name": "falcoctl-artifact-follow",
+      "restartCount": 2,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:53:03Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "calico-kube-controllers-7b4769b5c5-m256b",
+    "namespace": "kube-system",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "calico-kube-controllers-7b4769b5c5"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "calico-kube-controllers",
+      "restartCount": 5,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Error"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "calico-node-4nsk2",
+    "namespace": "kube-system",
+    "ownerReferences": [
+     {
+      "kind": "DaemonSet",
+      "name": "calico-node"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "calico-node",
+      "restartCount": 2,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "coredns-7d764666f9-jrfxm",
+    "namespace": "kube-system",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "coredns-7d764666f9"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "coredns",
+      "restartCount": 2,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:53:03Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "coredns-7d764666f9-xcgbx",
+    "namespace": "kube-system",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "coredns-7d764666f9"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "coredns",
+      "restartCount": 2,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:53:03Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "etcd-my-workspace",
+    "namespace": "kube-system",
+    "ownerReferences": [
+     {
+      "kind": "Node",
+      "name": "my-workspace"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "etcd",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:53:05Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "kube-apiserver-my-workspace",
+    "namespace": "kube-system",
+    "ownerReferences": [
+     {
+      "kind": "Node",
+      "name": "my-workspace"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "kube-apiserver",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:54:54Z",
+        "reason": "Unknown"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "kube-controller-manager-my-workspace",
+    "namespace": "kube-system",
+    "ownerReferences": [
+     {
+      "kind": "Node",
+      "name": "my-workspace"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "kube-controller-manager",
+      "restartCount": 2,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Error"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "kube-proxy-jk5pm",
+    "namespace": "kube-system",
+    "ownerReferences": [
+     {
+      "kind": "DaemonSet",
+      "name": "kube-proxy"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "kube-proxy",
+      "restartCount": 2,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Error"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "kube-scheduler-my-workspace",
+    "namespace": "kube-system",
+    "ownerReferences": [
+     {
+      "kind": "Node",
+      "name": "my-workspace"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "kube-scheduler",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:53:03Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "metrics-server-594f6d74c5-fklk5",
+    "namespace": "kube-system",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "metrics-server-594f6d74c5"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "metrics-server",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "sealed-secrets-controller-8558dcf9bc-sdxw5",
+    "namespace": "kube-system",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "sealed-secrets-controller-8558dcf9bc"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "sealed-secrets-controller",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "linkerd-cni-ctngp",
+    "namespace": "linkerd-cni",
+    "ownerReferences": [
+     {
+      "kind": "DaemonSet",
+      "name": "linkerd-cni"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "install-cni",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Completed"
+       }
+      }
+     },
+     {
+      "name": "repair-controller",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "linkerd-destination-865dcf4499-5mtpm",
+    "namespace": "linkerd",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "linkerd-destination-865dcf4499"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "destination",
+      "restartCount": 0
+     },
+     {
+      "name": "policy",
+      "restartCount": 0
+     },
+     {
+      "name": "sp-validator",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "linkerd-identity-678488798d-bgps5",
+    "namespace": "linkerd",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "linkerd-identity-678488798d"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "identity",
+      "restartCount": 0
+     },
+     {
+      "name": "linkerd-proxy",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "linkerd-proxy-injector-55487d5b65-wn75k",
+    "namespace": "linkerd",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "linkerd-proxy-injector-55487d5b65"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "proxy-injector",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "local-path-provisioner-dbff48958-hptkl",
+    "namespace": "local-path-storage",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "local-path-provisioner-dbff48958"
+     }
+    ],
+    "labels": {
+     "app": "local-path-provisioner"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "local-path-provisioner",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "elastic-operator-0",
+    "namespace": "logging",
+    "ownerReferences": [
+     {
+      "kind": "StatefulSet",
+      "name": "elastic-operator"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "manager",
+      "restartCount": 23,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "lab-filebeat-beat-filebeat-ssdjb",
+    "namespace": "logging",
+    "ownerReferences": [
+     {
+      "kind": "DaemonSet",
+      "name": "lab-filebeat-beat-filebeat"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "filebeat",
+      "restartCount": 2,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "lab-kibana-kb-899d7995c-h62r7",
+    "namespace": "logging",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "lab-kibana-kb-899d7995c"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "kibana",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:54:54Z",
+        "reason": "Unknown"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "lab-logs-es-default-0",
+    "namespace": "logging",
+    "ownerReferences": [
+     {
+      "kind": "StatefulSet",
+      "name": "lab-logs-es-default"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "elasticsearch",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:53:02Z",
+        "reason": "Error"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "ops-filebeat-beat-filebeat-82sz2",
+    "namespace": "logging",
+    "ownerReferences": [
+     {
+      "kind": "DaemonSet",
+      "name": "ops-filebeat-beat-filebeat"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "filebeat",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "alertmanager-kps-kube-prometheus-stack-alertmanager-0",
+    "namespace": "monitoring",
+    "ownerReferences": [
+     {
+      "kind": "StatefulSet",
+      "name": "alertmanager-kps-kube-prometheus-stack-alertmanager"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "alertmanager",
+      "restartCount": 0
+     },
+     {
+      "name": "config-reloader",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "kps-grafana-7c7b6b99d4-g4gzw",
+    "namespace": "monitoring",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "kps-grafana-7c7b6b99d4"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "grafana",
+      "restartCount": 2,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Completed"
+       }
+      }
+     },
+     {
+      "name": "grafana-sc-dashboard",
+      "restartCount": 2,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Completed"
+       }
+      }
+     },
+     {
+      "name": "grafana-sc-datasources",
+      "restartCount": 2,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:59Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "kps-kube-prometheus-stack-operator-6c694795f-kbq4h",
+    "namespace": "monitoring",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "kps-kube-prometheus-stack-operator-6c694795f"
+     }
+    ],
+    "labels": {
+     "app": "kube-prometheus-stack-operator"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "kube-prometheus-stack",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "kps-kube-state-metrics-5d89f6dc7-pbh4g",
+    "namespace": "monitoring",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "kps-kube-state-metrics-5d89f6dc7"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "kube-state-metrics",
+      "restartCount": 30,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Error"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "kps-prometheus-node-exporter-qnt25",
+    "namespace": "monitoring",
+    "ownerReferences": [
+     {
+      "kind": "DaemonSet",
+      "name": "kps-prometheus-node-exporter"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "node-exporter",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Error"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "prometheus-kps-kube-prometheus-stack-prometheus-0",
+    "namespace": "monitoring",
+    "ownerReferences": [
+     {
+      "kind": "StatefulSet",
+      "name": "prometheus-kps-kube-prometheus-stack-prometheus"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "config-reloader",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Completed"
+       }
+      }
+     },
+     {
+      "name": "prometheus",
+      "restartCount": 3,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "lab-nginx-866d7ff64-k98dr",
+    "namespace": "nginx-gateway",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "lab-nginx-866d7ff64"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "nginx",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "ngf-nginx-gateway-fabric-745587d66d-bq2wv",
+    "namespace": "nginx-gateway",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "ngf-nginx-gateway-fabric-745587d66d"
+     }
+    ]
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "nginx-gateway",
+      "restartCount": 0
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "cloudflared-7b7b8f5844-7d77m",
+    "namespace": "platform",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "cloudflared-7b7b8f5844"
+     }
+    ],
+    "labels": {
+     "app": "cloudflared"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "cloudflared",
+      "restartCount": 4,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:52:58Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "cloudflared-7b7b8f5844-scmn5",
+    "namespace": "platform",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "cloudflared-7b7b8f5844"
+     }
+    ],
+    "labels": {
+     "app": "cloudflared"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "cloudflared",
+      "restartCount": 5,
+      "lastState": {
+       "terminated": {
+        "finishedAt": "2026-10-25T09:56:36Z",
+        "reason": "Completed"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "metadata": {
+    "name": "timeline-b759bf7d8-b4ft5",
+    "namespace": "timeline",
+    "ownerReferences": [
+     {
+      "kind": "ReplicaSet",
+      "name": "timeline-b759bf7d8"
+     }
+    ],
+    "labels": {
+     "app": "timeline"
+    }
+   },
+   "status": {
+    "phase": "Running",
+    "containerStatuses": [
+     {
+      "name": "timeline",
+      "restartCount": 0
+     }
+    ]
+   }
+  }
+ ]
+}
