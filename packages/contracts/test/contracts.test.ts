@@ -52,3 +52,15 @@ describe("series", () => {
     for (const k of ["alert", "site", "backup", "deploy", "slo", "decision"]) expect(EntityKindSchema.safeParse(k).success).toBe(true);
   });
 });
+
+describe("series hardening", () => {
+  it("rejects non-finite and non-increasing points", () => {
+    for (const bad of [[[1, Infinity]], [[NaN, 1]], [[2, 1], [1, 1]], [[1, 1], [1, 2]]])
+      expect(SeriesSchema.safeParse({ ...series, points: bad }).success).toBe(false);
+  });
+  it("caps the number of series at 64", () => {
+    const s = { server: "lab", version: "1", generatedAt: "2026-10-30T11:33:44Z", entities: [], sources: [] };
+    expect(AgentStateSchema.safeParse({ ...s, series: Array(64).fill(series) }).success).toBe(true);
+    expect(AgentStateSchema.safeParse({ ...s, series: Array(65).fill(series) }).success).toBe(false);
+  });
+});

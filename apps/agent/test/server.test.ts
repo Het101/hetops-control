@@ -141,3 +141,21 @@ describe("registry series", () => {
     expect(reg.state().series).toEqual([]); expect(reg.state().sources[0]!.error).toContain("invalid series");
   });
 });
+
+describe("registry drops only invalid items", () => {
+  const ent = (id: string, server = "lab") => ({ id, kind: "app" as const, server: server as "lab", name: id, status: "ok" as const, facts: {}, links: [], actions: [], observedAt: t0.toISOString() });
+  it("keeps valid entities, marks the source failing with count, first id and path (no values)", async () => {
+    const src = { id: "s", periodMs: 10_000, async collect() { return { entities: [ent("lab/a"), { ...ent("lab/b"), status: "SECRET" }, ent("lab/c")] as never }; } };
+    const reg = new Registry("lab", [src], () => t0); await reg.runOnce("s");
+    const st = reg.state(); expect(st.entities.map(e => e.id)).toEqual(["lab/a", "lab/c"]);
+    expect(st.sources[0]!.ok).toBe(false); expect(st.sources[0]!.error).toMatch(/1 invalid item dropped.*lab\/b.*status/); expect(st.sources[0]!.error).not.toContain("SECRET");
+  });
+  it("rejects other servers' items and later duplicate ids across sources", async () => {
+    const a = { id: "a", periodMs: 10_000, async collect() { return { entities: [ent("lab/x")] }; } };
+    const b = { id: "b", periodMs: 10_000, async collect() { return { entities: [ent("lab/x"), ent("ops/y", "ops"), ent("lab/z")] }; } };
+    const reg = new Registry("lab", [a, b], () => t0); await reg.runOnce("a"); await reg.runOnce("b");
+    const st = reg.state(); expect(st.entities.map(e => e.id)).toEqual(["lab/x", "lab/z"]);
+    expect(st.entities.find(e => e.id === "lab/x")!.source).toBe("a");
+    expect(st.sources[1]!.ok).toBe(false); expect(st.sources[1]!.error).toContain("2 invalid items");
+  });
+});

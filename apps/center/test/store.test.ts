@@ -137,3 +137,13 @@ describe("store series", () => {
     expect(st.snapshot().series).toEqual([]);
   });
 });
+
+describe("store series ageing edges", () => {
+  const base = { id: "a", server: "lab" as const, label: "l", unit: "n", stepMs: 1000, points: [] as [number, number][], observedAt: "2026-10-30T12:00:00Z" };
+  it("sourceless series ages by the slowest period; exactly 3x is kept, beyond is dropped", () => {
+    let now = at("00"); const st = new Store(() => now);
+    st.apply("lab", { ...state("ok"), sources: [{ id: "k", periodMs: 10000, ok: true }, { id: "argo", periodMs: 60000, ok: true }], series: [base] });
+    now = new Date("2026-10-30T12:03:00Z"); expect(st.snapshot().series).toHaveLength(1);
+    now = new Date("2026-10-30T12:03:00.001Z"); expect(st.snapshot().series).toHaveLength(0);
+  });
+});

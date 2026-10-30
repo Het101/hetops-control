@@ -41,22 +41,28 @@ export class Registry {
     try {
       const timeout = new Promise<never>((_, rej) => { timer = setTimeout(() => rej(new Error(`timed out after ${ms}ms`)), ms); });
       const out = await Promise.race([call, timeout]);
-      const entities = out.entities.map((e, i) => {
-        const r = EntitySchema.safeParse(e);
-        if (!r.success) throw new Error(`invalid entity ${(e as { id?: unknown })?.id ?? i}: ${describe(r.error)}`);
-        return { ...r.data, source: id }; // the center ages each entity by its source's period
-      });
+      // invalid items are dropped one by one (the good data stays visible) and the source is marked failing below
+      const taken = new Set<string>(); for (const [k, d] of this.data) if (k !== id) for (const x of [...d.entities, ...d.series]) taken.add(x.id);
+      const bad: string[] = [];
+      const keep = <T extends { id: string; server: ServerId }>(kind: string, items: unknown[], schema: { safeParse(v: unknown): { success: true; data: T } | { success: false; error: { issues: { path: PropertyKey[]; code: string }[] } } }): T[] => {
+        const ok: T[] = [];
+        items.forEach((x, i) => {
+          const r = schema.safeParse(x); const rawId = (x as { id?: unknown })?.id; const name = typeof rawId === "string" ? rawId : String(i);
+          const why = !r.success ? describe(r.error) : r.data.server !== this.server ? "server mismatch" : taken.has(r.data.id) ? "duplicate id" : "";
+          if (why || !r.success) { bad.push(`${kind} ${name}: ${why}`); return; }
+          taken.add(r.data.id); ok.push(r.data);
+        });
+        return ok;
+      };
+      const entities = keep<Entity>("entity", out.entities, EntitySchema).map(e => ({ ...e, source: id })); // the center ages each entity by its source's period
       const evs = (out.events ?? []).map((e, i) => {
         const r = EventSchema.safeParse(e);
         if (!r.success) throw new Error(`invalid event ${i}: ${describe(r.error)}`);
         return r.data;
       });
-      const series = (out.series ?? []).map((x, i) => {
-        const r = SeriesSchema.safeParse(x);
-        if (!r.success) throw new Error(`invalid series ${(x as { id?: unknown })?.id ?? i}: ${describe(r.error)}`);
-        return { ...r.data, source: id };
-      });
-      this.data.set(id, { entities, series, report: { id, periodMs: src.periodMs, ok: true, lastRunAt } });
+      const series = keep<Series>("series", out.series ?? [], SeriesSchema).map(x => ({ ...x, source: id }));
+      const error = bad.length ? `${bad.length} invalid item${bad.length === 1 ? "" : "s"} dropped, first: invalid ${bad[0]}` : undefined;
+      this.data.set(id, { entities, series, report: { id, periodMs: src.periodMs, ok: !error, lastRunAt, ...(error ? { error } : {}) } });
       events = evs;
     } catch (err) {
       // message only, never stack or payload; the source's entities disappear
