@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CenterStateSchema, EventSchema, HeadlineSchema, type Event, type Headline } from "@hetops-control/contracts";
+import { CenterStateSchema, EventSchema, HeadlineSchema, MeSchema, type Event, type Headline } from "@hetops-control/contracts";
 
 export type { Headline };
 export const StateSchema = CenterStateSchema.extend({ headline: HeadlineSchema });
@@ -24,6 +24,7 @@ async function get<T>(path: string, schema: z.ZodType<T>): Promise<T> {
   return schema.parse(await r.json());
 }
 export const loadState = () => get("/api/state", StateSchema);
+export const loadMe = () => get("/api/me", MeSchema);
 export const loadEvents = (limit: number) => get(`/api/events?limit=${limit}`, z.array(EventSchema));
 
 const eventKey = (e: Event) => `${e.at}|${e.server}|${e.summary}|${e.entity ?? ""}`;

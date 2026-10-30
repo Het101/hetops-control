@@ -1,14 +1,6 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { StateSchema } from "../src/lib/api.js";
-import { fixtureEvents, fixtureState } from "./fixture.js";
-
-// the center is mocked: the state, the last events, and a stream that sends one state then ends (the page re-opens it)
-async function mockApi(page: Page) {
-  const state = StateSchema.parse(fixtureState);
-  await page.route("**/api/state", r => r.fulfill({ json: state }));
-  await page.route("**/api/events?*", r => r.fulfill({ json: fixtureEvents }));
-  await page.route("**/api/stream", r => r.fulfill({ contentType: "text/event-stream", body: `data: ${JSON.stringify({ type: "state", state })}\n\n` }));
-}
+import { fixtureState, mockApi } from "./fixture.js";
 
 test.beforeEach(async ({ page }, info) => {
   await mockApi(page);
@@ -37,13 +29,14 @@ test("the struggling app grows ember leaves", async ({ page }) => {
   await expect(page.locator(".list .row")).toHaveCount(6);
 });
 
-test("rail: pages to come are named, focusable and explain themselves", async ({ page }) => {
-  const topology = page.getByRole("button", { name: "Topology: arrives in stage 1b" });
-  await expect(topology).toHaveAttribute("aria-disabled", "true");
+test("rail: every page is a named link, tips show on keyboard focus", async ({ page }) => {
+  const topology = page.getByRole("link", { name: "Topology" });
+  await expect(topology).toHaveAttribute("href", "/topology");
   await topology.focus();
   await page.keyboard.press("Tab"); await page.keyboard.press("Shift+Tab"); // keyboard focus, so :focus-visible applies
   await expect(topology.locator(".tip")).toHaveCSS("opacity", "1");
   await expect(page.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
+  await expect(topology).not.toHaveAttribute("aria-current");
 });
 
 test("timeline ember rows come from the event level", async ({ page }) => {

@@ -11,7 +11,7 @@ const prune = () => { try { db.prune(); } catch (e) { console.error("prune faile
 prune(); const pruneTimer = setInterval(prune, 86_400_000);
 const links = cfg.agents.map(a => new AgentLink(a.server, a.url, a.token, a.ca));
 for (const l of links) l.start(store, db);
-const app = buildCenter({ store, db, webRoot: process.env.WEB_ROOT ?? "/app/web",
+const app = buildCenter({ store, db, webRoot: process.env.WEB_ROOT ?? "/app/web", version: process.env.VERSION ?? "dev",
   access: acc.dev ? (async () => ({ email: "dev@local" })) : ((jwt) => verifyAccess(jwt, acc)) });
 await app.listen({ port: cfg.port, host: cfg.host });
 for (const sig of ["SIGTERM", "SIGINT"] as const) process.on(sig, () => {
