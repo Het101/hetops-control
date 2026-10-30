@@ -1,6 +1,7 @@
-import { ServerIdSchema, worst, type AgentState, type CenterMessage, type CenterState, type Entity, type Event, type ServerId } from "@hetops-control/contracts";
+import { ServerIdSchema, worst, type AgentState, type CenterMessage, type CenterState, type Entity, type Event, type ServerId, type ServerView, type Status } from "@hetops-control/contracts";
 
-type Link = { state?: AgentState; reachable: boolean; since: Date };
+// skewMs = center clock - agent clock at the last apply; ageing adds it so agent clock drift never fakes staleness
+type Link = { state?: AgentState; skewMs: number; reachable: boolean; since: Date };
 
 /** The merged estate: the latest state per agent, aged at read time so nothing stale ever shows healthy. */
 export class Store {
@@ -8,23 +9,23 @@ export class Store {
   private listeners = new Set<(m: CenterMessage) => void>();
 
   constructor(private now: () => Date = () => new Date()) {
-    for (const s of ServerIdSchema.options) this.links.set(s, { reachable: false, since: now() });
+    for (const s of ServerIdSchema.options) this.links.set(s, { reachable: false, since: now(), skewMs: 0 });
   }
 
   /** Replaces the server's entities with `s`; returns the status changes (and "reachable again") as events. */
   apply(server: ServerId, s: AgentState): Event[] {
-    const link = this.links.get(server)!; const at = this.now().toISOString(); const events: Event[] = [];
+    const link = this.links.get(server)!; const receivedAt = this.now(); const at = receivedAt.toISOString(); const events: Event[] = [];
     // only after markUnreachable: a first connect is not news
     if (!link.reachable && link.state) events.push({ at, server, source: "center", kind: "info", summary: `${server} reachable again` });
     const prev = new Map(link.state?.entities.map(e => [e.id, e.status]));
     for (const e of s.entities) {
       const was = prev.get(e.id);
-      // new entities are not a change; removed ones are covered by ageing
+      // a new entity is not a change; a removed one simply leaves the snapshot with this state
       if (was && was !== e.status) events.push({ at, server, source: e.source ?? "center", kind: "status", entity: e.id,
         summary: `${e.name} (${server}) ${was} → ${e.status}${e.statusReason ? `: ${e.statusReason}` : ""}` });
     }
-    if (!link.reachable) { link.reachable = true; link.since = this.now(); }
-    link.state = s;
+    if (!link.reachable) { link.reachable = true; link.since = receivedAt; }
+    link.state = s; link.skewMs = receivedAt.getTime() - Date.parse(s.generatedAt);
     this.publish(events);
     return events;
   }
@@ -44,15 +45,15 @@ export class Store {
   record(e: Event): void { this.emit({ type: "event", event: e }); }
 
   snapshot(): CenterState {
-    const now = this.now().getTime(); const entities: Entity[] = [];
+    const now = this.now().getTime(); const entities: Aged[] = [];
     const servers = {} as CenterState["servers"];
     for (const [server, link] of this.links) {
       const aged = (link.state?.entities ?? []).map(e => age(e, link, now));
       entities.push(...aged);
-      servers[server] = { status: link.reachable ? worst(aged.map(e => e.status)) : "unknown", reachable: link.reachable,
+      servers[server] = { ...rollUp(link, aged.map(a => a.entity.status), aged.filter(a => a.stale).length), reachable: link.reachable,
         since: link.since.toISOString(), ...(link.state ? { agentVersion: link.state.version } : {}) };
     }
-    return { generatedAt: new Date(now).toISOString(), servers, entities };
+    return { generatedAt: new Date(now).toISOString(), servers, entities: entities.map(a => a.entity) };
   }
 
   on(fn: (m: CenterMessage) => void): () => void { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; }
@@ -69,11 +70,23 @@ export class Store {
   }
 }
 
-function age(e: Entity, link: Link, now: number): Entity {
-  if (!link.reachable) return { ...e, status: "unknown", statusReason: `agent unreachable since ${link.since.toISOString()}` };
+type Aged = { entity: Entity; stale: boolean };
+
+function age(e: Entity, link: Link, now: number): Aged {
+  if (!link.reachable) return { entity: { ...e, status: "unknown", statusReason: `agent unreachable since ${link.since.toISOString()}` }, stale: false };
   const sources = link.state!.sources;
   // an entity without a source (older agent) ages by the slowest source, the most lenient choice
   const period = sources.find(s => s.id === e.source)?.periodMs ?? Math.max(0, ...sources.map(s => s.periodMs));
-  const ms = now - Date.parse(e.observedAt);
-  return ms > 3 * period ? { ...e, status: "unknown", statusReason: `stale: no data for ${Math.round(ms / 1000)} s` } : e;
+  const ms = now - (Date.parse(e.observedAt) + link.skewMs);
+  return ms > 3 * period ? { entity: { ...e, status: "unknown", statusReason: `stale: no data for ${Math.round(ms / 1000)} s` }, stale: true } : { entity: e, stale: false };
+}
+
+/** unknown only when we cannot see the server; otherwise the worst known reading, and stale readings are worth attention. */
+function rollUp(link: Link, statuses: Status[], stale: number): Pick<ServerView, "status" | "statusReason"> {
+  if (!link.reachable) return { status: "unknown",
+    statusReason: link.state ? `agent unreachable since ${link.since.toISOString().slice(11, 16)}` : "not connected yet" };
+  if (!statuses.length) return { status: "unknown", statusReason: "no data yet" };
+  const known = statuses.filter(s => s !== "unknown");
+  if (stale && (!known.length || worst(known) === "ok")) return { status: "attention", statusReason: `${stale} readings stale` };
+  return known.length ? { status: worst(known) } : { status: "unknown", statusReason: "no known readings" };
 }

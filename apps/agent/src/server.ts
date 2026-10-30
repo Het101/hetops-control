@@ -11,7 +11,8 @@ export function buildServer(reg: Registry, token: string, opts: { https?: { cert
   });
   app.get("/v1/state", async () => reg.state());
   const streams = new Set<() => void>();
-  app.addHook("onClose", async () => { for (const end of [...streams]) end(); }); // lets app.close() finish
+  // preClose runs before the HTTP server waits for open connections; onClose would run only after they had gone
+  app.addHook("preClose", async () => { for (const end of [...streams]) end(); });
   app.get("/v1/stream", (req, rep) => {
     rep.hijack(); // we own the raw response from here
     rep.raw.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-store", connection: "keep-alive" });

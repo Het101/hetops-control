@@ -93,6 +93,15 @@ describe("hardening", () => {
     await new Promise(r => setTimeout(r, 100)); reg.stop();
     expect(calls).toBeLessThanOrEqual(5); // one timer: ~1 immediate + ~3 ticks (two timers would be ~8)
   });
+  it("closes promptly while a stream client is connected", async () => {
+    const reg = new Registry("lab", [fake()], () => t0); await reg.runOnce("fake");
+    const app = buildServer(reg, "s3cret"); app.log.level = "silent"; await app.listen({ port: 0, host: "127.0.0.1" });
+    const port = (app.server.address() as { port: number }).port;
+    const res = await fetch(`http://127.0.0.1:${port}/v1/stream`, { headers: { authorization: "Bearer s3cret" } });
+    const reader = res.body!.getReader(); await reader.read();
+    const t = Date.now(); await app.close(); expect(Date.now() - t).toBeLessThan(1000);
+    expect((await reader.read()).done).toBe(true); expect(reg.listenerCount()).toBe(0);
+  });
   it("cleans up SSE listeners after a client abort", async () => {
     const reg = new Registry("lab", [fake()], () => t0); await reg.runOnce("fake");
     const app = buildServer(reg, "s3cret"); await app.listen({ port: 0, host: "127.0.0.1" });

@@ -1,8 +1,9 @@
-import { z } from "zod"; import { EntitySchema, StatusSchema } from "./entity.js"; import { EventSchema } from "./event.js";
-export const ServerViewSchema = z.object({ status: StatusSchema, reachable: z.boolean(), since: z.string().datetime(), agentVersion: z.string().optional() });
-// every server is always present (never-connected ones as unknown), so keys are explicit rather than a partial record
-export const CenterStateSchema = z.object({ generatedAt: z.string().datetime(),
-  servers: z.object({ lab: ServerViewSchema, staging: ServerViewSchema, ops: ServerViewSchema }), entities: z.array(EntitySchema) });
+import { z } from "zod"; import { EntitySchema, ServerIdSchema, StatusSchema, type ServerId } from "./entity.js"; import { EventSchema } from "./event.js";
+export const ServerViewSchema = z.object({ status: StatusSchema, statusReason: z.string().optional(), reachable: z.boolean(),
+  since: z.string().datetime(), agentVersion: z.string().optional() });
+// one required key per server id (never-connected ones show as unknown); a z.record would make every key optional
+const serverKeys = Object.fromEntries(ServerIdSchema.options.map(s => [s, ServerViewSchema])) as Record<ServerId, typeof ServerViewSchema>;
+export const CenterStateSchema = z.object({ generatedAt: z.string().datetime(), servers: z.object(serverKeys).strict(), entities: z.array(EntitySchema) });
 export const CenterMessageSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("state"), state: CenterStateSchema }),
   z.object({ type: z.literal("event"), event: EventSchema }) ]);

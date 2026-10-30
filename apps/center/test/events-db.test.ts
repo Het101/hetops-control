@@ -11,6 +11,7 @@ describe("events db", () => {
       db.add({ at: ago(1), server: "ops", source: "argo", kind: "sync", summary: "newest", actor: "argo" });
       expect(db.recent(2).map(e => e.summary)).toEqual(["newest", "middle"]);
       const mid = db.recent(2)[1]!; expect(mid.entity).toBe("lab/app/x"); expect(mid).not.toHaveProperty("actor"); // NULL columns are omitted
+      expect(db.recent(0)).toHaveLength(1); expect(db.recent(-1)).toHaveLength(1); expect(db.recent(9999)).toHaveLength(3); // clamped to 1..500
       db.prune(30); expect(db.recent(10).map(e => e.summary)).toEqual(["newest", "middle"]);
     } finally { db.close(); rmSync(dir, { recursive: true, force: true }); }
   });
