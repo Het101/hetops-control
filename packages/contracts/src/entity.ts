@@ -9,6 +9,10 @@ export const StatusSchema = z.enum(["ok", "attention", "down", "unknown"]);
  *  deploy   revision: string, health: string, syncStatus: string, ageMin: minutes
  *  slo      objective: % (target), current: % (measured), budgetLeft: % of error budget, windowDays: days
  *  decision a CrowdSec ban: ip, scenario, origin, expiresIn: seconds
+ *  app      undeployedCommit: string (a newer commit than the deployed one, when the platform reports it)
+ *  check    drift: boolean (Bedrock found the host differs from its code)
+ * The center raises a fresh entity to attention/down when: an alert fires at warning/critical, a backup's lastOk is over 26 h old
+ * (or missing), an slo's budgetLeft <= 0, an app has an undeployedCommit, a check reports drift: true.
  */
 export const EntityKindSchema = z.enum(["server", "cluster", "node", "app", "argo-app", "site", "alert", "backup", "check", "deploy", "slo", "decision"]);
 type F<T> = { value: T; unit?: string; max?: number };
@@ -17,6 +21,8 @@ export type SiteFacts = { httpStatus?: F<number>; latencyMs?: F<number>; tlsDays
 export type BackupFacts = { ageHours?: F<number>; sizeBytes?: F<number>; lastOk?: F<string>; restoreVerified?: F<boolean> };
 export type DeployFacts = { revision?: F<string>; health?: F<string>; syncStatus?: F<string>; ageMin?: F<number> };
 export type SloFacts = { objective?: F<number>; current?: F<number>; budgetLeft?: F<number>; windowDays?: F<number> };
+export type AppFacts = { undeployedCommit?: F<string> };
+export type CheckFacts = { drift?: F<boolean> };
 export type DecisionFacts = { ip?: F<string>; scenario?: F<string>; origin?: F<string>; expiresIn?: F<number> };
 export const FactSchema = z.object({ value: z.union([z.number(), z.string(), z.boolean()]), unit: z.string().optional(), max: z.number().optional() });
 export const LinkSchema = z.object({ label: z.string(), href: z.string().url() });
