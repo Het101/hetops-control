@@ -53,7 +53,7 @@ jobs:
     needs: images
     runs-on: ubuntu-24.04-arm
     concurrency:
-      group: publish-main
+      group: publish-main-${{ matrix.app }}   # per image: a shared group let a newer run cancel the other app's queued publish
       cancel-in-progress: false
     permissions:
       contents: read
