@@ -39,7 +39,7 @@ describe("store details", () => {
     const st = new Store(() => at("10")); const got: string[] = []; st.on(m => got.push(m.type));
     st.apply("lab", state("ok"));
     const down = st.markUnreachable("lab", at("05"));
-    expect(down.map(e => e.summary)).toEqual(["lab unreachable (agent silent since 12:00:05)"]);
+    expect(down.map(e => e.summary)).toEqual(["lab unreachable (agent silent since 12:00:05 UTC)"]);
     expect(st.markUnreachable("lab", at("06"))).toEqual([]);
     expect(st.snapshot().entities[0]!.statusReason).toBe("agent unreachable since 2026-10-30T12:00:05.000Z");
     expect(st.apply("lab", state("attention")).map(e => e.summary)).toEqual(["lab reachable again", "api (lab) ok → attention"]);
@@ -103,5 +103,11 @@ describe("server roll-up", () => {
   });
   it("reachable with no data and no failing source stays unknown", () => {
     const st = new Store(() => at("00")); st.apply("lab", with_()); expect(lab(st)).toMatchObject({ status: "unknown", statusReason: "no data yet" });
+  });
+  it("a source that has not run yet is pending, not failing", () => {
+    const st = new Store(() => at("00")); const pend = { id: "kubernetes", periodMs: 10000, ok: false };
+    st.apply("lab", { ...with_(), sources: [pend] }); expect(lab(st)).toMatchObject({ status: "unknown", statusReason: "starting" }); expect(lab(st).failingSources).toBeUndefined();
+    st.apply("lab", { ...with_(e("a", "ok")), sources: [pend, { id: "argo", periodMs: 1, ok: true }] }); expect(lab(st)).toMatchObject({ status: "ok" });
+    st.apply("lab", { ...with_(e("a", "ok")), sources: [{ ...pend, error: "boom" }] }); expect(lab(st)).toMatchObject({ status: "attention", statusReason: "1 source failing" });
   });
 });

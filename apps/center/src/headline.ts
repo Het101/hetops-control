@@ -38,12 +38,12 @@ export function headline(s: CenterState): Headline {
       items.push({ sev: 2, blind: true, at, line: `${text}: ${detail}`, need: { entity: `${id}/source/${src.id}`, server: id, text, detail } });
     }
     const covered = items.some(i => i.need.server === id);
-    if (!covered && v.status === "unknown") {
+    if (!covered && v.status === "unknown" && v.statusReason !== "starting") {
       const text = `${id} is reachable but reports nothing yet`;
       items.push({ sev: 2, blind: true, at, line: text, need: { entity: id, server: id, text, detail: v.statusReason ?? "no data" } });
     } else if (!covered && (v.status === "attention" || v.status === "down")) { // e.g. stale readings
       const text = `${id} needs a look`;
-      items.push({ sev: v.status === "down" ? 3 : 2, blind: false, at, line: `${id}: ${v.statusReason ?? v.status}`, need: { entity: id, server: id, text, detail: v.statusReason ?? v.status } });
+      items.push({ sev: v.status === "down" ? 3 : 2, blind: v.status === "attention", at, line: `${id}: ${v.statusReason ?? v.status}`, need: { entity: id, server: id, text, detail: v.statusReason ?? v.status } });
     }
   }
   items.sort((a, b) => b.sev - a.sev || b.at - a.at);

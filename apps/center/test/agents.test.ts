@@ -27,11 +27,11 @@ describe("agent link", () => {
   it("fills the store from a real agent, then marks it unreachable when the agent closes", async () => {
     const { app, store, db } = await setup();
     await vi.waitFor(() => expect(store.snapshot().entities.map(e => e.id)).toEqual(["lab/app/x"]), { timeout: 2000 });
-    expect(store.snapshot().servers.lab).toMatchObject({ reachable: true, status: "attention", statusReason: "1 source failing" }) /* the restarts source has not run yet */;
+    expect(store.snapshot().servers.lab).toMatchObject({ reachable: true, status: "ok" });
     expect(store.snapshot().entities[0]!.source).toBe("fake");
     await app.close(); // ends the open stream (preClose)
     await vi.waitFor(() => expect(store.snapshot().servers.lab.reachable).toBe(false), { timeout: 25_000 });
-    expect(db.recent(5)[0]!.summary).toMatch(/^lab unreachable \(agent silent since \d\d:\d\d:\d\d\)$/);
+    expect(db.recent(5)[0]!.summary).toMatch(/^lab unreachable \(agent silent since \d\d:\d\d:\d\d UTC\)$/);
   }, 30_000);
   it("records events streamed by the agent", async () => {
     const { reg, store, db } = await setup();
