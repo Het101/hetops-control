@@ -10,6 +10,7 @@ export const EntitySchema = z.object({
   status: StatusSchema, statusReason: z.string().optional(),
   facts: z.record(FactSchema), links: z.array(LinkSchema), actions: z.array(ActionRefSchema),
   observedAt: z.string().datetime(), parent: z.string().optional(),
+  source: z.string().optional(), // id of the agent source that produced it; the center ages by its period
 });
 export type ServerId = z.infer<typeof ServerIdSchema>; export type Status = z.infer<typeof StatusSchema>;
 export type EntityKind = z.infer<typeof EntityKindSchema>; export type Fact = z.infer<typeof FactSchema>;

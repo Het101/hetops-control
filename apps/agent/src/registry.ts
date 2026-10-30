@@ -44,7 +44,7 @@ export class Registry {
       const entities = out.entities.map((e, i) => {
         const r = EntitySchema.safeParse(e);
         if (!r.success) throw new Error(`invalid entity ${(e as { id?: unknown })?.id ?? i}: ${describe(r.error)}`);
-        return r.data;
+        return { ...r.data, source: id }; // the center ages each entity by its source's period
       });
       const evs = (out.events ?? []).map((e, i) => {
         const r = EventSchema.safeParse(e);
