@@ -1,0 +1,293 @@
+[
+ {
+  "id": "71abf2b5-cfd5-4bd1-97fb-6aba1ca6df43",
+  "at": "2026-10-30T18:53:43.193Z",
+  "source": "argo",
+  "kind": "health",
+  "subject": "control/control-agent",
+  "summary": "control-agent is Healthy (was Progressing)",
+  "actor": "argocd",
+  "severity": "info",
+  "ref": {},
+  "public": true,
+  "dedupe": "argo:health:control-agent:Healthy:23911753"
+ },
+ {
+  "id": "22441c4c-5298-4647-a5a1-83d330524c0a",
+  "at": "2026-10-30T18:53:37.475Z",
+  "source": "argo",
+  "kind": "health",
+  "subject": "control/control-agent",
+  "summary": "control-agent is Progressing (was Healthy)",
+  "actor": "argocd",
+  "severity": "info",
+  "ref": {},
+  "public": true,
+  "dedupe": "argo:health:control-agent:Progressing:23911701"
+ },
+ {
+  "id": "8f5e7a6b-6f0a-4749-b7d8-6d86bf117d44",
+  "at": "2026-10-30T18:53:37.000Z",
+  "source": "argo",
+  "kind": "sync",
+  "subject": "control/control-agent",
+  "summary": "Argo CD synced control-agent to 4b74e97: control: roll out main 8b74612, lock down the lab agent's ingress (#172)",
+  "actor": "argocd",
+  "severity": "info",
+  "ref": {
+   "revision": "4b74e978b6088c49c6f873791ac2cc7af14d94fe",
+   "phase": "Succeeded",
+   "url": "https://github.com/Het101/hetops-k8s-lab/commit/4b74e978b6088c49c6f873791ac2cc7af14d94fe"
+  },
+  "public": true,
+  "dedupe": "argo:sync:control-agent:2026-10-30T18:53:37Z"
+ },
+ {
+  "id": "c76225c2-acc5-4a85-9a21-b8cfaf53b13d",
+  "at": "2026-10-30T18:52:28.000Z",
+  "source": "argo",
+  "kind": "sync",
+  "subject": "argocd/root",
+  "summary": "Argo CD synced root to 4b74e97: control: roll out main 8b74612, lock down the lab agent's ingress (#172)",
+  "actor": "argocd",
+  "severity": "info",
+  "ref": {
+   "revision": "4b74e978b6088c49c6f873791ac2cc7af14d94fe",
+   "phase": "Succeeded",
+   "url": "https://github.com/Het101/hetops-k8s-lab/commit/4b74e978b6088c49c6f873791ac2cc7af14d94fe"
+  },
+  "public": true,
+  "dedupe": "argo:sync:root:2026-10-30T18:52:28Z"
+ },
+ {
+  "id": "642837d1-4490-408c-9ab8-dc710403c5dc",
+  "at": "2026-10-30T13:25:50.295Z",
+  "source": "falco",
+  "kind": "detection",
+  "subject": "host/my-workspace",
+  "summary": "Drop and execute new binary in container: host/my-workspace",
+  "actor": "falco",
+  "severity": "crit",
+  "ref": {
+   "rule": "Drop and execute new binary in container",
+   "priority": "Critical",
+   "output": "13:25:50.295375714: Critical Executing binary not part of base image | proc_exe=/src/node_modules/.pnpm/esbuild@0.25.12/node_modules/esbuild/bin/esbuild proc_sname=node gparent=node proc_exe_ino_ctime=1793366750274691561 proc_exe_ino_mtime=1793366749665684682 proc_exe_ino_ctime_duration_proc_start=1"
+  },
+  "public": false,
+  "dedupe": "falco:Drop and execute new binary in container:host/my-workspace:2026-10-30T13:25:50.295375714Z"
+ },
+ {
+  "id": "84a7fe31-af87-42b3-aefe-8046204897ea",
+  "at": "2026-10-30T13:25:50.252Z",
+  "source": "falco",
+  "kind": "detection",
+  "subject": "host/my-workspace",
+  "summary": "Drop and execute new binary in container: host/my-workspace",
+  "actor": "falco",
+  "severity": "crit",
+  "ref": {
+   "rule": "Drop and execute new binary in container",
+   "priority": "Critical",
+   "output": "13:25:50.252049425: Critical Executing binary not part of base image | proc_exe=/src/node_modules/.pnpm/esbuild@0.21.5/node_modules/esbuild/bin/esbuild proc_sname=node gparent=node proc_exe_ino_ctime=1793366750223690985 proc_exe_ino_mtime=1793366746774311298 proc_exe_ino_ctime_duration_proc_start=15"
+  },
+  "public": false,
+  "dedupe": "falco:Drop and execute new binary in container:host/my-workspace:2026-10-30T13:25:50.252049425Z"
+ },
+ {
+  "id": "728bdeb4-c179-4e63-98c9-3a8ce6d8b68a",
+  "at": "2026-10-29T21:39:44.581Z",
+  "source": "k8s",
+  "kind": "delete",
+  "subject": "chaos/chaos-selftest",
+  "summary": "pod chaos-selftest-29878410-jrfzh deleted",
+  "actor": "unknown",
+  "severity": "info",
+  "ref": {},
+  "public": true,
+  "dedupe": "k8s:pod-delete:c375a665-1079-4314-b90d-ed7b69dfade6"
+ },
+ {
+  "id": "664a3c48-f612-4b13-a995-0c5cee65a510",
+  "at": "2026-10-29T21:39:40.000Z",
+  "source": "k8s",
+  "kind": "warning",
+  "subject": "chaos/chaos-selftest",
+  "summary": "Unhealthy: Liveness probe failed: Get \"http://192.0.2.131:4191/live\": dial tcp 192.0.2.131:4191: connect: connection refused",
+  "actor": "kubelet",
+  "severity": "warn",
+  "ref": {},
+  "public": true,
+  "dedupe": "k8s:warn:chaos/chaos-selftest:Unhealthy:Liveness probe failed: Get \"http://192.0.2.131:4191/live\": dial tcp 192.0.2.131:4191: connect: connection refused:5977699"
+ },
+ {
+  "id": "79305253-9b07-428e-a7b0-2ed26606bff3",
+  "at": "2026-10-29T21:39:06.367Z",
+  "source": "chaos",
+  "kind": "experiment",
+  "subject": "clinic/namespace",
+  "summary": "\"Nuke the clinic namespace\" recovered in 128.0 s · cost 1.4% of the weekly budget",
+  "actor": "self-test",
+  "severity": "info",
+  "ref": {
+   "experimentId": "83239188-f7bb-473d-82b7-cd5f13ac751f",
+   "action": "nuke-namespace",
+   "status": "recovered",
+   "recoveryMs": 127991,
+   "cost": 0.014021164021164021
+  },
+  "public": true,
+  "dedupe": "chaos:83239188-f7bb-473d-82b7-cd5f13ac751f:finish"
+ },
+ {
+  "id": "e5f1be40-6a65-4c18-a6bf-5c2a7e2cfec3",
+  "at": "2026-10-29T21:38:27.000Z",
+  "source": "k8s",
+  "kind": "warning",
+  "subject": "clinic/web",
+  "summary": "Unhealthy: Readiness probe failed: HTTP probe failed with statuscode: 502",
+  "actor": "kubelet",
+  "severity": "warn",
+  "ref": {},
+  "public": true,
+  "dedupe": "k8s:warn:clinic/web:Unhealthy:Readiness probe failed: HTTP probe failed with statuscode: 502:5977699"
+ },
+ {
+  "id": "76a89062-5945-4098-9ce9-e23f57a8a651",
+  "at": "2026-10-29T21:38:21.000Z",
+  "source": "argo",
+  "kind": "heal",
+  "subject": "clinic/clinic",
+  "summary": "Argo CD self-healed clinic (back to 35bd7f5)",
+  "actor": "argocd",
+  "severity": "info",
+  "ref": {
+   "revision": "35bd7f5f4675698cda636279ddaf8a1cb92d2de4",
+   "phase": "Succeeded"
+  },
+  "public": true,
+  "dedupe": "argo:sync:clinic:2026-10-29T21:38:21Z"
+ },
+ {
+  "id": "eac42a0f-1c05-49ae-8b77-dc896d4fd639",
+  "at": "2026-10-29T21:38:20.208Z",
+  "source": "k8s",
+  "kind": "rollout",
+  "subject": "clinic/web",
+  "summary": "clinic/web Deployment created (clinic-web:5fdbbdb)",
+  "actor": "argocd",
+  "severity": "info",
+  "ref": {},
+  "public": true,
+  "dedupe": "k8s:create:30a771cd-66d8-439f-b21a-ffb3ff99b4e3"
+ },
+ {
+  "id": "86d8e371-2880-41ca-95a3-38de503511f7",
+  "at": "2026-10-29T21:38:20.193Z",
+  "source": "k8s",
+  "kind": "rollout",
+  "subject": "clinic/worker",
+  "summary": "clinic/worker Deployment created (clinic-api:5fdbbdb)",
+  "actor": "argocd",
+  "severity": "info",
+  "ref": {},
+  "public": true,
+  "dedupe": "k8s:create:0450dbc9-c1a4-46bb-add2-c43378e46e2b"
+ },
+ {
+  "id": "35d8261e-2fc7-410e-b283-052e5983d937",
+  "at": "2026-10-29T21:37:44.000Z",
+  "source": "argo",
+  "kind": "heal",
+  "subject": "clinic/clinic",
+  "summary": "Argo CD self-healed clinic (back to 35bd7f5)",
+  "actor": "argocd",
+  "severity": "info",
+  "ref": {
+   "revision": "35bd7f5f4675698cda636279ddaf8a1cb92d2de4",
+   "phase": "Succeeded"
+  },
+  "public": true,
+  "dedupe": "argo:sync:clinic:2026-10-29T21:37:44Z"
+ },
+ {
+  "id": "9f0bb472-f296-480d-8cdd-4f5a1e45f98c",
+  "at": "2026-10-29T21:37:21.001Z",
+  "source": "k8s",
+  "kind": "delete",
+  "subject": "clinic/worker",
+  "summary": "clinic/worker Deployment deleted",
+  "actor": "unknown",
+  "severity": "warn",
+  "ref": {},
+  "public": true,
+  "dedupe": "k8s:delete:8c73627b-77c9-4c64-8c93-2b4d53b732cb"
+ },
+ {
+  "id": "93c27274-c697-4e92-b79c-abc3760d89b7",
+  "at": "2026-10-29T21:36:58.376Z",
+  "source": "chaos",
+  "kind": "experiment",
+  "subject": "clinic/namespace",
+  "summary": "The nightly self-test ran \"Nuke the clinic namespace\"",
+  "actor": "self-test",
+  "severity": "warn",
+  "ref": {
+   "experimentId": "83239188-f7bb-473d-82b7-cd5f13ac751f",
+   "action": "nuke-namespace"
+  },
+  "public": true,
+  "dedupe": "chaos:83239188-f7bb-473d-82b7-cd5f13ac751f:start"
+ },
+ {
+  "id": "f3157f2f-f150-41c1-a9fb-1238cef22bf9",
+  "at": "2026-10-29T21:35:33.441Z",
+  "source": "k8s",
+  "kind": "scale",
+  "subject": "clinic/api",
+  "summary": "clinic/api scaled 3 → 5",
+  "actor": "hpa",
+  "severity": "info",
+  "ref": {},
+  "public": true,
+  "dedupe": "k8s:scale:45133a15-b9cc-4726-92d1-7c01b6dc14fd:23648523"
+ },
+ {
+  "id": "d9d837c8-21fb-48b3-bc77-8e72cb6de8e0",
+  "at": "2026-10-29T21:32:47.614Z",
+  "source": "k8s",
+  "kind": "scale",
+  "subject": "clinic/web",
+  "summary": "clinic/web scaled 0 → 2",
+  "actor": "argocd",
+  "severity": "info",
+  "ref": {},
+  "public": true,
+  "dedupe": "k8s:scale:4f045b4b-0b94-4a41-acb8-f85682f8ac0e:23647543"
+ },
+ {
+  "id": "2cbb7cbc-8531-4ea3-b6ac-48f5ac1772ac",
+  "at": "2026-10-29T21:32:33.000Z",
+  "source": "k8s",
+  "kind": "restart",
+  "subject": "clinic/api",
+  "summary": "pod api-7dbd6d5b94-rprrk: api restarted (Error)",
+  "actor": "kubelet",
+  "severity": "warn",
+  "ref": {},
+  "public": true,
+  "dedupe": "k8s:restart:49db98b3-adb1-41af-a944-887ac12735da:api:1"
+ },
+ {
+  "id": "5be96830-1d6c-4aa0-8310-03c8ea0afd2b",
+  "at": "2026-10-29T21:31:17.000Z",
+  "source": "k8s",
+  "kind": "restart",
+  "subject": "clinic/api",
+  "summary": "pod api-7dbd6d5b94-6g4px: api restarted (OOMKilled)",
+  "actor": "kubelet",
+  "severity": "crit",
+  "ref": {},
+  "public": true,
+  "dedupe": "k8s:restart:2a09c246-c2c8-4d25-ab42-2c1758a21e78:api:1"
+ }
+]

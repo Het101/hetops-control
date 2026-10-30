@@ -1,0 +1,5 @@
+[
+ { "host": "hetops-3", "state": "clean", "at": 1793327801762 },
+ { "host": "my-workspace", "state": "clean", "at": 1793327801763 },
+ { "host": "vm2", "state": "clean", "at": 1793327801764 }
+]
