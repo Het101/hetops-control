@@ -52,30 +52,68 @@ export function bezier(x1: number, y1: number, x2: number, y2: number) {
     return c(y1, y2, s);
   };
 }
-const ease = bezier(.22, 1, .36, 1); // --ease in tokens.css
+const ease = bezier(.22, 1, .36, 1), easeIO = bezier(.65, 0, .35, 1), shake = bezier(.45, .05, .55, .95); // tokens.css --ease, --ease-io; the shaken leaf
 
+/** a scale about the point (cx, cy): an element's own centre, as CSS transform-box: fill-box would give */
+const scaleAt = (s: number, cx: number, cy: number) => `translate(${cx} ${cy}) scale(${s.toFixed(4)}) translate(${-cx} ${-cy})`;
+
+type Frame = { transform: string; opacity: number };
 /**
- * One frame of the mock's ember keyframes, `e` seconds into a particle's life (negative: still in its delay, so it rests
- * untouched as a CSS animation would), with a cycle of `f` seconds and a sideways drift `dx`. Transforms are about the
- * scene origin, exactly as the CSS ones were (an SVG element's transform-box is the view box).
+ * One frame of the mock's ember keyframes for a particle centred at (cx, cy), `e` seconds into its life, with a cycle of
+ * `f` seconds and a sideways drift `dx`. In its delay (e < 0) it is hidden, as the keyframes' first frame is. The leaf
+ * spins and the ember shrinks about its own centre.
  *   fall: linear; translate(dx, 120) rotate(320deg) at the end; opacity 0, .95 at 10%, 0
  *   rise: --ease on every keyframe interval; translate(dx, -70) scale(.3) at the end; opacity 0, 1 at 15%, 0
+ *   drop: the fall once, on the shaken-leaf curve, holding its last frame (e runs from the moment the leaf came loose)
  */
-export function spark(kind: "fall" | "rise", e: number, f: number, dx: number): { transform: string; opacity: number } | undefined {
-  if (e < 0) return undefined;
-  const p = (e % f) / f;
-  if (kind === "fall") return { transform: `translate(${(dx * p).toFixed(2)} ${(120 * p).toFixed(2)}) rotate(${(320 * p).toFixed(1)})`, opacity: p < .1 ? .95 * p / .1 : .95 * (1 - (p - .1) / .9) };
-  const k = ease(p);
-  return { transform: `translate(${(dx * k).toFixed(2)} ${(-70 * k).toFixed(2)}) scale(${(1 - .7 * k).toFixed(4)})`, opacity: p < .15 ? ease(p / .15) : 1 - ease((p - .15) / .85) };
+export function spark(kind: "fall" | "rise" | "drop", e: number, f: number, dx: number, cx: number, cy: number): Frame {
+  if (e < 0) return { transform: "", opacity: 0 };
+  if (kind === "rise") {
+    const p = (e % f) / f, k = ease(p);
+    return { transform: `translate(${(dx * k).toFixed(2)} ${(-70 * k).toFixed(2)}) ${scaleAt(1 - .7 * k, cx, cy)}`, opacity: p < .15 ? ease(p / .15) : 1 - ease((p - .15) / .85) };
+  }
+  const once = kind === "drop", p = once ? Math.min(1, e / f) : (e % f) / f, c = once ? shake : (x: number) => x, k = c(p);
+  return { transform: `translate(${(dx * k).toFixed(2)} ${(120 * k).toFixed(2)}) rotate(${(320 * k).toFixed(1)} ${cx} ${cy})`, opacity: p < .1 ? .95 * c(p / .1) : .95 * (1 - c((p - .1) / .9)) };
 }
 
-type Part = { el: SVGGraphicsElement; kind: string; x: number; ox: number; oy: number; amp: number; ph: number; f: number };
-const n = (v: string | undefined, d = 0) => (v === undefined ? d : Number(v));
+/**
+ * The Who-knocks map's marks, about their own centres: a ring knocking outwards (2.6 s, --ease, hidden in its delay), a ban's dot breathing
+ * (3.6 s, --ease-io, back and forth), and the lab's slow scan ring (6 s, --ease). e < 0: still in its delay, untouched.
+ */
+export function mark(kind: "ring" | "breathe" | "scan", e: number, f: number, cx: number, cy: number): Frame | undefined {
+  if (e < 0) return undefined;
+  const n = Math.floor(e / f), p = (e - n * f) / f;
+  if (kind === "breathe") { const k = easeIO(n % 2 ? 1 - p : p); return { transform: scaleAt(.82 + .26 * k, cx, cy), opacity: .72 + .28 * k }; }
+  const k = ease(p);
+  return kind === "ring" ? { transform: scaleAt(.6 + 1.6 * k, cx, cy), opacity: .9 * (1 - k) } : { transform: scaleAt(.05 + .95 * k, cx, cy), opacity: .5 * (1 - k) };
+}
 
 /**
- * Svelte action on the forest svg: one requestAnimationFrame loop drives every element marked data-wind, writing one
- * transform attribute per group (never layout). It stops when `on` is false (reduced motion), when the tab is hidden and
- * while the forest is scrolled out of view. `key` changes when the trees are regrown, so the parts are collected again.
+ * The shared clock: one requestAnimationFrame for every scene on the page, ticking at 30 Hz, so the forest and the map
+ * repaint in the same frame. A scene subscribes while it runs.
+ */
+const scenes = new Set<(now: number) => void>();
+let raf = 0, last = 0;
+const tick = (now: number) => {
+  raf = scenes.size ? requestAnimationFrame(tick) : 0;
+  // the motion is slow, so 30 updates a second read as smooth; repainting at 60 would double the cost for nothing
+  if (now - last < 30) return;
+  last = now;
+  for (const f of scenes) f(now);
+};
+const join = (f: (now: number) => void) => { scenes.add(f); if (!raf) raf = requestAnimationFrame(tick); };
+const leave = (f: (now: number) => void) => { scenes.delete(f); };
+
+type Part = { el: SVGGraphicsElement; kind: string; x: number; ox: number; oy: number; amp: number; ph: number; f: number; born: number };
+const n = (v: string | undefined, d = 0) => (v === undefined ? d : Number(v));
+/** what a paused element shows: the streak, the knock and scan rings and the sparks are hidden until the clock runs */
+const HOLD: Record<string, [string, string]> = { streak: ["opacity", "0"], scan: ["stroke-opacity", "0"], ring: ["stroke-opacity", "0"], fall: ["fill-opacity", "0"], rise: ["fill-opacity", "0"], drop: ["fill-opacity", "0"] };
+
+/**
+ * Svelte action on a scene svg (the forest, the knock map): the shared 30 Hz clock drives every element marked data-wind,
+ * writing a transform and an opacity per element (never layout). It stops when `on` is false (reduced motion), when the tab
+ * is hidden and while the svg is scrolled out of view. `key` changes when the scene's elements change; they are collected
+ * again on the next tick, once the DOM has them.
  *   data-wind="pivot"   rotate around (data-ox, data-oy) by data-amp degrees per unit of wind at data-x, plus a slow own sway
  *   data-wind="flutter" a leaf cluster's small own circle, livelier in a gust
  *   data-wind="grass"   a run of blades skewed from the ground line
@@ -84,26 +122,34 @@ const n = (v: string | undefined, d = 0) => (v === undefined ? d : Number(v));
  *   data-wind="root"    a root that grows and shrinks over data-f seconds (stroke-dashoffset on a pathLength 1 path)
  *   data-wind="ghost"   the dormant tree's slow breath (opacity)
  *   data-wind="fall"    a leaf falling from a struggling branch, and "rise" an ember rising from it: data-f s cycles after
- *                       data-ph s, drifting data-amp sideways (fill-opacity, which needs no transparency layer)
- * Roots, the ghost and the embers live here rather than in CSS so the whole scene repaints at the loop's 30 Hz, not at 60.
+ *                       data-ph s, drifting data-amp sideways, about their centre (data-ox, data-oy)
+ *   data-wind="drop"    the leaf a restart shakes loose: one fall of data-f s from the moment it appears
+ *   data-wind="ring" | "breathe" | "scan"  the knock map's marks: data-f s cycles after data-ph s, about (data-ox, data-oy)
+ * Opacity is fill-opacity or stroke-opacity on a single shape, which needs no transparency layer.
  */
 export function windy(svg: SVGSVGElement, p: { on: boolean; key: unknown }) {
-  let parts: Part[] = [], raf = 0, on = p.on, seen = true, t0 = performance.now();
-  const collect = () => {
+  let parts: Part[] = [], on = p.on, seen = true, dirty = true, running = false;
+  const t0 = performance.now(), born = new WeakMap<Element, number>();
+  const collect = (now: number) => {
+    dirty = false;
     parts = [...svg.querySelectorAll<SVGGraphicsElement>("[data-wind]")].map(el => {
       const d = el.dataset;
-      return { el, kind: d.wind!, x: n(d.x), ox: n(d.ox), oy: n(d.oy), amp: n(d.amp, 1), ph: n(d.ph), f: n(d.f, 1) };
+      if (!born.has(el)) born.set(el, now);
+      return { el, kind: d.wind!, x: n(d.x), ox: n(d.ox), oy: n(d.oy), amp: n(d.amp, 1), ph: n(d.ph), f: n(d.f, 1), born: born.get(el)! };
     });
   };
   const still = () => {
-    for (const q of parts) { q.el.removeAttribute("transform"); q.el.style.removeProperty("stroke-dashoffset"); q.el.style.removeProperty("opacity"); q.el.removeAttribute("fill-opacity"); if (q.kind === "streak") q.el.style.opacity = "0"; }
+    if (dirty) collect(performance.now());
+    for (const q of parts) {
+      for (const a of ["transform", "fill-opacity", "stroke-opacity"]) q.el.removeAttribute(a);
+      q.el.style.removeProperty("stroke-dashoffset"); q.el.style.removeProperty("opacity");
+      const h = HOLD[q.kind];
+      if (h?.[0] === "opacity") q.el.style.opacity = h[1]; else if (h) q.el.setAttribute(h[0], h[1]);
+    }
   };
-  let last = 0;
+  const put = (el: Element, f: Frame | undefined, attr: string) => { if (f) { el.setAttribute("transform", f.transform); el.setAttribute(attr, f.opacity.toFixed(3)); } };
   const frame = (now: number) => {
-    raf = requestAnimationFrame(frame);
-    // the wind is slow, so 30 updates a second read as smooth; repainting the forest at 60 would double its cost for nothing
-    if (now - last < 30) return;
-    last = now;
+    if (dirty) collect(now);
     const t = (now - t0) / 1000 + 4; // start just before the first gust
     for (const q of parts) {
       switch (q.kind) {
@@ -129,11 +175,10 @@ export function windy(svg: SVGSVGElement, p: { on: boolean; key: unknown }) {
           const b = .5 - .5 * Math.cos(2 * Math.PI * t / q.f + q.ph);
           q.el.style.strokeDashoffset = (.04 + .46 * b).toFixed(3); break;
         }
-        case "fall": case "rise": {
-          const s = spark(q.kind, t - 4, q.f, q.amp);
-          if (s) { q.el.setAttribute("transform", s.transform); q.el.setAttribute("fill-opacity", s.opacity.toFixed(3)); }
-          break;
-        }
+        case "fall": case "rise": put(q.el, spark(q.kind, t - 4 - q.ph, q.f, q.amp, q.ox, q.oy), "fill-opacity"); break;
+        case "drop": put(q.el, spark("drop", (now - q.born) / 1000, q.f, q.amp, q.ox, q.oy), "fill-opacity"); break;
+        case "ring": case "scan": put(q.el, mark(q.kind, t - 4 - q.ph, q.f, q.ox, q.oy), "stroke-opacity"); break;
+        case "breathe": put(q.el, mark("breathe", t - 4 - q.ph, q.f, q.ox, q.oy), "fill-opacity"); break;
         case "ghost": q.el.style.opacity = (.47 + .15 * Math.sin(2 * Math.PI * t / 9 + q.ph)).toFixed(3); break;
         case "mote": {
           const x = ((q.ox + t * 9 * q.f) % 1300) - 50, y = q.oy + Math.sin(t * .7 * q.f + q.ph) * 10;
@@ -143,15 +188,17 @@ export function windy(svg: SVGSVGElement, p: { on: boolean; key: unknown }) {
     }
   };
   const run = () => {
-    cancelAnimationFrame(raf); raf = 0;
-    if (on && seen && !document.hidden) raf = requestAnimationFrame(frame); else still();
+    const go = on && seen && !document.hidden;
+    if (go && !running) join(frame);
+    if (!go) { leave(frame); still(); }
+    running = go;
   };
   const io = typeof IntersectionObserver === "function" ? new IntersectionObserver(([e]) => { seen = !!e?.isIntersecting; run(); }) : undefined;
   io?.observe(svg);
   document.addEventListener("visibilitychange", run);
-  collect(); run();
+  run();
   return {
-    update(next: { on: boolean; key: unknown }) { on = next.on; collect(); run(); },
-    destroy() { cancelAnimationFrame(raf); io?.disconnect(); document.removeEventListener("visibilitychange", run); },
+    update(next: { on: boolean; key: unknown }) { on = next.on; dirty = true; run(); },
+    destroy() { leave(frame); io?.disconnect(); document.removeEventListener("visibilitychange", run); },
   };
 }

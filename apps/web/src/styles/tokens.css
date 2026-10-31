@@ -14,7 +14,10 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans)
 /* raised and pressed surfaces (neumorphic) */
 .raised{background:linear-gradient(145deg,#2f3034,#27282b);box-shadow:-6px -6px 14px var(--hi),8px 10px 22px var(--lo)}
 .pressed{background:linear-gradient(145deg,#25262a,#2d2e32);box-shadow:inset -4px -4px 10px var(--hi),inset 6px 6px 14px var(--lo)}
-.app{display:grid;grid-template-columns:92px 1fr;min-height:100vh;max-width:1500px;margin:0 auto}
+/* the modules mount a moment after the hero (components/Later.svelte): the scrollbar's gutter is kept from the start and the
+   rows never stretch to fill the screen, so the page growing beneath the hero moves nothing already drawn */
+html{scrollbar-gutter:stable}
+.app{display:grid;grid-template-columns:92px 1fr;align-content:start;min-height:100vh;max-width:1500px;margin:0 auto}
 
 /* ---------- rail with animated icons ---------- */
 /* the rail stays put while the page scrolls: sticky to the viewport, full height, so the gear at the foot is always in reach */
@@ -102,15 +105,12 @@ svg.forest{will-change:transform;contain:paint}
 .st i{font-style:normal;font:600 11px var(--mono);letter-spacing:.08em;color:var(--quiet)}
 .st i.warm{color:var(--ember)}
 /* forest motion */
-/* the wind, the breathing roots, the ghost tree, the falling leaves and the rising embers are one 30 Hz rAF loop in lib/wind.ts; these are the CSS halves:
-   the light that runs down the roots on each reading, the weather's colours, a leaf shaken loose */
+/* the wind, the breathing roots, the ghost tree, the falling leaves, the rising embers and a shaken-loose leaf are one 30 Hz rAF loop in lib/wind.ts; these are the CSS halves:
+   the light that runs down the roots on each reading, and the weather's colours */
 .root{stroke-dasharray:1 1}
 .root-pulse{stroke:#d9d7d1;stroke-width:2.4;stroke-dasharray:.16 2;stroke-dashoffset:.16;opacity:0}
 .streak{fill:none;stroke:var(--quiet);stroke-width:.9;stroke-linecap:round}
 .mote{fill:var(--quiet)}
-.drop{animation:fall 4.2s cubic-bezier(.45,.05,.55,.95) forwards}
-@keyframes fall{0%{transform:translate(0,0) rotate(0);opacity:0}10%{opacity:.95}100%{transform:translate(var(--dx,20px),120px) rotate(320deg);opacity:0}}
-/* the falling leaves (.fall) and rising embers (.ember-p) replay the mock's fall and rise keyframes in lib/wind.ts; fall stays for .drop */
 
 /* ---------- modules ---------- */
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:22px;margin-top:24px}
@@ -138,6 +138,10 @@ svg.forest{will-change:transform;contain:paint}
 .knob svg{width:12px;height:12px}
 .knob.ember{background:radial-gradient(circle at 35% 30%,var(--ember-1),var(--ember-2) 60%,var(--ember-3));box-shadow:0 0 14px rgba(242,88,42,.55);color:#2a1408}
 .tag{font:600 10px var(--mono);letter-spacing:.08em;padding:3px 8px;border-radius:999px;color:var(--ink-2)}
+/* a counting number (lib/motion.ts countUp) holds its final width from the first frame: an invisible, zero-height copy
+   of the final value sits above the digits, so the box is never narrower than where the count will end */
+[data-final]{display:inline-block}
+[data-final]::before{content:attr(data-final);display:block;height:0;overflow:hidden;visibility:hidden}
 /* reduced motion: the OS setting, unless Settings chose (data-motion on stills, off keeps motion) */
 @media (prefers-reduced-motion:reduce){:root:not([data-motion="off"]) *,:root:not([data-motion="off"]) *::before,:root:not([data-motion="off"]) *::after{animation:none!important;transition:none!important}:root:not([data-motion="off"]) .mod{opacity:1;transform:none}}
 :root[data-motion="on"] *,:root[data-motion="on"] *::before,:root[data-motion="on"] *::after{animation:none!important;transition:none!important}

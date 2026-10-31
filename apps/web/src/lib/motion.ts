@@ -17,6 +17,9 @@ export function countUp(node: HTMLElement, to: number) {
   let from = 0, raf = 0;
   const run = (target: number) => {
     cancelAnimationFrame(raf);
+    // the box keeps the final number's width while the digits count (tokens.css [data-final]), so a sentence around a
+    // number that grows from 0 to 27 does not rewrap and shift under the reader
+    node.dataset.final = target.toLocaleString();
     if (get(reduced)) { node.textContent = target.toLocaleString(); from = target; return; }
     const start = from, t0 = performance.now(), dur = 1500;
     const tick = (t: number) => {

@@ -71,6 +71,7 @@
   // a real restart (an event that arrives while the page is open) shakes one ember leaf loose from its branch
   type Drop = { id: string; cx: number; cy: number; dx: number };
   let drops = $state<Drop[]>([]);
+  const DROP_S = 4.2;
   const heard = new Set<string>();
   $effect(() => {
     for (const e of events) {
@@ -82,6 +83,8 @@
       if (!b) continue;
       const R = rng(hash(k)), l = b.leaves[Math.floor(R() * b.leaves.length)];
       drops = [...drops, { id: k, cx: b.tip.x + (l?.x ?? 0), cy: b.tip.y + (l?.y ?? 0), dx: Math.round((R() - .2) * 70) }];
+      // the wind loop plays its one fall; then it is gone
+      setTimeout(() => (drops = drops.filter(x => x.id !== k)), DROP_S * 1000 + 100);
     }
   });
 
@@ -99,7 +102,7 @@
   }
 </script>
 
-<svg class="forest" bind:this={svg} use:windy={{ on: !$reduced, key: trees }} viewBox="0 0 1200 320" preserveAspectRatio="xMidYMax meet" role="img" aria-label="One tree per server; branches are apps, leaves are pods, ember leaves are restarts">
+<svg class="forest" bind:this={svg} use:windy={{ on: !$reduced, key: [trees, drops] }} viewBox="0 0 1200 320" preserveAspectRatio="xMidYMax meet" role="img" aria-label="One tree per server; branches are apps, leaves are pods, ember leaves are restarts">
   <defs>
     <radialGradient id="glow"><stop offset="0" stop-color="#4a4b51" stop-opacity=".55"/><stop offset="1" stop-color="#4a4b51" stop-opacity="0"/></radialGradient>
     <radialGradient id="emberHalo"><stop offset=".45" stop-color="#f0582a" stop-opacity=".5"/><stop offset="1" stop-color="#f0582a" stop-opacity="0"/></radialGradient>
@@ -159,13 +162,13 @@
       </g>
       {#each t.branches as b (b.id)}
         {@const s = sparks(t.server, b)}
-        {#each s.falls as f (f.id)}<ellipse class="fall" data-wind="fall" data-f={f.f} data-ph={f.dl} data-amp={f.dx} cx={f.cx} cy={f.cy} rx="3.4" ry="1.9" fill="#f2702f"/>{/each}
-        {#each s.embers as e (e.id)}<circle class="ember-p" data-wind="rise" data-f={e.f} data-ph={e.dl} data-amp={e.dx} cx={e.cx} cy={e.cy} r={e.r} fill="url(#sparkGlow)"/>{/each}
+        {#each s.falls as f (f.id)}<ellipse class="fall" data-wind="fall" data-f={f.f} data-ph={f.dl} data-amp={f.dx} data-ox={f.cx} data-oy={f.cy} fill-opacity="0" cx={f.cx} cy={f.cy} rx="3.4" ry="1.9" fill="#f2702f"/>{/each}
+        {#each s.embers as e (e.id)}<circle class="ember-p" data-wind="rise" data-f={e.f} data-ph={e.dl} data-amp={e.dx} data-ox={e.cx} data-oy={e.cy} fill-opacity="0" cx={e.cx} cy={e.cy} r={e.r} fill="url(#sparkGlow)"/>{/each}
       {/each}
     </g>
     {/if}
   {/each}
-  {#each drops as d (d.id)}<ellipse class="drop" cx={d.cx} cy={d.cy} rx="3.6" ry="2" fill="url(#emberLeaf)" style={`--dx:${d.dx}px`} onanimationend={() => (drops = drops.filter(x => x.id !== d.id))}/>{/each}
+  {#each drops as d (d.id)}<ellipse class="drop" data-wind="drop" data-f={DROP_S} data-amp={d.dx} data-ox={d.cx} data-oy={d.cy} fill-opacity="0" cx={d.cx} cy={d.cy} rx="3.6" ry="2" fill="url(#emberLeaf)"/>{/each}
 </svg>
 <div class="stations">
   {#each stations as s (s.id)}

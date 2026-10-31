@@ -196,10 +196,13 @@ button.row,.open{border:0;background:none;color:inherit;font:inherit;text-align:
 
 /* ---------- Security ---------- */
 .map-mod{min-height:300px}
-.world{width:100%;height:auto;display:block;margin-top:10px}
+.world{position:relative;width:100%;display:block;margin-top:10px}
+.world>svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* the land never changes: its own layer, contained, so the moving marks never repaint it */
+.world .land{contain:strict;will-change:transform}
+.world .marks{will-change:transform;contain:paint}
 .knock{fill:var(--quiet)}
-.knock-ring{fill:none;stroke:var(--quiet);stroke-width:1.2;transform-box:fill-box;transform-origin:center;animation:knock 2.6s var(--ease) infinite;animation-delay:var(--dl,0s)}
-@keyframes knock{from{transform:scale(.6);opacity:.9}to{transform:scale(2.2);opacity:0}}
+.knock-ring{fill:none;stroke:var(--quiet);stroke-width:1.2}
 .knock-l{font:500 11px var(--mono);fill:var(--ink-2)}
 .lab-dot{fill:#fff}
 .lab-ring{fill:none;stroke:#fff;stroke-opacity:.5;stroke-width:1.2}
@@ -238,13 +241,10 @@ a.row{color:inherit;text-decoration:none}
 .grid.home{align-items:stretch}
 .home .dial small{margin-top:1px}
 
-/* ---------- more motion: charts draw in, the map breathes (transform, opacity and stroke only) ---------- */
+/* ---------- more motion: charts draw in (transform, opacity and stroke only); the map's marks move on the scene clock in lib/wind.ts ---------- */
 .reveal{transform-origin:0 0;animation:reveal 2.2s var(--ease-io) .35s backwards}
 @keyframes reveal{from{transform:scaleX(0)}}
-.knock{transform-box:fill-box;transform-origin:center;animation:dot-breathe 3.6s var(--ease-io) infinite alternate;animation-delay:var(--dl,0s)}
-@keyframes dot-breathe{from{transform:scale(.82);opacity:.72}to{transform:scale(1.08);opacity:1}}
-.scan{fill:none;stroke:#fff;stroke-width:1;vector-effect:non-scaling-stroke;transform-box:fill-box;transform-origin:center;opacity:0;animation:scan-out 6s var(--ease) infinite;animation-delay:var(--dl,0s)}
-@keyframes scan-out{0%{transform:scale(.05);opacity:.5}100%{transform:scale(1);opacity:0}}
+.scan{fill:none;stroke:#fff;stroke-width:1;vector-effect:non-scaling-stroke}
 .budget-num b{font-weight:inherit}
 .slider .fill{animation:grow-x 1.6s var(--ease) .3s backwards}
 .slider .thumb{animation:fade .5s var(--ease) 1.3s backwards}
