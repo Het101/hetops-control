@@ -40,6 +40,10 @@ describe("topology edge states", () => {
     expect(edge(r, "public").state).toBe("ok"); // the internet still reaches Cloudflare
     expect(edge(r, "snap-r2").state).toBe("attention");
     expect(edge(r, "snap-disk").state).toBe("ok");
+    // the ember stays on the link: Cloudflare still carries traffic, R2 has only its failing link
+    const n = (id: string) => topology(r, now).nodes.find(x => x.id === id)!;
+    expect(n("cloudflare").state).toBe("ok");
+    expect(n("r2").state).toBe("attention");
     r.servers.lab.reachable = false;
     expect(edge(r, "agent-lab").state).toBe("down");
   });

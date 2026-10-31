@@ -177,8 +177,12 @@ export function topology(state: State, now: number): { nodes: NodeView[]; edges:
     const touching = edges.filter(e => e.from === m.id || e.to === m.id);
     const signals = touching.map((e): Signal => ({ label: e.name, state: e.state, detail: e.reason }));
     if (!m.server) {
-      const st = worst(signals.filter(s => s.state !== "planned"));
-      return { ...m, state: st, reason: st === "ok" ? "every link to it carries traffic" : signals.find(s => s.state === st)?.detail ?? st, signals };
+      // an outside service is fine while anything gets through it; a single failing link is that link's ember, not the service's
+      const live = signals.filter(s => s.state !== "planned");
+      const st = live.some(s => s.state === "ok") ? "ok" : worst(live);
+      const all = live.every(s => s.state === "ok");
+      return { ...m, state: st, reason: st === "ok" ? (all ? "every link to it carries traffic" : "carrying traffic; a link through it needs a look")
+        : signals.find(s => s.state === st)?.detail ?? st, signals };
     }
     const v = state.servers[m.server];
     const cluster = state.entities.find(e => e.kind === "cluster" && e.server === m.server);
