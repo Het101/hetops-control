@@ -1,4 +1,6 @@
 import { MAX_SERIES, EntitySchema, EventSchema, SeriesSchema, type AgentState, type Entity, type Event, type Series, type ServerId, type SourceReport, type StreamMessage } from "@hetops-control/contracts";
+import type { Action, ActionDescriptor } from "@hetops-control/contracts";
+import { describeAction } from "./actions/index.js";
 
 export type SourceContext = { server: ServerId; now: () => Date };
 // watch: optional push; the source calls changed() when its data moved, and the registry runs it soon instead of at the next period
@@ -10,8 +12,10 @@ export class Registry {
   private timers: NodeJS.Timeout[] = [];
   private running = new Set<string>();
   private kicks = new Map<string, NodeJS.Timeout>();
+  private descriptors: ActionDescriptor[];
 
-  constructor(private server: ServerId, private sources: Source[], private now: () => Date = () => new Date()) {
+  constructor(private server: ServerId, private sources: Source[], private now: () => Date = () => new Date(), private actions: Action<any>[] = []) {
+    this.descriptors = actions.map(describeAction); // once, so a bad params schema fails at start
     for (const s of sources) this.data.set(s.id, { entities: [], series: [], report: { id: s.id, periodMs: s.periodMs, ok: false } });
   }
 
@@ -106,8 +110,14 @@ export class Registry {
       reports.push(notes.length ? { ...d.report, ok: false, error: notes.join("; ") } : d.report);
     }
     const byId = (a: { id: string }, b: { id: string }) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+    // each entity offers the actions that apply to it; the source never has to know which verbs this agent runs
+    const offer = (e: Entity): Entity => {
+      const refs = this.actions.filter(a => a.targets.includes(e.kind) && a.applies(e)).map(a => ({ id: a.id, label: a.label, risk: a.risk }));
+      return refs.length ? { ...e, actions: [...e.actions, ...refs] } : e;
+    };
     return { server: this.server, version: process.env.VERSION ?? "dev", generatedAt: this.now().toISOString(),
-      entities: entities.sort(byId), sources: reports, series: series.sort(byId) };
+      entities: entities.sort(byId).map(offer), sources: reports, series: series.sort(byId),
+      ...(this.descriptors.length ? { actions: this.descriptors } : {}) };
   }
 
   on(listener: (m: StreamMessage) => void): () => void {

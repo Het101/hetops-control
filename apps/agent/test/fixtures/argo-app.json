@@ -1,0 +1,46 @@
+{
+ "apiVersion": "argoproj.io/v1alpha1",
+ "kind": "Application",
+ "metadata": {
+  "name": "cert-manager",
+  "namespace": "argocd",
+  "annotations": {
+   "argocd.argoproj.io/sync-wave": "-1"
+  }
+ },
+ "spec": {
+  "project": "security",
+  "source": {
+   "repoURL": "https://charts.jetstack.io",
+   "chart": "cert-manager",
+   "targetRevision": "v1.21.3",
+   "helm": {
+    "releaseName": "cert-manager",
+    "valuesObject": {
+     "crds": { "enabled": true, "keep": true },
+     "global": { "leaderElection": { "namespace": "cert-manager" } },
+     "startupapicheck": { "enabled": false },
+     "resources": { "requests": { "cpu": "10m", "memory": "64Mi" }, "limits": { "memory": "128Mi" } },
+     "webhook": { "resources": { "requests": { "cpu": "10m", "memory": "32Mi" }, "limits": { "memory": "64Mi" } } },
+     "cainjector": { "resources": { "requests": { "cpu": "10m", "memory": "64Mi" }, "limits": { "memory": "128Mi" } } }
+    }
+   }
+  },
+  "destination": { "server": "https://kubernetes.default.svc", "namespace": "cert-manager" },
+  "syncPolicy": {
+   "automated": { "prune": true, "selfHeal": true },
+   "syncOptions": ["CreateNamespace=true", "ServerSideApply=true"],
+   "retry": { "limit": 5, "backoff": { "duration": "15s", "factor": 2, "maxDuration": "3m" } }
+  }
+ },
+ "status": {
+  "sync": { "status": "Synced", "revision": "v1.21.3" },
+  "health": { "status": "Healthy" },
+  "operationState": {
+   "phase": "Succeeded",
+   "message": "successfully synced (all tasks run)",
+   "operation": { "sync": { "revision": "v1.21.3" } },
+   "syncResult": { "revision": "v1.21.3" }
+  }
+ }
+}
