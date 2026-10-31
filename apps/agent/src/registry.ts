@@ -3,13 +3,15 @@ import type { Action, ActionDescriptor } from "@hetops-control/contracts";
 import { describeAction } from "./actions/index.js";
 
 export type SourceContext = { server: ServerId; now: () => Date };
-export interface Source { id: string; periodMs: number; collect(ctx: SourceContext): Promise<{ entities: Entity[]; events?: Event[]; series?: Series[] }> }
+// watch: optional push; the source calls changed() when its data moved, and the registry runs it soon instead of at the next period
+export interface Source { id: string; periodMs: number; watch?(changed: () => void): void; collect(ctx: SourceContext): Promise<{ entities: Entity[]; events?: Event[]; series?: Series[] }> }
 
 export class Registry {
   private data = new Map<string, { entities: Entity[]; series: Series[]; report: SourceReport }>();
   private listeners = new Set<(m: StreamMessage) => void>();
   private timers: NodeJS.Timeout[] = [];
   private running = new Set<string>();
+  private kicks = new Map<string, NodeJS.Timeout>();
   private descriptors: ActionDescriptor[];
 
   constructor(private server: ServerId, private sources: Source[], private now: () => Date = () => new Date(), private actions: Action<any>[] = []) {
@@ -23,10 +25,20 @@ export class Registry {
       const tick = () => { void this.runOnce(s.id); };
       tick();
       this.timers.push(setInterval(tick, s.periodMs));
+      s.watch?.(() => this.kick(s.id));
     }
   }
 
-  stop(): void { this.timers.forEach(clearInterval); this.timers = []; }
+  stop(): void { this.timers.forEach(clearInterval); this.timers = []; this.kicks.forEach(clearTimeout); this.kicks.clear(); }
+
+  // a burst of changes (a rollout, a relist) becomes one run a second later; a change during a run reruns after it
+  private kick(id: string): void {
+    if (!this.timers.length || this.kicks.has(id)) return;
+    this.kicks.set(id, setTimeout(() => {
+      this.kicks.delete(id);
+      if (this.running.has(id)) this.kick(id); else void this.runOnce(id);
+    }, 1000));
+  }
 
   listenerCount(): number { return this.listeners.size; }
 
