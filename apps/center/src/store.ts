@@ -1,4 +1,4 @@
-import { ServerIdSchema, worst, type AgentState, type CenterMessage, type CenterState, type Entity, type Event, type Series, type ServerId, type ServerView, type Status } from "@hetops-control/contracts";
+import { ServerIdSchema, worst, type ActionRun, type AgentState, type CenterMessage, type CenterState, type Entity, type Event, type Series, type ServerId, type ServerView, type Status } from "@hetops-control/contracts";
 import { judge } from "./rules.js";
 
 // skewMs = center clock - agent clock at the last apply; ageing adds it so agent clock drift never fakes staleness
@@ -49,6 +49,9 @@ export class Store {
   /** Agent events (restarts, deploys …) pass through to listeners. */
   record(e: Event): void { this.emit({ type: "event", event: e }); }
 
+  /** An action run moved (started, finished): straight to the stream, never debounced. */
+  announce(run: ActionRun): void { this.emit({ type: "action", run }); }
+
   snapshot(): CenterState {
     const now = this.now().getTime(); const entities: Aged[] = []; const series: Series[] = [];
     const servers = {} as CenterState["servers"];
@@ -66,7 +69,8 @@ export class Store {
         since: link.since.toISOString(), ...(link.state ? { agentVersion: link.state.version } : {}), ...(failing.length ? { failingSources: failing } : {}),
         ...(srcs.length ? { sources: srcs } : {}) };
     }
-    return { generatedAt: new Date(now).toISOString(), servers, entities: entities.map(a => a.entity), series };
+    const actions = [...this.links].flatMap(([server, link]) => (link.reachable ? link.state?.actions ?? [] : []).map(a => ({ ...a, server })));
+    return { generatedAt: new Date(now).toISOString(), servers, entities: entities.map(a => a.entity), series, actions };
   }
 
   on(fn: (m: CenterMessage) => void): () => void { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; }

@@ -24,9 +24,11 @@ export function headline(s: CenterState): Headline {
   const lost = servers.filter(id => !s.servers[id].reachable && s.servers[id].agentVersion !== undefined);
   // configured but never connected, and past the 60 s grace after the center started (its `since`): it is blind to us, which is a need
   const never = servers.filter(id => { const v = s.servers[id]; return v.configured && !v.reachable && v.agentVersion === undefined && Date.parse(s.generatedAt) - Date.parse(v.since) >= GRACE_MS; });
+  const acked = new Set((s.acks ?? []).map(a => a.entity));   // gatus.ack: off Needs you while the ack holds
   const items: Item[] = [];
   for (const e of s.entities) {
     if (e.status !== "down" && e.status !== "attention") continue;
+    if (acked.has(e.id)) continue;
     const detail = detailOf(e);
     items.push({ sev: e.status === "down" ? 3 : 2, blind: false, at: Date.parse(e.observedAt), line: detail,
       need: { entity: e.id, server: e.server, text: `${e.name} on ${e.server}`, detail, ...(e.actions[0] ? { action: e.actions[0] } : {}) } });

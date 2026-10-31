@@ -36,6 +36,13 @@ export class AgentLink {
     void this.dispatcher?.close().catch(() => {}); this.dispatcher = undefined;
   }
 
+  /** One action call on this agent's link (same token, same CA); the caller owns the timeout through `signal`. */
+  async post(path: string, body: unknown, signal: AbortSignal): Promise<{ status: number; body: unknown }> {
+    const res = await fetch(this.url + path, { method: "POST", signal, dispatcher: this.dispatcher,
+      headers: { authorization: `Bearer ${this.token}`, "content-type": "application/json" }, body: JSON.stringify(body) });
+    return { status: res.status, body: safeJson(await res.text()) };
+  }
+
   private async loop(g: number, store: Store, db: EventsDb) {
     const live = () => this.gen === g;
     // the store and the DB are ours, not the agent's: their failures are logged and never end the session
