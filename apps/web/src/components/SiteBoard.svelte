@@ -11,6 +11,11 @@
   const tip = (k: SiteRow["ticks"][number]) => `${hhmm(k.t)} UTC: ${k.up === undefined ? "not watched" : `${k.up.toFixed(2)}% up`}`;
   const said = (r: SiteRow) => { const up = r.ticks.filter(k => k.up === 100).length, hit = r.ticks.filter(k => k.up !== undefined && k.up < 100).length;
     return `Last 24 hours: ${up} hours up${hit ? `, ${hit} with down time` : ""}${24 - up - hit ? `, ${24 - up - hit} not watched` : ""}`; };
+  // the line under the name: why it fails, else its domain, else (named after its domain) how its watched hours went
+  const sub = (r: SiteRow) => { if (r.warm && r.e.statusReason) return r.e.statusReason;
+    if (r.host && r.host.toLowerCase() !== r.e.name.toLowerCase()) return r.host;
+    const seen = r.ticks.filter(k => k.up !== undefined), dip = seen.filter(k => k.up! < 100).length;
+    return seen.length ? `${seen.length - dip}/${seen.length} h fully up${dip ? ` · ${dip} dipped` : ""}` : r.group; };
 </script>
 
 <div class="board">
@@ -24,7 +29,7 @@
       <div class="site" class:hot={r.warm} data-site={r.e.id}>
         <button type="button" class="site-open" onclick={() => onopen(r.e)}>
           <span class="sdot" class:warm={r.warm} class:unknown={r.e.status === "unknown"} aria-hidden="true"></span>
-          <span class="t">{r.e.name}<small class="mono" class:warm={r.warm}>{r.warm && r.e.statusReason ? r.e.statusReason : (r.host ?? r.group)}</small></span>
+          <span class="t">{r.e.name}<small class="mono" class:warm={r.warm}>{sub(r)}</small></span>
           <span class="beats" role="img" aria-label={said(r)}>
             {#each r.ticks as k, i (i === r.ticks.length - 1 ? `${k.t}:${k.up}` : k.t)}
               <i class:dip={k.up !== undefined && k.up < 100} class:down={r.warm && i === r.ticks.length - 1} class:unknown={k.up === undefined} class:new={i === r.ticks.length - 1}
