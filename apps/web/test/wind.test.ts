@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GUST_EVERY, bezier, gust, gustAt, spark, wind } from "../src/lib/wind.js";
+import { GUST_EVERY, bezier, gust, gustAt, mark, spark, wind } from "../src/lib/wind.js";
 
 const peakX = (t: number) => { let best = -1, x0 = 0; for (let x = -400; x <= 1600; x += 10) { const g = gust(x, t); if (g > best) { best = g; x0 = x; } } return x0; };
 
@@ -24,11 +24,27 @@ describe("ember keyframes in the loop", () => {
     const out = bezier(.22, 1, .36, 1); let prev = 0;
     for (let x = .05; x <= 1; x += .05) { expect(out(x)).toBeGreaterThanOrEqual(prev); prev = out(x); }
   });
-  it("rests untouched in its delay, then plays the mock's fall and rise", () => {
-    expect(spark("fall", -.1, 6, 20)).toBeUndefined();
-    const f = spark("fall", .6, 6, 20)!; expect(f.transform).toBe("translate(2.00 12.00) rotate(32.0)"); expect(f.opacity).toBeCloseTo(.95, 6);
-    expect(spark("fall", 6, 6, 20)!.opacity).toBe(0); // the cycle wraps to its first frame
-    const peak = spark("rise", .45, 3, 10)!; expect(peak.opacity).toBe(1);
-    expect(spark("rise", 2.999, 3, 10)!.transform).toMatch(/^translate\(10\.00 -70\.00\) scale\(0\.300/);
+  it("plays the mock's fall and rise about each particle's own centre, hidden in its delay", () => {
+    expect(spark("fall", -.1, 6, 20, 100, 50)).toEqual({ transform: "", opacity: 0 });
+    const f = spark("fall", .6, 6, 20, 100, 50); expect(f.transform).toBe("translate(2.00 12.00) rotate(32.0 100 50)"); expect(f.opacity).toBeCloseTo(.95, 6);
+    expect(spark("fall", 6, 6, 20, 100, 50).opacity).toBe(0); // the cycle wraps to its first frame
+    expect(spark("rise", .45, 3, 10, 0, 0).opacity).toBe(1);
+    expect(spark("rise", 2.999, 3, 10, 600, 200).transform).toMatch(/^translate\(10\.00 -70\.00\) translate\(600 200\) scale\(0\.300\d\) translate\(-600 -200\)$/);
+  });
+  it("drops a shaken leaf once and holds its last frame", () => {
+    expect(spark("drop", 4.2, 4.2, 30, 0, 0)).toEqual(spark("drop", 9, 4.2, 30, 0, 0));
+    expect(spark("drop", 9, 4.2, 30, 0, 0).opacity).toBe(0);
+    expect(spark("drop", .2, 4.2, 30, 0, 0).opacity).toBeGreaterThan(0);
+  });
+});
+
+describe("knock map marks", () => {
+  it("knock, breathe and scan about their own centres", () => {
+    expect(mark("ring", -1, 2.6, 5, 5)).toBeUndefined();
+    expect(mark("ring", 0, 2.6, 40, 20)).toEqual({ transform: "translate(40 20) scale(0.6000) translate(-40 -20)", opacity: .9 });
+    const end = mark("scan", 5.999, 6, 0, 0)!; expect(end.opacity).toBeLessThan(.01); expect(end.transform).toContain("scale(1.0000)");
+    // breathing goes back and forth: the start of the second cycle is the top of the breath
+    expect(mark("breathe", 3.6, 3.6, 0, 0)!.opacity).toBeCloseTo(1, 6);
+    expect(mark("breathe", 7.2, 3.6, 0, 0)!.opacity).toBeCloseTo(.72, 6);
   });
 });

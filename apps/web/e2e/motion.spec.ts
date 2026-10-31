@@ -30,6 +30,46 @@ test("the embers and falling leaves ride the same 30 Hz loop, not CSS animations
   expect(await page.evaluate(() => [...document.querySelectorAll("svg.forest .ember-p, svg.forest .fall")].flatMap(el => el.getAnimations()).length)).toBe(0);
 });
 
+test("a restart that arrives live shakes one ember leaf loose: it falls on the loop, then is gone", async ({ page }) => {
+  const state = roughNight();
+  await mockApi(page, state, roughEvents);
+  const restart = { at: new Date().toISOString(), server: "lab", source: "kubernetes", kind: "restart", entity: "lab/app/chaos/chaos-api", summary: "chaos-api restarted" };
+  await page.route("**/api/stream", r => r.fulfill({ contentType: "text/event-stream",
+    body: `data: ${JSON.stringify({ type: "state", state })}\n\ndata: ${JSON.stringify({ type: "event", event: restart })}\n\n` }));
+  await page.goto("/");
+  const drop = page.locator("svg.forest .drop").first();
+  await expect(drop).toBeAttached();
+  await page.waitForTimeout(600);
+  const t = await drop.getAttribute("transform");
+  expect(t).toMatch(/rotate\([\d.]+ [\d.]+ [\d.]+\)$/); // it spins about its own centre
+  expect(Number(await drop.getAttribute("fill-opacity"))).toBeGreaterThan(0);
+  expect(await drop.evaluate(el => el.getAnimations().length)).toBe(0);
+  await expect(page.locator("svg.forest .drop")).toHaveCount(0, { timeout: 6000 });
+});
+
+test("the knock map's land is one static layer; its marks move on the same loop", async ({ page }) => {
+  await mockApi(page, roughNight(), roughEvents); await page.goto("/security");
+  const map = page.locator(".world").first();
+  await expect(map.locator(".knock").first()).toBeAttached();
+  expect(await map.locator("svg.land *").count()).toBe(1);
+  const read = () => map.locator(".knock, .knock-ring, .scan").evaluateAll(els => els.map(el => `${el.getAttribute("transform")}|${el.getAttribute("fill-opacity") ?? el.getAttribute("stroke-opacity")}`));
+  await page.waitForTimeout(400); const a = await read(); await page.waitForTimeout(300); const b = await read();
+  expect(a.filter((x, i) => x !== b[i]).length).toBeGreaterThan(a.length / 2);
+  expect(await map.evaluate(el => el.getAnimations({ subtree: true }).length)).toBe(0);
+});
+
+test("the hero paints first and the modules that follow move nothing: no layout shift, wide or phone", async ({ page }) => {
+  await mockApi(page, roughNight(), roughEvents);
+  await page.addInitScript(() => { (window as unknown as { cls: number }).cls = 0; new PerformanceObserver(l => { for (const e of l.getEntries() as unknown as { value: number }[]) (window as unknown as { cls: number }).cls += e.value; }).observe({ type: "layout-shift", buffered: true }); });
+  for (const [w, h] of [[1366, 900], [412, 823]] as const) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto("/"); await expect(page.locator('[data-module="sites"] .site').first()).toBeAttached();
+    await page.waitForTimeout(500);
+    // the only movement left is the top bar's "connecting" turning into "live · 0 s ago", a few millionths
+    expect(await page.evaluate(() => (window as unknown as { cls: number }).cls), `at ${w}`).toBeLessThan(.001);
+  }
+});
+
 for (const how of ["os", "settings"] as const) {
   test(`reduced motion (${how}): the forest is still and the weather is gone`, async ({ page }) => {
     await mockApi(page, roughNight(), roughEvents);

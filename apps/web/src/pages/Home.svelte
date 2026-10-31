@@ -15,6 +15,7 @@
   import Waiting from "../components/Waiting.svelte";
   import SiteBoard from "../components/SiteBoard.svelte";
   import Drawer from "../components/Drawer.svelte";
+  import Later from "../components/Later.svelte";
 
   // Home: the hero, then one module per page, each linking to it; a module whose source never reported is not shown
   let { estate, events, eventsError, now, shown }: { estate: State; events: Event[]; eventsError: boolean; now: Date; shown: number } = $props();
@@ -40,6 +41,13 @@
   const on = (m: { mode: string }) => m.mode !== "hidden";
   // the capsules spread across the module's real width at one unit per pixel, so they never balloon on a wide screen
   let capW = $state(420);
+  // read through a ResizeObserver, which reports after layout; bind:clientWidth reads it during the render and forces a
+  // layout of the whole page in the middle of it
+  const width = (el: Element, set: (w: number) => void) => {
+    const ro = new ResizeObserver(([e]) => { if (e) set(e.contentRect.width); });
+    ro.observe(el);
+    return { destroy: () => ro.disconnect() };
+  };
   const CW = $derived(Math.max(300, Math.round(capW)));
   // the side column runs short when the budget or CrowdSec is missing; then the timeline leaves the middle column for a
   // full-width row, so deploys and the log flow end level with the shorter side
@@ -59,7 +67,7 @@
       <h4 id="h-deploys"><span>DEPLOYS · 14 DAYS</span><span>{!eventsError && deploys ? `${deploys} in 14 d` : ""}<a class="to" href="/timeline" aria-label="Open the Timeline">open →</a></span></h4>
       {#if eventsError}<Waiting title="Can't read the event log." warm>Deploys come from the Change Timeline; they are not shown until it answers again.</Waiting>
       {:else}
-        <svg class="capsules" bind:clientWidth={capW} viewBox={`0 0 ${CW} 150`} role="img" aria-label={`Deploys per day over 14 days: ${days.map(d => d.known ? d.n : "unknown").join(", ")}${waiting.length ? `; ${plural(waiting.length, "deploy")} waiting on you` : ""}`}>
+        <svg class="capsules" use:width={w => (capW = w)} viewBox={`0 0 ${CW} 150`} role="img" aria-label={`Deploys per day over 14 days: ${days.map(d => d.known ? d.n : "unknown").join(", ")}${waiting.length ? `; ${plural(waiting.length, "deploy")} waiting on you` : ""}`}>
           <defs><linearGradient id="cap-hot" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#c2391a"/><stop offset="1" stop-color="#ff9a3c"/></linearGradient></defs>
           {#each days as d, i (d.day)}
             {@const x = 10 + i * (CW - 36) / 13} {@const h = d.n ? 14 + (d.n / peak) * 104 : 0} {@const hot = i === days.length - 1 ? waiting.length : 0}
@@ -127,12 +135,15 @@
     <h4 id="h-sites" class="board-h"><span>SITES · 24 H</span><span>{!gatus.fail && rows.length ? summary(rows) : ""}<a class="to" href="/apps" aria-label="Open Apps">open →</a></span></h4>
     {#if gatus.fail}<Waiting title="Can't read Gatus." warm>{gatus.fail.server}: {gatus.fail.error}</Waiting>
     {:else if gatus.mode === "empty"}<Waiting title="No sites reported.">Public sites and products appear with their last 24 hours.</Waiting>
-    {:else}<SiteBoard {rows} onopen={e => (open = e)} />{/if}
+    <!-- the board is the foot of the page, so it can follow a slice later without moving anything -->
+    {:else}<Later><SiteBoard {rows} onopen={e => (open = e)} /></Later>{/if}
   </section>
 {/snippet}
 
 <!-- two columns that end level: the instruments down the side, the flows down the middle; the log terrain takes up any slack.
      The timeline runs full width below when the optional side modules are missing; the sites board always does. -->
+<!-- the hero paints first; the modules below mount in the next idle slices (their data is already here and stays live) -->
+<Later>
 <div class="grid home">
   <div class="lane side c4" class:short={wideTimeline}>
     <HostLoad state={estate} />
@@ -148,5 +159,6 @@
   {#if wideTimeline}<Timeline events={events.slice(0, shown)} error={eventsError} wide />{/if}
   {#if on(gatus)}{@render sitesMod()}{/if}
 </div>
+</Later>
 
 {#if open}<Drawer entity={open} {events} now={t} onclose={() => (open = undefined)} />{/if}
