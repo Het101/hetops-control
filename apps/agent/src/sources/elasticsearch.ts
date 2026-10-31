@@ -16,12 +16,15 @@ const FLOW = {
     min_doc_count: 0, extended_bounds: { min: "now-24h/m", max: "now/m" } } } } } },
 };
 
+/** The Authorization header for a file-realm user whose username and password are files in authDir (read on every call). */
+export const basicAuth = (authDir: string) => {
+  const [u, p] = ["username", "password"].map(f => readFileSync(join(authDir, f), "utf8").trim());
+  return { authorization: `Basic ${Buffer.from(`${u}:${p}`).toString("base64")}` };
+};
+
 // credentials are read on every call (a rotated secret is picked up) and only ever go into the Authorization header
 export function realEs(base: string, authDir: string): EsReader {
-  const auth = () => {
-    const [u, p] = ["username", "password"].map(f => readFileSync(join(authDir, f), "utf8").trim());
-    return { authorization: `Basic ${Buffer.from(`${u}:${p}`).toString("base64")}` };
-  };
+  const auth = () => basicAuth(authDir);
   return {
     health: () => json(`${base}/_cluster/health`, { headers: auth() }),
     flow: () => json(`${base}/${STREAMS.map(s => `logs-lab-${s}`).join(",")}/_search`,
