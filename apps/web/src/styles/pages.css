@@ -164,7 +164,8 @@ button.row,.open{border:0;background:none;color:inherit;font:inherit;text-align:
 .beats{display:flex;align-items:flex-end;gap:2px;height:24px}
 .beats i{flex:1;height:calc(var(--h,1) * 100%);border-radius:2px;background:var(--quiet);transform-origin:50% 100%;
   animation:tick-in .6s var(--ease) backwards;animation-delay:calc(var(--in,0s) + .25s + var(--i,0) * 22ms)}
-.beats i.down{background:linear-gradient(var(--ember-1),var(--ember-3))}
+.beats i.dip{opacity:.55}
+.beats i.down{background:linear-gradient(var(--ember-1),var(--ember-3));opacity:1}
 .beats i.unknown{background:none;box-shadow:inset 0 0 0 1px var(--ink-3);opacity:.7}
 .beats i.new{animation:tick-in .6s var(--ease) backwards,beat 1.4s var(--ease-io) 1;animation-delay:calc(var(--in,0s) + .25s + var(--i,0) * 22ms),calc(var(--in,0s) + .9s + var(--i,0) * 22ms)}
 @keyframes tick-in{from{transform:scaleY(0);opacity:0}}

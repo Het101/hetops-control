@@ -4,7 +4,8 @@
   import { columns, spark, tickHeight, type SiteRow } from "../lib/sites.js";
 
   // the Sites status board (Home and Apps): one row per site in two balanced columns, Sites then Products; each row a 24-hour
-  // heartbeat (one tick per clock hour), the last response time with its hourly line, and the 24 h uptime. Ember only for "needs you".
+  // heartbeat (one tick per clock hour, its height the uptime), the last response time with its hourly line, and the 24 h uptime.
+  // Ember only for "needs you": the current hour of a site that is failing now; a recovered hour is a shorter, dimmer silver tick.
   let { rows, onopen }: { rows: SiteRow[]; onopen: (e: Entity) => void } = $props();
   const cols = $derived(columns(rows).map((items, i) => ({ key: i, items })));
   const tip = (k: SiteRow["ticks"][number]) => `${hhmm(k.t)} UTC: ${k.up === undefined ? "not watched" : `${k.up.toFixed(2)}% up`}`;
@@ -26,7 +27,7 @@
           <span class="t">{r.e.name}<small class="mono" class:warm={r.warm}>{r.warm && r.e.statusReason ? r.e.statusReason : (r.host ?? r.group)}</small></span>
           <span class="beats" role="img" aria-label={said(r)}>
             {#each r.ticks as k, i (i === r.ticks.length - 1 ? `${k.t}:${k.up}` : k.t)}
-              <i class:down={k.up !== undefined && k.up < 100} class:unknown={k.up === undefined} class:new={i === r.ticks.length - 1}
+              <i class:dip={k.up !== undefined && k.up < 100} class:down={r.warm && i === r.ticks.length - 1} class:unknown={k.up === undefined} class:new={i === r.ticks.length - 1}
                 style={`--h:${k.up === undefined ? 1 : tickHeight(k.up)};--i:${i}`} title={tip(k)}></i>
             {/each}
           </span>
@@ -42,4 +43,4 @@
   </div>
   {/each}
 </div>
-<p class="note">one tick per hour · silver = up all hour · ember = down time that hour · hollow = not watched · line = mean response per hour</p>
+<p class="note">one tick per hour · shorter, dimmer = down time that hour · ember = failing now · hollow = not watched · line = mean response per hour</p>

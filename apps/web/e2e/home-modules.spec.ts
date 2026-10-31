@@ -37,8 +37,10 @@ test("the sites board: 24 ticks a row, Sites then Products, hollow before a Gatu
   await expect(board.locator(".board-g")).toHaveText(["SITES · 7", "SITES · CONT.", "PRODUCTS · 3"]);
   await expect(board.locator(".site .beats").first().locator("i")).toHaveCount(24);
   await expect(board.locator('[data-site="ops/site/sites_control"] .beats i.unknown')).toHaveCount(7);
-  await expect(board.locator('[data-site="ops/site/sites_hetops-dev"] .beats i.down, [data-site="ops/site/sites_hetops-dev"] .beats i.unknown')).toHaveCount(0);
-  await expect(board.locator('[data-site="ops/site/sites_chaos"] .beats i.down')).toHaveCount(1);
+  await expect(board.locator('[data-site="ops/site/sites_hetops-dev"] .beats i.dip, [data-site="ops/site/sites_hetops-dev"] .beats i.unknown')).toHaveCount(0);
+  // a recovered hour is a shorter, dimmer silver tick, never ember: ember is only for what needs the owner now
+  await expect(board.locator('[data-site="ops/site/sites_chaos"] .beats i.dip')).toHaveCount(1);
+  await expect(board.locator(".beats i.down")).toHaveCount(0);
   await expect(board.locator('[data-site="ops/site/sites_chaos"]')).toContainText("98.61%");
   await expect(board.locator('[data-site="ops/site/sites_chaos"] .lat')).toContainText("301 ms");
   await expect(board.locator('[data-site="ops/site/products_radar"] a.go')).toHaveAttribute("href", "https://radar.hetops.dev");
@@ -75,10 +77,12 @@ test("a rough night: the budget, silver bans, and ember only where the owner is 
   await expect(mod(page, "deploys").locator(".wait-row")).toContainText("radar-cloud has 7a5cba8 waiting for a deploy");
   const sec = mod(page, "backups").locator('[data-backup="ops/backup/nightly-security"]');
   await expect(sec).toHaveClass(/now/); await expect(sec).toContainText("FAILED"); await expect(sec).toContainText("r2-security is not reachable");
-  // the down site leads its group in ember, its last two hours ember; the slow one is named, not ember
+  // the down site leads its group in ember, ember on its current hour only; the slow one is named, not ember
   const hot = mod(page, "sites").locator(".site.hot");
   await expect(hot).toHaveCount(1); await expect(hot).toContainText("ThreadVault");
-  await expect(mod(page, "sites").locator('[data-site="ops/site/products_threadvault"] .beats i.down')).toHaveCount(3);
+  await expect(mod(page, "sites").locator(".beats i.down")).toHaveCount(1);       // only ThreadVault's current hour
+  await expect(mod(page, "sites").locator('[data-site="ops/site/products_threadvault"] .beats i:last-child')).toHaveClass(/down/);
+  await expect(mod(page, "sites").locator('[data-site="ops/site/products_threadvault"] .beats i.dip')).toHaveCount(3);
   await expect(mod(page, "sites").locator(".board-g:not(.cont) + .site").nth(1)).toHaveAttribute("data-site", "ops/site/products_threadvault");
   await expect(mod(page, "sites").locator("h4")).toContainText("9/10 up · slowest dns.hetops.dev 1840 ms");
   await expect(mod(page, "sites").locator('[data-site="ops/site/sites_dns"] .pct')).not.toHaveClass(/warm/);
