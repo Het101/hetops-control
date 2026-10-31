@@ -39,10 +39,13 @@ const sources = [src("kubernetes", 10_000), src("hostload", 15_000), src("argo",
 const opsSources = [...sources, src("gatus", 30_000), src("elasticsearch", 60_000), src("snapshots", 300_000)];
 
 // the ops agent's Gatus, Elasticsearch and snapshot sources, shaped as they report today
-const gatus = (kind: "site" | "check", key: string, name: string, group: string, uptime: number, ms: number, http = 200): Entity => ({
-  ...base, id: `ops/${kind}/${key}`, kind, server: "ops", name, source: "gatus", status: "ok",
-  facts: { group: { value: group }, httpStatus: { value: http }, latencyMs: { value: ms, unit: "ms" }, uptime24h: { value: uptime, unit: "%", max: 100 },
-    lastCheck: { value: "2026-10-30T07:41:30.000Z" } } });
+const gatus = (kind: "site" | "check", key: string, name: string, group: string, uptime: number, ms: number, http = 200): Entity => {
+  const host = kind === "site" ? (name.includes(".") ? name : `${key.split("_")[1]}.hetops.dev`) : undefined;
+  return { ...base, id: `ops/${kind}/${key}`, kind, server: "ops", name, source: "gatus", status: "ok",
+    facts: { group: { value: group }, httpStatus: { value: http }, latencyMs: { value: ms, unit: "ms" }, uptime24h: { value: uptime, unit: "%", max: 100 },
+      lastCheck: { value: "2026-10-30T07:41:30.000Z" }, ...(host ? { host: { value: host } } : {}) },
+    links: host ? [{ label: host, href: `https://${host}` }] : [] };
+};
 const sites: Entity[] = [
   gatus("site", "sites_hetops-dev", "hetops.dev", "sites", 100, 84), gatus("site", "sites_status", "status.hetops.dev", "sites", 99.93, 121),
   gatus("site", "sites_drill", "drill.hetops.dev", "sites", 100, 96), gatus("site", "sites_dns", "dns.hetops.dev", "sites", 99.86, 143),
@@ -73,6 +76,19 @@ const flow = (id: string, label: string, baseRate: number, amp: number): Series 
   return { id, server: "ops", label, unit: "docs", stepMs: 600_000, points, observedAt: at, source: "elasticsearch" };
 };
 
+// each site's 24 h as the ops agent reports it: uptime per clock hour (a site below 100 % lost it in one hour) and the mean response
+// time per hour; Gatus restarted 7 hours into control.hetops.dev's window, so its first 7 hours are not known (hollow)
+const HOUR = 3_600_000, hourEnd = Date.parse(at) - (Date.parse(at) % HOUR);
+const siteHistory = (e: Entity, gap = 0): Series[] => {
+  const seed = e.id.length, up = Number(e.facts.uptime24h!.value), ms = Number(e.facts.latencyMs!.value), dip = (seed * 7) % 20 + 2;
+  const hours = Array.from({ length: 24 - gap }, (_, i) => hourEnd - (23 - gap - i) * HOUR);
+  return [{ id: `${e.id}/uptime-1h`, server: "ops", label: `${e.name}: uptime per hour`, unit: "%", stepMs: HOUR, observedAt: at, source: "gatus",
+      points: hours.map((t, i): [number, number] => [t, i === dip - gap && up < 100 ? Math.max(40, Math.round((100 - (100 - up) * 24) * 100) / 100) : 100]) },
+    { id: `${e.id}/latency-1h`, server: "ops", label: `${e.name}: mean response time per hour`, unit: "ms", stepMs: HOUR, observedAt: at, source: "gatus",
+      points: hours.map((t, i): [number, number] => [t, Math.round(ms * (1 + .16 * Math.sin(i / 2.6 + seed) + .06 * Math.sin(i * 1.7)))]) }];
+};
+const siteSeries = sites.flatMap(e => siteHistory(e, e.id === "ops/site/sites_control" ? 7 : 0));
+
 export const fixtureState: State = {
   generatedAt: at,
   servers: {
@@ -80,7 +96,7 @@ export const fixtureState: State = {
     staging: { status: "unknown", statusReason: "not connected yet", reachable: false, configured: false, since: "2026-10-30T06:00:00.000Z" },
     ops: { status: "ok", reachable: true, configured: true, since: "2026-10-29T22:10:00.000Z", agentVersion: "0.1.0", sources: opsSources },
   },
-  series: [flow("ops/logs/default", "Lab logs: default", 9000, 2600), flow("ops/logs/security", "Lab logs: security", 1400, 420)],
+  series: [flow("ops/logs/default", "Lab logs: default", 9000, 2600), flow("ops/logs/security", "Lab logs: security", 1400, 420), ...siteSeries],
   entities: [
     cluster("lab", "v1.31.4+k3s1", 1, 34, 35), node("lab", "my-workspace", 48, 63, 41),
     ...labApps.map(([ns, n, p, r, l]) => app("lab", ns, n, p, r, l)), argo("lab", "clinic"), argo("lab", "chaos"),
@@ -154,6 +170,11 @@ export function roughNight(): State {
   // ops: a site down and the security snapshot failed last night
   const www = s.entities.find(e => e.id === "ops/site/products_threadvault")!;
   Object.assign(www, { status: "down", statusReason: "3 failed in a row: [STATUS] == 200" }); www.facts.httpStatus = { value: 502 };
+  const hours = (id: string) => s.series.find(x => x.id === id)!.points;
+  const tv = hours("ops/site/products_threadvault/uptime-1h"); tv.at(-2)![1] = 61.5; tv.at(-1)![1] = 0;   // down since 06:23
+  // and a slow site: dns.hetops.dev answering, but in 1.8 s and climbing for the last 5 hours
+  const dns = s.entities.find(e => e.id === "ops/site/sites_dns")!; dns.facts.latencyMs = { value: 1840, unit: "ms" };
+  hours("ops/site/sites_dns/latency-1h").slice(-5).forEach((p, i) => { p[1] = [420, 690, 980, 1350, 1790][i]!; });
   const sec = s.entities.find(e => e.id === "ops/backup/nightly-security")!;
   Object.assign(sec, { status: "attention", statusReason: "last run failed: repository r2-security is not reachable" });
   sec.facts.lastOk = { value: "2026-10-29T01:45:09.000Z" }; sec.facts.lastFailure = { value: "2026-10-30T01:45:02.000Z" }; sec.facts.failed = { value: 2 };

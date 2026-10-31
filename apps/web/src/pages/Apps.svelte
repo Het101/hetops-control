@@ -7,7 +7,8 @@
   import Knob from "../components/Knob.svelte";
   import Drawer from "../components/Drawer.svelte";
   import Waiting from "../components/Waiting.svelte";
-  import { uptimeFill } from "../lib/home.js";
+  import SiteBoard from "../components/SiteBoard.svelte";
+  import { siteRows, summary } from "../lib/sites.js";
 
   let { estate, events, now }: { estate: State | undefined; events: Event[]; now: Date } = $props();
   let server = $state<string[]>([]), mood = $state<string[]>([]), q = $state("");
@@ -16,12 +17,12 @@
   const t = $derived(now.getTime());
   const ents = $derived(estate?.entities ?? []);
   const STATE = (e: Entity) => needsYou(e.status) ? "needs you" : e.status === "unknown" ? "can't tell" : "healthy";
-  const keep = (e: Entity) => picked(server, e.server) && picked(mood, STATE(e)) && matches(q, e.name, e.id, str(e, "namespace"), str(e, "fqdn"));
+  const keep = (e: Entity) => picked(server, e.server) && picked(mood, STATE(e)) && matches(q, e.name, e.id, str(e, "namespace"), str(e, "fqdn"), str(e, "host"));
   const pool = $derived(ents.filter(e => ["app", "argo-app", "site"].includes(e.kind)));
   const argo = $derived(pool.filter(e => e.kind === "argo-app" && keep(e)).sort((a, b) => Number(needsYou(b.status)) - Number(needsYou(a.status)) || a.name.localeCompare(b.name)));
   const coolify = $derived(pool.filter(e => e.kind === "app" && e.source === "coolify" && keep(e)));
   const work = $derived(pool.filter(e => e.kind === "app" && e.source !== "coolify" && keep(e)));
-  const sites = $derived(pool.filter(e => e.kind === "site" && keep(e)).sort((a, b) => a.name.localeCompare(b.name)));
+  const rows = $derived(siteRows(pool.filter(e => e.kind === "site" && keep(e)), estate?.series ?? [], t));
   const nsOf = (e: Entity) => str(e, "namespace") ?? "—";
   // one dense grid per server, ordered by namespace; the namespace rides on each tile
   const spaces = $derived(ServerIdSchema.options.map(server => ({ key: server, server,
@@ -127,21 +128,11 @@
     {/each}
   </section>
 
-  <section class="mod raised c12 list" style="--in:.3s" aria-labelledby="ap-sites">
-    <h4 id="ap-sites"><span>SITES · UPTIME 24 H</span><span>{sites.length ? `${sites.filter(s => s.status === "ok").length}/${sites.length} up` : ""}</span></h4>
+  <section class="mod raised c12" style="--in:.3s" aria-labelledby="ap-sites" data-module="sites">
+    <h4 id="ap-sites" class="board-h"><span>SITES · 24 H</span><span>{rows.length ? summary(rows) : ""}</span></h4>
     {#if gat.failing.length}<Waiting title={`Can't read Gatus on ${gat.failing[0]!.server}.`} warm>{gat.failing[0]!.error}</Waiting>{/if}
-    {#each sites as e (e.id)}
-      {@const u = num(e, "uptime24h")} {@const warm = needsYou(e.status)} {@const ms = num(e, "latencyMs")} {@const seen = time(e, "lastCheck")}
-      <button type="button" class="row site" class:now={warm} data-site={e.id} onclick={() => (open = e)}>
-        <span class="t">{e.name}<small>{str(e, "group") ?? "site"} · {e.server}{num(e, "httpStatus") ? ` · HTTP ${num(e, "httpStatus")}` : ""}{e.statusReason ? ` · ${e.statusReason}` : ""}</small></span>
-        <span class="up pressed" aria-hidden="true"><i class:warm style={`transform:scaleX(${uptimeFill(u)})`}></i></span>
-        <span class="mono pct" class:warm>{u === undefined ? "—" : `${u.toFixed(2)}%`}</span>
-        <span class="mono ms">{ms === undefined ? "—" : `${Math.round(ms)} ms`}<small>{seen ? ago(seen, t) : ""}</small></span>
-      </button>
-    {:else}
-      {#if !gat.failing.length}<Waiting title={gat.reporting.length ? "No sites match." : "Gatus is not reporting yet."}>Public sites and products with their 24 h uptime.</Waiting>{/if}
-    {/each}
-    {#if sites.length}<p class="note">the bar spans 90 to 100% uptime · ember = failing now</p>{/if}
+    {#if rows.length}<SiteBoard {rows} onopen={e => (open = e)} />
+    {:else if !gat.failing.length}<Waiting title={gat.reporting.length ? "No sites match." : "Gatus is not reporting yet."}>Public sites and products with their last 24 hours.</Waiting>{/if}
   </section>
 </div>
 
