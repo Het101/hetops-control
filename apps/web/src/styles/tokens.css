@@ -138,6 +138,10 @@ svg.forest{will-change:transform;contain:paint}
 .knob svg{width:12px;height:12px}
 .knob.ember{background:radial-gradient(circle at 35% 30%,var(--ember-1),var(--ember-2) 60%,var(--ember-3));box-shadow:0 0 14px rgba(242,88,42,.55);color:#2a1408}
 .tag{font:600 10px var(--mono);letter-spacing:.08em;padding:3px 8px;border-radius:999px;color:var(--ink-2)}
+/* a counting number (lib/motion.ts countUp) holds its final width from the first frame: an invisible, zero-height copy
+   of the final value sits above the digits, so the box is never narrower than where the count will end */
+[data-final]{display:inline-block}
+[data-final]::before{content:attr(data-final);display:block;height:0;overflow:hidden;visibility:hidden}
 /* reduced motion: the OS setting, unless Settings chose (data-motion on stills, off keeps motion) */
 @media (prefers-reduced-motion:reduce){:root:not([data-motion="off"]) *,:root:not([data-motion="off"]) *::before,:root:not([data-motion="off"]) *::after{animation:none!important;transition:none!important}:root:not([data-motion="off"]) .mod{opacity:1;transform:none}}
 :root[data-motion="on"] *,:root[data-motion="on"] *::before,:root[data-motion="on"] *::after{animation:none!important;transition:none!important}
