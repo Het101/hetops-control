@@ -4,10 +4,11 @@
  */
 const queue: (() => void)[] = [];
 let pumping = false;
+const waiting: (() => void)[] = [];
 const idle = (f: () => void) => (typeof requestIdleCallback === "function" ? requestIdleCallback(f, { timeout: 150 }) : setTimeout(f, 1));
 function pump() {
   const f = queue.shift();
-  if (!f) { pumping = false; return; }
+  if (!f) { pumping = false; waiting.splice(0).forEach(w => w()); return; }
   f();
   idle(pump);
 }
@@ -15,3 +16,5 @@ export function later(f: () => void) {
   queue.push(f);
   if (!pumping) { pumping = true; idle(pump); }
 }
+/** resolves once every slice asked for so far has mounted (at once if none is waiting) */
+export const drained = () => new Promise<void>(r => { if (pumping) waiting.push(r); else r(); });
