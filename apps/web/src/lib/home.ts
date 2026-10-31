@@ -41,5 +41,3 @@ export function perMinute(s: Series | undefined): string | undefined {
   return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(last[1] / (s.stepMs / 60_000)).toLowerCase();
 }
 
-/** an uptime strip cell: 90 to 100 % maps to an empty to full bar, as on the Apps page */
-export const uptimeFill = (pct: number | undefined) => (pct === undefined ? 0 : Math.min(1, Math.max(0, (pct - 90) / 10)));

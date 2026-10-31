@@ -26,9 +26,31 @@ test("a calm morning: the modules whose sources report, and none of the ones sti
   await expect(mod(page, "logs").locator("h4")).toContainText("/min");
   await expect(mod(page, "backups").locator("a.row")).toHaveCount(2);
   await expect(mod(page, "backups").locator(".row.now")).toHaveCount(0);
-  await expect(mod(page, "sites").locator(".cell")).toHaveCount(10);
-  await expect(mod(page, "sites").locator(".cell.hot")).toHaveCount(0);
-  await expect(mod(page, "sites").locator("h4")).toContainText("10/10 up");
+  await expect(mod(page, "sites").locator(".site")).toHaveCount(10);
+  await expect(mod(page, "sites").locator(".site.hot, .sdot.warm")).toHaveCount(0);
+  await expect(mod(page, "sites").locator("h4")).toContainText("10/10 up · slowest chaos.hetops.dev 301 ms · 5 incidents in 24 h");
+});
+
+test("the sites board: 24 ticks a row, Sites then Products, hollow before a Gatus restart, a drawer and a link per row", async ({ page }) => {
+  await mockApi(page); await page.goto("/");
+  const board = mod(page, "sites");
+  await expect(board.locator(".board-g")).toHaveText(["SITES · 7", "SITES · CONT.", "PRODUCTS · 3"]);
+  await expect(board.locator(".site .beats").first().locator("i")).toHaveCount(24);
+  await expect(board.locator('[data-site="ops/site/sites_control"] .beats i.unknown')).toHaveCount(7);
+  await expect(board.locator('[data-site="ops/site/sites_hetops-dev"] .beats i.dip, [data-site="ops/site/sites_hetops-dev"] .beats i.unknown')).toHaveCount(0);
+  // a recovered hour is a shorter, dimmer silver tick, never ember: ember is only for what needs the owner now
+  await expect(board.locator('[data-site="ops/site/sites_chaos"] .beats i.dip')).toHaveCount(1);
+  await expect(board.locator(".beats i.down")).toHaveCount(0);
+  await expect(board.locator('[data-site="ops/site/sites_chaos"]')).toContainText("98.61%");
+  await expect(board.locator('[data-site="ops/site/sites_chaos"] .lat')).toContainText("301 ms");
+  await expect(board.locator('[data-site="ops/site/products_radar"] a.go')).toHaveAttribute("href", "https://radar.hetops.dev");
+  // the two columns hold the same number of rows, give or take one
+  const xs = await board.locator(".site").evaluateAll(els => els.map(e => Math.round(e.getBoundingClientRect().x)));
+  const left = xs.filter(x => x === Math.min(...xs)).length;
+  expect(Math.abs(left - (xs.length - left))).toBeLessThanOrEqual(1);
+  await board.locator('[data-site="ops/site/sites_chaos"] .site-open').click();
+  await expect(page.getByRole("dialog")).toContainText("chaos.hetops.dev");
+  await expect(page.getByRole("dialog").getByRole("link", { name: /chaos\.hetops\.dev/ })).toHaveAttribute("href", "https://chaos.hetops.dev");
 });
 
 test("each module links to its page", async ({ page }) => {
@@ -55,8 +77,15 @@ test("a rough night: the budget, silver bans, and ember only where the owner is 
   await expect(mod(page, "deploys").locator(".wait-row")).toContainText("radar-cloud has 7a5cba8 waiting for a deploy");
   const sec = mod(page, "backups").locator('[data-backup="ops/backup/nightly-security"]');
   await expect(sec).toHaveClass(/now/); await expect(sec).toContainText("FAILED"); await expect(sec).toContainText("r2-security is not reachable");
-  await expect(mod(page, "sites").locator(".cell.hot")).toHaveCount(1);
-  await expect(mod(page, "sites").locator(".cell.hot")).toContainText("ThreadVault");
+  // the down site leads its group in ember, ember on its current hour only; the slow one is named, not ember
+  const hot = mod(page, "sites").locator(".site.hot");
+  await expect(hot).toHaveCount(1); await expect(hot).toContainText("ThreadVault");
+  await expect(mod(page, "sites").locator(".beats i.down")).toHaveCount(1);       // only ThreadVault's current hour
+  await expect(mod(page, "sites").locator('[data-site="ops/site/products_threadvault"] .beats i:last-child')).toHaveClass(/down/);
+  await expect(mod(page, "sites").locator('[data-site="ops/site/products_threadvault"] .beats i.dip')).toHaveCount(3);
+  await expect(mod(page, "sites").locator(".board-g:not(.cont) + .site").nth(1)).toHaveAttribute("data-site", "ops/site/products_threadvault");
+  await expect(mod(page, "sites").locator("h4")).toContainText("9/10 up · slowest dns.hetops.dev 1840 ms");
+  await expect(mod(page, "sites").locator('[data-site="ops/site/sites_dns"] .pct')).not.toHaveClass(/warm/);
 });
 
 test("a failing source says so in ember and shows no numbers", async ({ page }) => {
@@ -70,7 +99,7 @@ test("a failing source says so in ember and shows no numbers", async ({ page }) 
     ["knocks", "Can't read CrowdSec."], ["backups", "Can't read the snapshots."], ["sites", "Can't read Gatus."]] as const) {
     await expect(mod(page, m).locator(".wait.warm")).toContainText(title);
   }
-  await expect(page.locator(".capsules, .terrain, .world, .slider, [data-module] a.row, .cell")).toHaveCount(0);
+  await expect(page.locator(".capsules, .terrain, .world, .slider, [data-module] a.row, .site")).toHaveCount(0);
   await expect(mod(page, "knocks")).toContainText("LAPI answered 403");
 });
 
@@ -98,9 +127,11 @@ test.describe("screenshots", () => {
   for (const [w, h] of [[1366, 900], [1920, 1080]] as const) {
     test(`${w} px, calm and rough`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: h });
-      await mockApi(page); await page.goto("/"); await expect(mod(page, "sites").locator(".cell").first()).toBeVisible(); await shot(page, `home-${w}`);
+      await mockApi(page); await page.goto("/"); await expect(mod(page, "sites").locator(".site").first()).toBeVisible(); await shot(page, `home-${w}`);
+      await mod(page, "sites").screenshot({ path: `e2e/__screens__/sites-${w}.png` });
       await mockApi(page, roughNight(), [...roughEvents, ...deployHistory]); await page.reload();
       await expect(mod(page, "knocks").locator(".knock").first()).toBeAttached(); await shot(page, `home-${w}-rough`);
+      await mod(page, "sites").screenshot({ path: `e2e/__screens__/sites-${w}-rough.png` });
     });
   }
   test("phone, no horizontal scroll", async ({ page }) => {
@@ -108,6 +139,7 @@ test.describe("screenshots", () => {
     await mockApi(page, roughNight(), [...roughEvents, ...deployHistory]); await page.goto("/");
     await expect(mod(page, "knocks").locator(".knock").first()).toBeAttached();
     await shot(page, "home-mobile");
+    await mod(page, "sites").screenshot({ path: "e2e/__screens__/sites-mobile-rough.png" });
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     // the hero stacks: Needs-you sits below the headline, not over it
     const head = (await page.locator(".headline").boundingBox())!, needs = (await page.locator(".needs").boundingBox())!;

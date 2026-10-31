@@ -4,7 +4,8 @@ export const StatusSchema = z.enum(["ok", "attention", "down", "unknown"]);
 /**
  * Entity kinds and the facts each one carries (facts stay an open record; the *Facts types below are what the web reads).
  *  alert    firing: 1 (count), severity: "critical"|"warning"|"info", since: ISO time
- *  site     httpStatus: number, latencyMs: ms, tlsDaysLeft: days, uptime30d: %, uptime24h: %, lastCheck: ISO time, group: string
+ *  site     httpStatus: number, latencyMs: ms, tlsDaysLeft: days, uptime30d: %, uptime24h: %, lastCheck: ISO time, group: string,
+ *           host: host name; series <id>/uptime-1h (% per clock hour, an hour not watched has no point) and <id>/latency-1h (mean ms)
  *  backup   ageHours: hours, sizeBytes: bytes, lastOk: ISO time, restoreVerified: boolean, nextRun: ISO time, lastFailure: ISO time,
  *           snapshots: count kept, failed: count, repository: string, indices: comma-separated string
  *  argo-app sync: string, health: string, revision: short sha
@@ -23,7 +24,7 @@ export const EntityKindSchema = z.enum(["server", "cluster", "node", "app", "arg
 type F<T> = { value: T; unit?: string; max?: number };
 export type AlertFacts = { firing?: F<number>; severity?: F<string>; since?: F<string> };
 export type SiteFacts = { httpStatus?: F<number>; latencyMs?: F<number>; tlsDaysLeft?: F<number>; uptime30d?: F<number>;
-  uptime24h?: F<number>; lastCheck?: F<string>; group?: F<string> };
+  uptime24h?: F<number>; lastCheck?: F<string>; group?: F<string>; host?: F<string> };
 export type BackupFacts = { ageHours?: F<number>; sizeBytes?: F<number>; lastOk?: F<string>; restoreVerified?: F<boolean>;
   nextRun?: F<string>; lastFailure?: F<string>; snapshots?: F<number>; failed?: F<number>; repository?: F<string>; indices?: F<string> };
 export type DeployFacts = { revision?: F<string>; health?: F<string>; syncStatus?: F<string>; ageMin?: F<number> };

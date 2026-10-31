@@ -1,15 +1,19 @@
 import { describe, it, expect } from "vitest"; import { EntitySchema, SeriesSchema } from "@hetops-control/contracts";
-import { gatusSource } from "../src/sources/gatus.js"; import { elasticsearchSource, snapshotsSource } from "../src/sources/elasticsearch.js";
+import { gatusSource, hourly, HISTORY_SITES } from "../src/sources/gatus.js"; import { elasticsearchSource, snapshotsSource } from "../src/sources/elasticsearch.js";
 import { buildSources } from "../src/sources/index.js";
 // Recorded on hetops-3, 30 Oct 2026 (no secrets, no IPs). es-flow.json was recorded with a terms size of 2, which is why
 // it has sum_other_doc_count > 0 and only the default stream's two backing indices.
 import statuses from "./fixtures/gatus-statuses.json"; import uptimes from "./fixtures/gatus-uptimes.json";
+// gatus-history.json: each site's events and response-times/24h/history, recorded on hetops-3 at 2026-10-31T05:45:26Z
+import history from "./fixtures/gatus-history.json";
 import health from "./fixtures/es-health.json"; import slm from "./fixtures/es-slm.json"; import flow from "./fixtures/es-flow.json";
 
 const at = (iso: string) => ({ server: "ops" as const, now: () => new Date(iso) });
 const NOW = "2026-10-30T19:20:00Z";
+const hist = history as Record<string, { events: { type: string; timestamp: string }[]; responseTimes: { timestamps: number[]; values: number[] } }>;
 const gatus = (s: any[] = statuses, up: Record<string, string> = uptimes) =>
-  ({ statuses: async () => s, uptime24h: async (k: string) => { if (!(k in up)) throw new Error("404"); return Number(up[k]); } });
+  ({ statuses: async () => s, uptime24h: async (k: string) => { if (!(k in up)) throw new Error("404"); return Number(up[k]); },
+    history: async (k: string) => { if (!(k in hist)) throw new Error("404"); return hist[k]!; } });
 const es = (over: Record<string, unknown> = {}) => ({ health: async () => health, slm: async () => slm, flow: async () => complete(), ...over }) as any;
 const complete = () => { const f = structuredClone(flow) as any; f.aggregations.idx.sum_other_doc_count = 0; return f; };
 
@@ -40,6 +44,48 @@ describe("gatus source (recorded)", () => {
     const { entities } = await gatusSource(gatus(statuses, {})).collect(at("2026-10-30T21:00:00Z"));
     expect(entities.every(e => e.status === "unknown" && /^no result for \d+ min$/.test(e.statusReason!))).toBe(true);
     expect(entities.every(e => e.facts.uptime24h === undefined)).toBe(true);
+  });
+});
+
+const H = 3_600_000, REC = Date.parse("2026-10-31T05:45:26Z");
+describe("gatus hourly history", () => {
+  it("turns Gatus's events and response-time history into 24 clock hours (recorded)", () => {
+    const h = hourly(hist["products_radar-cloud"]!, REC);
+    expect(h.uptime).toHaveLength(24);
+    expect(h.uptime[0]![0]).toBe(Date.parse("2026-10-30T06:00:00Z"));
+    expect(h.uptime.at(-1)![0]).toBe(Date.parse("2026-10-31T05:00:00Z"));
+    // the one recorded outage: 12:55:44 to 12:56:34 on 30 Oct, 50 s of that hour
+    expect(h.uptime.filter(p => p[1] < 100)).toEqual([[Date.parse("2026-10-30T12:00:00Z"), 98.61]]);
+    expect(h.latency).toHaveLength(24);   // Gatus sends 25; the hour before the window is dropped
+    for (const pts of [h.uptime, h.latency]) SeriesSchema.parse({ id: "x", server: "ops", label: "", unit: "", stepMs: H, points: pts, observedAt: new Date(REC).toISOString() });
+  });
+  it("leaves the hours before a Gatus restart out (hollow, never up), counts a partial hour, and stays down until now", () => {
+    const now = Date.parse("2026-10-31T05:30:00Z");
+    const h = hourly({ responseTimes: { timestamps: [Date.parse("2026-10-31T04:00:00Z"), NaN], values: [120, 5] }, events: [
+      { type: "START", timestamp: "2026-10-30T01:00:00Z" }, { type: "UNHEALTHY", timestamp: "2026-10-31T01:50:00Z" },
+      { type: "START", timestamp: "2026-10-31T02:30:00Z" },                                        // restarted while down: that interval ends
+      { type: "HEALTHY", timestamp: "2026-10-31T02:30:01Z" }, { type: "UNHEALTHY", timestamp: "2026-10-31T05:15:00Z" }] }, now);
+    expect(h.uptime.map(p => new Date(p[0]).toISOString().slice(11, 13))).toEqual(["02", "03", "04", "05"]);
+    expect(h.uptime.map(p => p[1])).toEqual([100, 100, 100, 50]);   // 05:15 to 05:30 of the 30 min seen
+    expect(h.latency).toEqual([[Date.parse("2026-10-31T04:00:00Z"), 120]]);
+    expect(hourly({ events: [], responseTimes: { timestamps: [], values: [] } }, now).uptime).toEqual([]);
+  });
+  it("emits uptime and latency series per site, with host and link, and caps the history at HISTORY_SITES sites", async () => {
+    const out = await gatusSource(gatus()).collect(at(NOW));
+    expect(out.series!.map(s => s.id)).toContain("ops/site/sites_portfolio/uptime-1h");
+    expect(out.series).toHaveLength(2 * statuses.filter(s => ["sites", "products"].includes(s.group)).length);
+    for (const s of out.series!) SeriesSchema.parse(s);
+    const p = out.entities.find(e => e.name === "Portfolio")!;
+    expect([p.facts.host?.value, p.links]).toEqual(["hetops.dev", [{ label: "hetops.dev", href: "https://hetops.dev" }]]);
+    expect(out.entities.find(e => e.kind === "check")!.links).toEqual([]);
+    const site = statuses.find(s => s.key === "sites_portfolio")!;
+    const many = Array.from({ length: HISTORY_SITES + 5 }, (_, i) => ({ ...site, key: `sites_s${i}`, name: `S${i}` }));
+    const capped = await gatusSource({ ...gatus(many), history: async () => hist["sites_portfolio"]! }).collect(at(NOW));
+    expect(capped.entities).toHaveLength(HISTORY_SITES + 5);
+    expect(capped.series).toHaveLength(2 * HISTORY_SITES);
+    // a failing history call keeps the site, without its series
+    const lost = await gatusSource({ ...gatus(), history: async () => { throw new Error("502"); } }).collect(at(NOW));
+    expect([lost.entities.length, lost.series!.length]).toEqual([statuses.length, 0]);
   });
 });
 

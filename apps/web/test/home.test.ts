@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Entity, Event, Series } from "@hetops-control/contracts";
-import { deployDays, moduleState, perMinute, uptimeFill, waitingDeploys } from "../src/lib/home.js";
+import { deployDays, moduleState, perMinute, waitingDeploys } from "../src/lib/home.js";
 import type { State } from "../src/lib/api.js";
 
 const at = "2026-10-30T07:42:00.000Z", now = Date.parse(at);
@@ -54,14 +54,11 @@ describe("waitingDeploys", () => {
   });
 });
 
-describe("perMinute and uptimeFill", () => {
+describe("perMinute", () => {
   const s = (points: [number, number][]): Series => ({ id: "ops/logs/default", server: "ops", label: "", unit: "docs", stepMs: 600_000, points, observedAt: at });
   it("the latest 10-min bucket as a compact per-minute rate", () => {
     expect(perMinute(s([[0, 5], [600_000, 13_000]]))).toBe("1.3k");
     expect(perMinute(s([[0, 50]]))).toBe("5");
     expect(perMinute(s([]))).toBeUndefined(); expect(perMinute(undefined)).toBeUndefined();
-  });
-  it("90 to 100 % uptime fills the bar, clamped", () => {
-    expect(uptimeFill(100)).toBe(1); expect(uptimeFill(95)).toBeCloseTo(.5); expect(uptimeFill(80)).toBe(0); expect(uptimeFill(undefined)).toBe(0);
   });
 });

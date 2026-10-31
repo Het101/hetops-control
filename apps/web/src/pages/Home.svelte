@@ -1,8 +1,9 @@
 <script lang="ts">
-  import type { Event } from "@hetops-control/contracts";
-  import { num, type State } from "../lib/api.js";
+  import type { Entity, Event } from "@hetops-control/contracts";
+  import type { State } from "../lib/api.js";
   import { backupView, DAY, hhmm, ago, needsYou, str } from "../lib/pages.js";
-  import { deployDays, moduleState, perMinute, uptimeFill, waitingDeploys } from "../lib/home.js";
+  import { deployDays, moduleState, perMinute, waitingDeploys } from "../lib/home.js";
+  import { siteRows, summary } from "../lib/sites.js";
   import Headline from "../components/Headline.svelte";
   import NeedsYou from "../components/NeedsYou.svelte";
   import Forest from "../components/Forest.svelte";
@@ -12,6 +13,8 @@
   import KnockMap from "../components/KnockMap.svelte";
   import Terrain from "../components/Terrain.svelte";
   import Waiting from "../components/Waiting.svelte";
+  import SiteBoard from "../components/SiteBoard.svelte";
+  import Drawer from "../components/Drawer.svelte";
 
   // Home: the hero, then one module per page, each linking to it; a module whose source never reported is not shown
   let { estate, events, eventsError, now, shown }: { estate: State; events: Event[]; eventsError: boolean; now: Date; shown: number } = $props();
@@ -31,14 +34,16 @@
   const cs = $derived(moduleState(estate, "crowdsec", decisions.length > 0));
   const backups = $derived(ents.filter(e => e.kind === "backup").sort((a, b) => Number(needsYou(b.status)) - Number(needsYou(a.status)) || a.name.localeCompare(b.name)));
   const snaps = $derived(moduleState(estate, "snapshots", backups.length > 0));
-  const sites = $derived(ents.filter(e => e.kind === "site").sort((a, b) => Number(needsYou(b.status)) - Number(needsYou(a.status)) || a.name.localeCompare(b.name)));
-  const gatus = $derived(moduleState(estate, "gatus", sites.length > 0));
+  const rows = $derived(siteRows(ents.filter(e => e.kind === "site"), estate.series, t));
+  const gatus = $derived(moduleState(estate, "gatus", rows.length > 0));
+  let open = $state<Entity>();
   const on = (m: { mode: string }) => m.mode !== "hidden";
-  // the side column runs short when the budget or CrowdSec is missing; then the sites strip fills it instead of a hole
   // the capsules spread across the module's real width at one unit per pixel, so they never balloon on a wide screen
   let capW = $state(420);
   const CW = $derived(Math.max(300, Math.round(capW)));
-  const sideSites = $derived(!(on(budget) && on(cs)));
+  // the side column runs short when the budget or CrowdSec is missing; then the timeline leaves the middle column for a
+  // full-width row, so deploys and the log flow end level with the shorter side
+  const wideTimeline = $derived(!(on(budget) && on(cs)));
   const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
   const fmtDay = (d: string) => new Date(`${d}T00:00:00Z`).toUTCString().slice(5, 11).toUpperCase();
 </script>
@@ -119,39 +124,29 @@
 {/snippet}
 {#snippet sitesMod()}
   <section class="mod raised c12" style="--in:.52s" aria-labelledby="h-sites" data-module="sites">
-        <h4 id="h-sites"><span>SITES · UPTIME 24 H</span><span>{!gatus.fail && sites.length ? `${sites.filter(s => s.status === "ok").length}/${sites.length} up` : ""}<a class="to" href="/apps" aria-label="Open Apps">open →</a></span></h4>
-        {#if gatus.fail}<Waiting title="Can't read Gatus." warm>{gatus.fail.server}: {gatus.fail.error}</Waiting>
-        {:else if gatus.mode === "empty"}<Waiting title="No sites reported.">Public sites and products appear with their 24 h uptime.</Waiting>
-        {:else}
-          <div class="strip">
-            {#each sites as e (e.id)}
-              {@const u = num(e, "uptime24h")} {@const warm = needsYou(e.status)}
-              <div class="cell" class:hot={warm} data-site={e.id} title={e.statusReason ?? e.status}>
-                <span class="t">{e.name}</span>
-                <span class="up pressed" aria-hidden="true"><i class:warm style={`transform:scaleX(${uptimeFill(u)})`}></i></span>
-                <span class="mono pct" class:warm>{warm ? e.status.toUpperCase() : u === undefined ? "—" : `${u.toFixed(2)}%`}</span>
-              </div>
-            {/each}
-          </div>
-          <p class="note">the bar spans 90 to 100% uptime · ember = failing now</p>
-        {/if}
-      </section>
+    <h4 id="h-sites" class="board-h"><span>SITES · 24 H</span><span>{!gatus.fail && rows.length ? summary(rows) : ""}<a class="to" href="/apps" aria-label="Open Apps">open →</a></span></h4>
+    {#if gatus.fail}<Waiting title="Can't read Gatus." warm>{gatus.fail.server}: {gatus.fail.error}</Waiting>
+    {:else if gatus.mode === "empty"}<Waiting title="No sites reported.">Public sites and products appear with their last 24 hours.</Waiting>
+    {:else}<SiteBoard {rows} onopen={e => (open = e)} />{/if}
+  </section>
 {/snippet}
 
 <!-- two columns that end level: the instruments down the side, the flows down the middle; the log terrain takes up any slack.
-     Sites joins the side column when the optional modules are missing, else it runs full width below. -->
+     The timeline runs full width below when the optional side modules are missing; the sites board always does. -->
 <div class="grid home">
-  <div class="lane side c4">
+  <div class="lane side c4" class:short={wideTimeline}>
     <HostLoad state={estate} />
     {#if on(budget)}{@render budgetMod()}{/if}
     {#if on(cs)}{@render knocksMod()}{/if}
     {#if on(snaps)}{@render backupsMod()}{/if}
-    {#if on(gatus) && sideSites}{@render sitesMod()}{/if}
   </div>
   <div class="lane main c8">
     {@render deploysMod()}
     {#if on(logs)}{@render logsMod()}{/if}
-    <Timeline events={events.slice(0, shown)} error={eventsError} />
+    {#if !wideTimeline}<Timeline events={events.slice(0, shown)} error={eventsError} />{/if}
   </div>
-  {#if on(gatus) && !sideSites}{@render sitesMod()}{/if}
+  {#if wideTimeline}<Timeline events={events.slice(0, shown)} error={eventsError} wide />{/if}
+  {#if on(gatus)}{@render sitesMod()}{/if}
 </div>
+
+{#if open}<Drawer entity={open} {events} now={t} onclose={() => (open = undefined)} />{/if}
