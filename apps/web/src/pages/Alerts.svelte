@@ -47,15 +47,17 @@
       {#if group.length}
         <div class="group mono sev-h" class:warm={s !== "info"}>{COPY[s].toUpperCase()} · {group.length}</div>
         {#each group as a (a.entity.id)}
-          {@const warm = a.severity !== "info"}
+          {@const ack = estate?.acks?.find(k => k.entity === a.entity.id)}
+          {@const warm = a.severity !== "info" && !ack}
           <div class="row" class:now={warm} data-severity={s}>
             <button type="button" class="open" onclick={() => (open = a.entity)}>
               <span class="sev" class:warm aria-hidden="true"><i></i></span>
-              <span class="t">{a.entity.name}<small>{a.detail} · {a.entity.server} · {a.source}</small></span>
+              <span class="t">{a.entity.name}<small>{a.detail} · {a.entity.server} · {a.source}</small>
+                {#if ack}<small class="ack-note">acknowledged by {ack.actor} until {hhmm(Date.parse(ack.until))} UTC{ack.note ? ` · ${ack.note}` : ""}</small>{/if}</span>
               <span class="since mono" class:warm>{a.since ? `for ${span(now.getTime() - a.since)}` : "since ?"}<small>{a.since ? `from ${hhmm(a.since)} UTC` : "start not recorded"}</small></span>
             </button>
             {#each a.entity.links.slice(0, 1) as l (l.href)}<a class="out" href={l.href} target="_blank" rel="noreferrer" aria-label={`${l.label} for ${a.entity.name}`}>↗</a>{/each}
-            <Knob label={`Silence ${a.entity.name}`} {warm} />
+            <Knob entity={a.entity} label={`${a.entity.actions[0]?.label ?? "Silence"} ${a.entity.name}`} {warm} />
           </div>
         {/each}
       {/if}

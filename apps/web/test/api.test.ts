@@ -20,7 +20,7 @@ describe("stream", () => {
 
   it("re-opens a stream that has gone silent, and says so", () => {
     const link = vi.fn();
-    const stop = follow({ state: () => {}, event: () => {}, link, events: () => {}, eventsFailed: () => {} }, 6);
+    const stop = follow({ state: () => {}, event: () => {}, link, events: () => {}, eventsFailed: () => {}, action: () => {} }, 6);
     FakeSource.all[0]!.onopen?.();
     vi.advanceTimersByTime(SILENCE_MS - 5000);
     expect(FakeSource.all).toHaveLength(1);
@@ -32,7 +32,7 @@ describe("stream", () => {
   });
 
   it("a stream that keeps talking is left alone", () => {
-    const stop = follow({ state: () => {}, event: () => {}, link: () => {}, events: () => {}, eventsFailed: () => {} }, 6);
+    const stop = follow({ state: () => {}, event: () => {}, link: () => {}, events: () => {}, eventsFailed: () => {}, action: () => {} }, 6);
     for (let t = 0; t < 4; t++) { vi.advanceTimersByTime(15_000); FakeSource.all[0]!.onmessage?.({ data: "{}" }); }
     expect(FakeSource.all).toHaveLength(1);
     stop();

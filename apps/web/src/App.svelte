@@ -13,6 +13,9 @@
   import Topology from "./pages/Topology.svelte";
   import NotFound from "./pages/NotFound.svelte";
   import { isPage, PAGES, route } from "./lib/router.svelte.js";
+  import ActionDialog from "./components/ActionDialog.svelte";
+  import Toasts from "./components/Toasts.svelte";
+  import { catalog, track } from "./lib/action-state.svelte.js";
 
   // Home shows the latest 6; the Timeline page keeps the most the center serves
   const SHOWN = 6, KEEP = 500, DOWN_MS = 10_000;
@@ -25,10 +28,11 @@
 
   $effect(() => {
     const stop = follow({
-      state: s => { estate = s; lastMsg = Date.now(); },
+      state: s => { estate = s; catalog.list = s.actions ?? []; lastMsg = Date.now(); },
       event: e => { events = mergeEvents(events, [e], KEEP); lastMsg = Date.now(); },
       events: list => { events = mergeEvents(events, list, KEEP); eventsError = false; },
       eventsFailed: err => { console.warn(err); eventsError = true; },
+      action: r => track(r),
       link: open => { if (open) downSince = undefined; else downSince ??= Date.now(); },
     }, KEEP);
     const tick = setInterval(() => (now = new Date()), 1000);
@@ -79,3 +83,5 @@
     {/if}
   </main>
 </div>
+<ActionDialog />
+<Toasts />

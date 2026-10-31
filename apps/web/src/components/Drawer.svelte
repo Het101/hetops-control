@@ -48,7 +48,7 @@
       {:else}<p class="note">This source reports no links for it yet.</p>{/if}
       {#if entity.actions.length}
         <h3 class="sub-h"><span>ACTIONS</span></h3>
-        <div class="acts">{#each entity.actions as a (a.id)}<span class="act-l"><Knob label={a.label} warm={needsYou(entity.status)} />{a.label}<small>{a.risk}</small></span>{/each}</div>
+        <div class="acts">{#each entity.actions as a (a.id)}<span class="act-l"><Knob {entity} action={a.id} label={`${a.label} ${entity.name}`} warm={needsYou(entity.status)} />{a.label}<small>{a.risk}</small></span>{/each}</div>
       {/if}
       {#if history.length}
         <h3 class="sub-h"><span>RECENT EVENTS</span></h3>

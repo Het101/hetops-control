@@ -1,12 +1,13 @@
 import { z } from "zod";
-import { CenterStateSchema, EventSchema, HeadlineSchema, MeSchema, type Event, type Headline } from "@hetops-control/contracts";
+import { ActionRunSchema, CenterStateSchema, EventSchema, HeadlineSchema, MeSchema, type ActionRun, type Event, type Headline } from "@hetops-control/contracts";
 
 export type { Headline };
 export const StateSchema = CenterStateSchema.extend({ headline: HeadlineSchema });
 const MessageSchema = z.discriminatedUnion("type", [
   // a stream state may omit the headline; the last one is kept
   z.object({ type: z.literal("state"), state: CenterStateSchema.extend({ headline: HeadlineSchema.optional() }) }),
-  z.object({ type: z.literal("event"), event: EventSchema }) ]);
+  z.object({ type: z.literal("event"), event: EventSchema }),
+  z.object({ type: z.literal("action"), run: ActionRunSchema }) ]);
 export type State = z.infer<typeof StateSchema>;
 
 /** The center pings (and re-sends the state) every 15 s; twice that in silence means the stream is dead even if the socket is not. */
@@ -16,6 +17,8 @@ export type Handlers = {
   state: (s: State) => void; event: (e: Event) => void; link: (open: boolean) => void;
   /** the latest events, on start and after every reconnect (what happened while the stream was down) */
   events: (list: Event[]) => void; eventsFailed: (err: unknown) => void;
+  /** an action run moved (started, finished) */
+  action: (r: ActionRun) => void;
 };
 
 async function get<T>(path: string, schema: z.ZodType<T>): Promise<T> {
@@ -58,6 +61,7 @@ export function follow(on: Handlers, eventLimit: number): () => void {
       if (!parsed.success) { console.warn("stream: unexpected message", parsed.error.issues); return; }
       const msg = parsed.data;
       if (msg.type === "event") return on.event(msg.event);
+      if (msg.type === "action") return on.action(msg.run);
       const headline = msg.state.headline ?? last?.headline;
       if (headline) take({ ...msg.state, headline });
     };

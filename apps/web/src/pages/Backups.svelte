@@ -57,7 +57,7 @@
           <span class="col hist"><small>history</small>{num(e, "snapshots") ?? "—"} kept · <span class:warm={v.failedLast}>{num(e, "failed") ?? 0} failed</span>
             <small class:warm={v.failedLast}>{v.bad ? `last failure ${ago(v.bad, t)}` : "no failure on record"}{changes(e.id) ? ` · ${changes(e.id)} changes` : ""}</small></span>
         </button>
-        <Knob label={`Run ${e.name} now`} {warm} />
+        <Knob entity={e} action="snapshot.now" label={`Snapshot ${e.name} now`} {warm} />
       </div>
     {:else}
       {#if !src.failing.length}<Waiting title={src.reporting.length ? "The snapshot source reports no policies." : "No backup source reporting yet."}>Each snapshot policy appears here with its last result, its age, the next run and its failures.</Waiting>{/if}

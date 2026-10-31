@@ -80,7 +80,7 @@ test.describe("Alerts", () => {
     await expect(page.locator('.row[data-severity="warning"]').nth(0)).toContainText("KubePodCrashLooping"); // firing since 03:14, before the drift at 06:00
     await expect(page.locator('.row[data-severity="info"]')).toContainText("CPUThrottlingHigh");
     await expect(page.getByRole("link", { name: "Grafana for KubePodCrashLooping" })).toHaveAttribute("href", /grafana/);
-    await expect(page.getByRole("button", { name: /Silence KubePodCrashLooping: arrives in stage 2/ })).toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByRole("button", { name: /Silence KubePodCrashLooping: not offered for this one/ })).toHaveAttribute("aria-disabled", "true");
     await expect(page.locator(".budget-num b")).toHaveAttribute("data-final", "58"); // the value it counts to
     await page.getByRole("group", { name: "Server" }).getByRole("button", { name: /ops/ }).click();
     await expect(rows).toHaveCount(1);
@@ -143,7 +143,7 @@ test.describe("Backups", () => {
     await expect(row).toContainText("30 kept");
     await expect(row).toContainText("1 failed");
     await expect(row.locator(".arc-age.warm")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Run nightly-all now: arrives in stage 2" })).toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByRole("button", { name: "Snapshot nightly-all now: not offered for this one" })).toHaveAttribute("aria-disabled", "true");
   });
 
   test("a failed run is ember and says why", async ({ page }) => {
