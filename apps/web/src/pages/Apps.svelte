@@ -80,7 +80,7 @@
             <span class="duo"><i class:ok={sync(e) === "Synced"} class:warm={warm && sync(e) !== "Synced"}>{sync(e)}</i><i class:ok={health(e) === "Healthy"} class:warm={warm && health(e) !== "Healthy"}>{health(e)}</i></span>
             {#if e.statusReason}<small class:warm>{e.statusReason}</small>{/if}
           </button>
-          <Knob label={`Sync ${e.name}`} {warm} />
+          <Knob entity={e} action="argo.sync" label={`Sync ${e.name}`} {warm} />
         </div>
       {:else}
         <Waiting title={estate ? "No Argo CD apps match." : "Waiting for the first state."} />
@@ -102,7 +102,7 @@
             <span class="t">{e.name}<small>{[str(e, "fqdn"), dep ? `deployed ${ago(dep, t)}` : undefined, str(e, "commit")].filter(Boolean).join(" · ") || e.statusReason || e.status}</small>
               {#if str(e, "undeployedCommit")}<small class="warm">{str(e, "undeployedCommit")!.slice(0, 7)} is waiting for a deploy</small>{/if}</span>
           </button>
-          <Knob label={`Redeploy ${e.name}`} {warm} />
+          <Knob entity={e} action="coolify.redeploy" label={`Redeploy ${e.name}`} {warm} />
         </div>
       {:else}
         <Waiting title="No Coolify apps match." />

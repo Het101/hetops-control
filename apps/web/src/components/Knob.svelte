@@ -1,8 +1,13 @@
 <script lang="ts">
-  // a round action knob that is not wired yet: focusable, dimmed, and honest about when it arrives
-  let { label, stage = 2, warm = false }: { label: string; stage?: number; warm?: boolean } = $props();
+  import type { Entity } from "@hetops-control/contracts";
+  import { catalog, ui } from "../lib/action-state.svelte.js";
+  import { offer } from "../lib/actions.js";
+  // a round action knob: it acts when its entity offers the action; otherwise it stays focusable, dimmed, and says why
+  let { entity, action, label, warm = false }: { entity: Entity; action?: string; label: string; warm?: boolean } = $props();
+  const o = $derived(offer(entity, action, catalog.list));
+  const why = $derived(o ? label : `${label}: not offered for this one`);
 </script>
 
-<button type="button" class="knob act" class:ember={warm} class:raised={!warm} aria-disabled="true" title={`${label}: arrives in stage ${stage}`}
-  aria-label={`${label}: arrives in stage ${stage}`} onclick={e => e.stopPropagation()}>
+<button type="button" class="knob act" class:ember={warm && !!o} class:raised={!warm || !o} aria-disabled={o ? undefined : "true"} title={why} aria-label={why}
+  onclick={e => { e.stopPropagation(); if (o) ui.open = { entity, ...o }; }}>
   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>

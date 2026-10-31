@@ -58,7 +58,7 @@
 
 <section class="hero raised">
   <Headline headline={estate.headline} {now} />
-  <NeedsYou needs={estate.headline.needs} />
+  <NeedsYou needs={estate.headline.needs} entities={estate.entities} />
   <Forest state={estate} {events} />
 </section>
 
