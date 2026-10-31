@@ -1,8 +1,9 @@
 <script lang="ts">
-  import type { Event } from "@hetops-control/contracts";
-  import { num, type State } from "../lib/api.js";
+  import type { Entity, Event } from "@hetops-control/contracts";
+  import type { State } from "../lib/api.js";
   import { backupView, DAY, hhmm, ago, needsYou, str } from "../lib/pages.js";
-  import { deployDays, moduleState, perMinute, uptimeFill, waitingDeploys } from "../lib/home.js";
+  import { deployDays, moduleState, perMinute, waitingDeploys } from "../lib/home.js";
+  import { siteRows, summary } from "../lib/sites.js";
   import Headline from "../components/Headline.svelte";
   import NeedsYou from "../components/NeedsYou.svelte";
   import Forest from "../components/Forest.svelte";
@@ -12,6 +13,8 @@
   import KnockMap from "../components/KnockMap.svelte";
   import Terrain from "../components/Terrain.svelte";
   import Waiting from "../components/Waiting.svelte";
+  import SiteBoard from "../components/SiteBoard.svelte";
+  import Drawer from "../components/Drawer.svelte";
 
   // Home: the hero, then one module per page, each linking to it; a module whose source never reported is not shown
   let { estate, events, eventsError, now, shown }: { estate: State; events: Event[]; eventsError: boolean; now: Date; shown: number } = $props();
@@ -31,8 +34,9 @@
   const cs = $derived(moduleState(estate, "crowdsec", decisions.length > 0));
   const backups = $derived(ents.filter(e => e.kind === "backup").sort((a, b) => Number(needsYou(b.status)) - Number(needsYou(a.status)) || a.name.localeCompare(b.name)));
   const snaps = $derived(moduleState(estate, "snapshots", backups.length > 0));
-  const sites = $derived(ents.filter(e => e.kind === "site").sort((a, b) => Number(needsYou(b.status)) - Number(needsYou(a.status)) || a.name.localeCompare(b.name)));
-  const gatus = $derived(moduleState(estate, "gatus", sites.length > 0));
+  const rows = $derived(siteRows(ents.filter(e => e.kind === "site"), estate.series, t));
+  const gatus = $derived(moduleState(estate, "gatus", rows.length > 0));
+  let open = $state<Entity>();
   const on = (m: { mode: string }) => m.mode !== "hidden";
   // a missing module hands its width to its row neighbour, so no row is left with a hole
   const span = (wide: boolean, normal: string) => (wide ? "c12" : normal);
@@ -124,22 +128,12 @@
 
   {#if on(gatus)}
     <section class="mod raised c12" style="--in:.52s" aria-labelledby="h-sites" data-module="sites">
-      <h4 id="h-sites"><span>SITES · UPTIME 24 H</span><span>{!gatus.fail && sites.length ? `${sites.filter(s => s.status === "ok").length}/${sites.length} up` : ""}<a class="to" href="/apps" aria-label="Open Apps">open →</a></span></h4>
+      <h4 id="h-sites" class="board-h"><span>SITES · 24 H</span><span>{!gatus.fail && rows.length ? summary(rows) : ""}<a class="to" href="/apps" aria-label="Open Apps">open →</a></span></h4>
       {#if gatus.fail}<Waiting title="Can't read Gatus." warm>{gatus.fail.server}: {gatus.fail.error}</Waiting>
-      {:else if gatus.mode === "empty"}<Waiting title="No sites reported.">Public sites and products appear with their 24 h uptime.</Waiting>
-      {:else}
-        <div class="strip">
-          {#each sites as e (e.id)}
-            {@const u = num(e, "uptime24h")} {@const warm = needsYou(e.status)}
-            <div class="cell" class:hot={warm} data-site={e.id} title={e.statusReason ?? e.status}>
-              <span class="t">{e.name}</span>
-              <span class="up pressed" aria-hidden="true"><i class:warm style={`transform:scaleX(${uptimeFill(u)})`}></i></span>
-              <span class="mono pct" class:warm>{warm ? e.status.toUpperCase() : u === undefined ? "—" : `${u.toFixed(2)}%`}</span>
-            </div>
-          {/each}
-        </div>
-        <p class="note">the bar spans 90 to 100% uptime · ember = failing now</p>
-      {/if}
+      {:else if gatus.mode === "empty"}<Waiting title="No sites reported.">Public sites and products appear with their last 24 hours.</Waiting>
+      {:else}<SiteBoard {rows} onopen={e => (open = e)} />{/if}
     </section>
   {/if}
 </div>
+
+{#if open}<Drawer entity={open} {events} now={t} onclose={() => (open = undefined)} />{/if}

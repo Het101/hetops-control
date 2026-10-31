@@ -108,6 +108,10 @@ test.describe("Apps", () => {
     await expect(page.locator('.tile[data-app="lab/app/clinic/api"] .pips i.up')).toHaveCount(3);
     await expect(page.locator(".site")).toHaveCount(10);
     await expect(page.locator('.site[data-site="ops/site/sites_chaos"]')).toContainText("98.61%");
+    await expect(page.locator('.site[data-site="ops/site/sites_chaos"] .beats i')).toHaveCount(24);
+    await page.locator('.site[data-site="ops/site/sites_chaos"] .site-open').click();
+    await expect(page.getByRole("dialog")).toContainText("uptime 24h");
+    await page.keyboard.press("Escape");
     await expect(page.getByText("Coolify is not reporting yet.")).toBeVisible();
   });
 
