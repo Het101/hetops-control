@@ -16,9 +16,11 @@
   {#each map.placed as p, i (p.country)}
     {@const r = (3 + 7 * Math.sqrt(p.n / top)) * Math.max(k, .6)}
     {#if !$reduced}<circle class="knock-ring" cx={p.x} cy={p.y} {r} style={`--dl:${(i * .33) % 2.6}s`}/>{/if}
-    <circle cx={p.x} cy={p.y} r={r * .55} class="knock"><title>{p.country}: {p.n} banned</title></circle>
+    <circle cx={p.x} cy={p.y} r={r * .55} class="knock" style={`--dl:${-((i * .7) % 3.6)}s`}><title>{p.country}: {p.n} banned</title></circle>
     {#if labels && p.n / top > .3}<text x={p.x + r + 3} y={p.y + 3} class="knock-l">{p.country} {p.n}</text>{/if}
   {/each}
+  <!-- a slow radar sweep out from the lab: two rings, half a period apart -->
+  {#if !$reduced}{#each [0, 1] as n (n)}<circle class="scan" cx={lab[0]} cy={lab[1]} r={Math.min(w, h * 2.4) * .3} style={`--dl:${n * 3}s`}/>{/each}{/if}
   <circle cx={lab[0]} cy={lab[1]} r={9 * Math.max(k, .6)} class="lab-ring"/><circle cx={lab[0]} cy={lab[1]} r={4 * Math.max(k, .7)} class="lab-dot"/>
   {#if labels}<text x={lab[0] + 12} y={lab[1] + 4} class="lab-l">LAB</text>{/if}
 </svg>

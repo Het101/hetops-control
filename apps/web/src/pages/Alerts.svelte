@@ -30,23 +30,8 @@
   <h1 tabindex="-1">{!estate ? "What is firing, across every server." : firing ? `${firing} thing${firing === 1 ? " is" : "s are"} firing.` : "Nothing is firing."}</h1>
 </section>
 
-<div class="grid">
-  <section class="mod raised c8 tally" style="--in:.04s" aria-label="By severity">
-    {#each SEVERITIES as s (s)}
-      {@const n = count(s)}
-      <div class="tal"><b class:warm={s !== "info" && n > 0}>{n}</b><span class="mono">{s.toUpperCase()}</span></div>
-    {/each}
-    <div class="tal"><b>{passing}<small>/{checks.length}</small></b><span class="mono">CHECKS PASSING</span></div>
-  </section>
-
-  <section class="mod raised c4 budget" style="--in:.08s" aria-labelledby="a-budget">
-    <h4 id="a-budget"><span>ERROR BUDGET</span><span>{slo[0]?.facts.windowDays ? `${slo[0].facts.windowDays.value} d` : ""}</span></h4>
-    {#if sloSrc.failing.length}<Waiting title={`Can't read the error budget on ${sloSrc.failing[0]!.server}.`} warm>{sloSrc.failing[0]!.error}</Waiting>
-    {:else if !slo.length}<Waiting title="No error budget reporting yet.">The lab's chaos SLO appears here when its source lands.</Waiting>
-    {:else}<Budget {slo} />
-    {/if}
-  </section>
-
+<!-- whatever is firing takes the wide column; on a quiet day every check does, and "nothing is firing" moves to the side -->
+{#snippet firingMod()}
   <section class="mod raised c8 list" style="--in:.12s" aria-labelledby="a-firing">
     <h4 id="a-firing"><span>FIRING · BY SEVERITY</span><span>{shown.length} of {all.length}</span></h4>
     {#if all.length}
@@ -82,7 +67,8 @@
       <p class="note">Alertmanager is not reporting yet: this list holds the Gatus and Elasticsearch checks; Prometheus alerts join it when the lab's alert source lands.</p>
     {/if}
   </section>
-
+{/snippet}
+{#snippet checksMod()}
   <section class="mod raised c4 list" style="--in:.16s" aria-labelledby="a-checks">
     <h4 id="a-checks"><span>EVERY CHECK</span><span>{checks.length}</span></h4>
     {#if checks.length}
@@ -95,6 +81,31 @@
       <p class="note">ember = failing · hollow = can't tell · silver = passing</p>
     {:else}<Waiting title="No checks reporting yet.">Gatus endpoints and Elasticsearch health appear here.</Waiting>{/if}
   </section>
+{/snippet}
+
+<div class="grid">
+  <div class="lane c8">
+    <section class="mod raised c8 tally" style="--in:.04s" aria-label="By severity">
+      {#each SEVERITIES as s (s)}
+        {@const n = count(s)}
+        <div class="tal"><b class:warm={s !== "info" && n > 0}>{n}</b><span class="mono">{s.toUpperCase()}</span></div>
+      {/each}
+      <div class="tal"><b>{passing}<small>/{checks.length}</small></b><span class="mono">CHECKS PASSING</span></div>
+    </section>
+
+    {#if all.length}{@render firingMod()}{:else}{@render checksMod()}{/if}
+  </div>
+  <div class="lane c4">
+    <section class="mod raised c4 budget" style="--in:.08s" aria-labelledby="a-budget">
+      <h4 id="a-budget"><span>ERROR BUDGET</span><span>{slo[0]?.facts.windowDays ? `${slo[0].facts.windowDays.value} d` : ""}</span></h4>
+      {#if sloSrc.failing.length}<Waiting title={`Can't read the error budget on ${sloSrc.failing[0]!.server}.`} warm>{sloSrc.failing[0]!.error}</Waiting>
+      {:else if !slo.length}<Waiting title="No error budget reporting yet.">The lab's chaos SLO appears here when its source lands.</Waiting>
+      {:else}<Budget {slo} />
+      {/if}
+    </section>
+
+    {#if all.length}{@render checksMod()}{:else}{@render firingMod()}{/if}
+  </div>
 </div>
 
 {#if open}<Drawer entity={open} {events} now={now.getTime()} onclose={() => (open = undefined)} />{/if}
