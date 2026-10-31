@@ -55,6 +55,12 @@ describe("agent link", () => {
     expect(store.snapshot().entities).toEqual([]); expect(store.snapshot().servers.lab.reachable).toBe(false);
     expect(logged()).toContain("agent lab: /v1/state: HTTP 401");
   });
+  it("post: one action call with the link's token, the agent's answer as status and JSON", async () => {
+    const { app } = await setup();
+    const url = `http://127.0.0.1:${(app.server.address() as { port: number }).port}`;
+    expect(await new AgentLink("lab", url, "s3cret").post("/v1/actions/x", {}, AbortSignal.timeout(2000))).toEqual({ status: 404, body: { error: "this agent offers no actions" } });
+    expect((await new AgentLink("lab", url, "wrong").post("/v1/actions/x", {}, AbortSignal.timeout(2000))).status).toBe(401);
+  });
 });
 
 const T = "2026-10-30T12:00:00.000Z";

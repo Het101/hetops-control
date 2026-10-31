@@ -36,6 +36,11 @@ describe("argo.sync (recorded)", () => {
     expect(await argoSync(api).run(app(), {}, ctx)).toEqual({ ok: true, already: true, summary: "a sync of cert-manager is already running" });
     expect(patches).toEqual([]);
   });
+  it("hands the run's abort signal to every Kubernetes call, so the 55 s limit cancels them", async () => {
+    const seen: unknown[] = []; const api: ArgoApps = { get: async (_n, signal) => { seen.push(signal); return rec; }, patch: async (_n, _b, signal) => { seen.push(signal); } };
+    await argoSync(api).run(app(), {}, ctx); await argoRefresh(api).run(app(), { hard: false }, ctx);
+    expect(seen).toEqual([ctx.signal, ctx.signal, ctx.signal]);
+  });
   it("refuses a name that is not a Kubernetes name", async () => {
     await expect(argoSync(fake().api).run(app("../x"), {}, ctx)).rejects.toThrow("not an Argo CD application name");
   });

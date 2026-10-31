@@ -5,14 +5,15 @@ import { json } from "./http.js";
 
 // Coolify's API (v4.0.0-beta.470), shaped as recorded (test/fixtures/coolify.json): the applications, and each one's deployments
 // newest first. A deployment row carries its full build log, so only a few are asked for after the first run.
-export interface CoolifyReader { applications(): Promise<any[]>; deployments(uuid: string, take: number): Promise<any[]> }
+export interface CoolifyReader { applications(): Promise<any[]>; deployments(uuid: string, take: number, signal?: AbortSignal): Promise<any[]> }
 
 /** The token (a read-only one: no sensitive fields, no writes) is read on every call, so a rotated secret is picked up. */
 export function realCoolify(base: string, tokenFile: string): CoolifyReader {
-  const get = (path: string) => json(`${base}${path}`, { headers: { accept: "application/json", authorization: `Bearer ${readFileSync(tokenFile, "utf8").trim()}` } });
+  const get = (path: string, signal?: AbortSignal) => json(`${base}${path}`,
+    { headers: { accept: "application/json", authorization: `Bearer ${readFileSync(tokenFile, "utf8").trim()}` }, ...(signal ? { signal } : {}) });
   return {
     applications: () => get("/api/v1/applications"),
-    deployments: async (uuid, take) => (await get(`/api/v1/deployments/applications/${encodeURIComponent(uuid)}?skip=0&take=${take}`))?.deployments,
+    deployments: async (uuid, take, signal) => (await get(`/api/v1/deployments/applications/${encodeURIComponent(uuid)}?skip=0&take=${take}`, signal))?.deployments,
   };
 }
 
