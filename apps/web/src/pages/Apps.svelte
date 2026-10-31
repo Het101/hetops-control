@@ -30,6 +30,8 @@
   const total = $derived(pool.filter(e => e.kind !== "site").length);
   const needing = $derived(pool.filter(e => needsYou(e.status)).length);
   const cool = $derived(sourceState(estate, "coolify")), gat = $derived(sourceState(estate, "gatus"));
+  // with no Coolify rows to show, Argo takes the full row and Coolify's note sits under it as a slim strip, not a half-empty card
+  const coolQuiet = $derived(!!cool.failing.length || !cool.reporting.length || !coolify.length);
   const health = (e: Entity) => str(e, "health") ?? "Unknown", sync = (e: Entity) => str(e, "sync") ?? "Unknown";
   const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
   const word = (s: (typeof sums)[number]) => s.needs ? `${s.needs} need${s.needs === 1 ? "s" : ""} you` : s.view?.reachable ? "steady" : s.view?.configured ? "unreachable" : "no agent yet";
@@ -66,7 +68,7 @@
     </div>
   </section>
 
-  <section class="mod raised c7 list" style="--in:.18s" aria-labelledby="ap-argo">
+  <section class={`mod raised ${coolQuiet ? "c12" : "c7"} list`} style="--in:.18s" aria-labelledby="ap-argo">
     <h4 id="ap-argo"><span>ARGO CD · SYNC AND HEALTH</span><span>{argo.length}</span></h4>
     <div class="cards">
       {#each argo as e (e.id)}
@@ -85,7 +87,7 @@
     </div>
   </section>
 
-  <section class="mod raised c5 list" style="--in:.22s" aria-labelledby="ap-cool">
+  <section class={`mod raised ${coolQuiet ? "c12 slim" : "c5"} list`} style="--in:.22s" aria-labelledby="ap-cool">
     <h4 id="ap-cool"><span>COOLIFY · DEPLOYS</span><span>{coolify.length || ""}</span></h4>
     {#if cool.failing.length}
       <Waiting title={`Can't read Coolify on ${cool.failing[0]!.server}.`} warm>{cool.failing[0]!.error}</Waiting>
@@ -109,9 +111,9 @@
 
   <section class="mod raised c12 list" style="--in:.26s" aria-labelledby="ap-work">
     <h4 id="ap-work"><span>WORKLOADS · PODS AND RESTARTS</span><span>{work.length}</span></h4>
+    <div class="tiles">
     {#each spaces as g (g.key)}
-      <div class="group mono">{g.server.toUpperCase()} · {g.apps.length} workloads</div>
-      <div class="tiles">
+      <div class="tile-h">{g.server.toUpperCase()}<small>{g.apps.length} workloads</small></div>
         {#each g.apps as e (e.id)}
           {@const ready = num(e, "pods") ?? 0} {@const want = num(e, "podsDesired") ?? 0} {@const p = pips(ready, want)}
           {@const r = num(e, "restarts24h") ?? 0} {@const warm = needsYou(e.status)}
@@ -121,15 +123,16 @@
             <small class:warm={r > 0 || ready < want}>{ready < want ? `${ready}/${want} ready` : r ? `${plural(r, "restart")} · last ${ago(str(e, "lastRestartAt") ?? e.observedAt, t)}` : "no restarts"}</small>
           </button>
         {/each}
-      </div>
     {:else}
       <Waiting title={estate ? "No workloads match." : "Waiting for the first state."} />
     {/each}
+    </div>
   </section>
 
   <section class="mod raised c12 list" style="--in:.3s" aria-labelledby="ap-sites">
     <h4 id="ap-sites"><span>SITES · UPTIME 24 H</span><span>{sites.length ? `${sites.filter(s => s.status === "ok").length}/${sites.length} up` : ""}</span></h4>
     {#if gat.failing.length}<Waiting title={`Can't read Gatus on ${gat.failing[0]!.server}.`} warm>{gat.failing[0]!.error}</Waiting>{/if}
+    <div class="site-list">
     {#each sites as e (e.id)}
       {@const u = num(e, "uptime24h")} {@const warm = needsYou(e.status)} {@const ms = num(e, "latencyMs")} {@const seen = time(e, "lastCheck")}
       <button type="button" class="row site" class:now={warm} data-site={e.id} onclick={() => (open = e)}>
@@ -141,6 +144,7 @@
     {:else}
       {#if !gat.failing.length}<Waiting title={gat.reporting.length ? "No sites match." : "Gatus is not reporting yet."}>Public sites and products with their 24 h uptime.</Waiting>{/if}
     {/each}
+    </div>
     {#if sites.length}<p class="note">the bar spans 90 to 100% uptime · ember = failing now</p>{/if}
   </section>
 </div>

@@ -14,7 +14,8 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Plus Jakar
 .app{display:grid;grid-template-columns:92px 1fr;min-height:100vh;max-width:1500px;margin:0 auto}
 
 /* ---------- rail with animated icons ---------- */
-.rail{position:relative;z-index:20;display:flex;flex-direction:column;align-items:center;gap:18px;padding:22px 0}
+/* the rail stays put while the page scrolls: sticky to the viewport, full height, so the gear at the foot is always in reach */
+.rail{position:sticky;top:0;align-self:start;height:100vh;height:100dvh;z-index:20;display:flex;flex-direction:column;align-items:center;gap:18px;padding:22px 0}
 .logo{width:46px;height:46px;border-radius:50%;margin-bottom:10px;display:grid;place-items:center}
 .logo i{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffc08a,var(--ember-2) 60%,var(--ember-3));box-shadow:0 0 14px rgba(242,112,47,.55);animation:breathe 4.5s var(--ease-io) infinite}
 .nav{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:var(--ink-3);cursor:pointer;transition:transform .35s var(--ease),color .3s,box-shadow .35s var(--ease);position:relative}
@@ -60,7 +61,10 @@ main{padding:24px 28px 34px 8px}
 .brand{font:600 13px "IBM Plex Mono";letter-spacing:.16em;color:var(--ink-2)}
 .live{display:flex;align-items:center;gap:9px;font:500 12px "IBM Plex Mono";color:var(--ink-2)}
 .pulse{position:relative;width:9px;height:9px;border-radius:50%;background:var(--quiet)}
-.pulse::after{content:"";position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--quiet);animation:ping 2.4s var(--ease) infinite}
+/* the live dot is re-keyed on every stream message: it blips and sends one ring out, so the pulse is the data arriving */
+.pulse{animation:blip .7s var(--ease)}
+@keyframes blip{from{transform:scale(1.6)}}
+.pulse::after{content:"";position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--quiet);opacity:0;animation:ping 1.8s var(--ease)}
 @keyframes ping{0%{transform:scale(1);opacity:.8}100%{transform:scale(3);opacity:0}}
 
 /* ---------- hero ---------- */
@@ -86,6 +90,8 @@ main{padding:24px 28px 34px 8px}
 @keyframes glow{0%,100%{box-shadow:0 0 0 4px #26272a,0 0 16px rgba(242,88,42,.45),0 8px 16px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 4px #26272a,0 0 30px rgba(242,88,42,.75),0 8px 16px rgba(0,0,0,.45)}}
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
 svg.forest{position:absolute;left:0;right:0;bottom:70px;width:100%;height:320px;z-index:1}
+/* its own compositor layer: the wind repaints the forest only, never the hero's gradient and shadows behind it */
+svg.forest{will-change:transform;contain:paint}
 .stations{position:absolute;left:28px;right:28px;bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);z-index:2}
 .st{text-align:center}
 .st b{display:block;font:600 16px Fraunces,serif}
@@ -93,8 +99,13 @@ svg.forest{position:absolute;left:0;right:0;bottom:70px;width:100%;height:320px;
 .st i{font-style:normal;font:600 11px "IBM Plex Mono";letter-spacing:.08em;color:var(--quiet)}
 .st i.warm{color:var(--ember)}
 /* forest motion */
-.canopy{transform-box:fill-box;transform-origin:50% 100%;animation:sway var(--d,7s) var(--ease-io) infinite alternate}
-@keyframes sway{from{transform:rotate(-1.2deg)}to{transform:rotate(1.2deg)}}
+/* the wind, the breathing roots and the ghost tree are one 30 Hz rAF loop in lib/wind.ts; these are the CSS halves:
+   the light that runs down the roots on each reading, the weather's colours, a leaf shaken loose */
+.root{stroke-dasharray:1 1}
+.root-pulse{stroke:#d9d7d1;stroke-width:2.4;stroke-dasharray:.16 2;stroke-dashoffset:.16;opacity:0}
+.streak{fill:none;stroke:var(--quiet);stroke-width:.9;stroke-linecap:round}
+.mote{fill:var(--quiet)}
+.drop{animation:fall 4.2s cubic-bezier(.45,.05,.55,.95) forwards}
 .fall{animation:fall var(--d,6s) linear infinite;animation-delay:var(--dl,0s)}
 @keyframes fall{0%{transform:translate(0,0) rotate(0);opacity:0}10%{opacity:.95}100%{transform:translate(var(--dx,20px),120px) rotate(320deg);opacity:0}}
 .ember-p{animation:rise var(--d,3s) var(--ease) infinite;animation-delay:var(--dl,0s)}
@@ -102,8 +113,9 @@ svg.forest{position:absolute;left:0;right:0;bottom:70px;width:100%;height:320px;
 
 /* ---------- modules ---------- */
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:22px;margin-top:24px}
-.mod{border-radius:26px;padding:20px 22px;position:relative;overflow:hidden;opacity:0;transform:translateY(14px);animation:enter .8s var(--ease) forwards;animation-delay:var(--in,0s)}
-@keyframes enter{to{opacity:1;transform:none}}
+/* modules float in, staggered by --in; visible by default, so a failed script never hides the page, and free to lift on hover */
+.mod{border-radius:26px;padding:20px 22px;position:relative;overflow:hidden;animation:enter .8s var(--ease) backwards;animation-delay:var(--in,0s);transition:transform .45s var(--ease),box-shadow .45s var(--ease)}
+@keyframes enter{from{opacity:0;transform:translateY(14px)}}
 .mod h4{margin:0;font:600 11.5px "IBM Plex Mono";letter-spacing:.13em;color:var(--ink-3);display:flex;justify-content:space-between}
 .note{font-size:12px;color:var(--ink-3);margin-top:6px}
 .c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c7{grid-column:span 7}
@@ -150,8 +162,9 @@ a.nav{text-decoration:none}
 .blade{transform-box:fill-box;transform-origin:50% 100%;animation:grow var(--d,1.6s) var(--ease) backwards;animation-delay:var(--dl,0s)}
 @keyframes grow{from{transform:scaleY(.35)}}
 /* the dial sweeps from empty on first paint, then eases between readings */
-.arc{animation:sweep 1.6s var(--ease) backwards;animation-delay:var(--in,0s)}
-@keyframes sweep{from{stroke-dashoffset:var(--full)}}
+.arc{animation:sweep 2s var(--ease) backwards;animation-delay:var(--in,0s)}
+/* sweep past the reading by a hair, then settle back onto it */
+@keyframes sweep{0%{stroke-dashoffset:var(--full)}70%{stroke-dashoffset:var(--over,0)}100%{stroke-dashoffset:var(--off,0)}}
 .dial small{display:block;margin-top:3px;font-size:10.5px;color:var(--ink-3)}
 .dial .none{color:var(--ink-3)}
 .row .tag{margin-left:auto}

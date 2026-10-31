@@ -14,7 +14,7 @@
   const pct = (v: number | undefined) => v === undefined ? "—" : `${Math.round(v)}%`;
 </script>
 
-<section class="mod raised c4" style="--in:.1s">
+<section class="mod raised c4" style="--in:.1s" data-module="hostload">
   <h4><span>HOST LOAD</span><span>now</span></h4>
   <div class="dials">
     {#each loads as l (l.id)}

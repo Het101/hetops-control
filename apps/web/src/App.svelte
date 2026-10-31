@@ -55,7 +55,7 @@
     <div class="top">
       <span class="brand">HETOPS CONTROL</span>
       <span class="live" class:warm={reconnecting} role="status">
-        <span class="pulse"></span>{reconnecting ? "reconnecting" : ago === undefined ? "connecting" : `live · ${ago} s ago`}</span>
+        {#key lastMsg}<span class="pulse"></span>{/key}{reconnecting ? "reconnecting" : ago === undefined ? "connecting" : `live · ${ago} s ago`}</span>
     </div>
 
     {#if route.path === "/"}

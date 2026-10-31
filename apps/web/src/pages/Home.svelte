@@ -34,8 +34,11 @@
   const sites = $derived(ents.filter(e => e.kind === "site").sort((a, b) => Number(needsYou(b.status)) - Number(needsYou(a.status)) || a.name.localeCompare(b.name)));
   const gatus = $derived(moduleState(estate, "gatus", sites.length > 0));
   const on = (m: { mode: string }) => m.mode !== "hidden";
-  // a missing module hands its width to its row neighbour, so no row is left with a hole
-  const span = (wide: boolean, normal: string) => (wide ? "c12" : normal);
+  // the side column runs short when the budget or CrowdSec is missing; then the sites strip fills it instead of a hole
+  // the capsules spread across the module's real width at one unit per pixel, so they never balloon on a wide screen
+  let capW = $state(420);
+  const CW = $derived(Math.max(300, Math.round(capW)));
+  const sideSites = $derived(!(on(budget) && on(cs)));
   const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
   const fmtDay = (d: string) => new Date(`${d}T00:00:00Z`).toUTCString().slice(5, 11).toUpperCase();
 </script>
@@ -43,103 +46,112 @@
 <section class="hero raised">
   <Headline headline={estate.headline} {now} />
   <NeedsYou needs={estate.headline.needs} />
-  <Forest state={estate} />
+  <Forest state={estate} {events} />
 </section>
 
-<div class="grid home">
-  <HostLoad state={estate} />
-
-  <section class={`mod raised ${on(budget) ? "c5" : "c8"}`} style="--in:.16s" aria-labelledby="h-deploys" data-module="deploys">
-    <h4 id="h-deploys"><span>DEPLOYS · 14 DAYS</span><span>{!eventsError && deploys ? `${deploys} in 14 d` : ""}<a class="to" href="/timeline" aria-label="Open the Timeline">open →</a></span></h4>
-    {#if eventsError}<Waiting title="Can't read the event log." warm>Deploys come from the Change Timeline; they are not shown until it answers again.</Waiting>
-    {:else}
-      <svg class="capsules" viewBox="0 0 420 150" role="img" aria-label={`Deploys per day over 14 days: ${days.map(d => d.known ? d.n : "unknown").join(", ")}${waiting.length ? `; ${plural(waiting.length, "deploy")} waiting on you` : ""}`}>
-        <defs><linearGradient id="cap-hot" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#c2391a"/><stop offset="1" stop-color="#ff9a3c"/></linearGradient></defs>
-        {#each days as d, i (d.day)}
-          {@const x = 10 + i * 29} {@const h = d.n ? 14 + (d.n / peak) * 104 : 0} {@const hot = i === days.length - 1 ? waiting.length : 0}
-          <rect x={x - 1} y="2" width="18" height="132" rx="9" class="cap-track" class:unknown={!d.known}><title>{d.day}: {d.known ? plural(d.n, "deploy") : "before the oldest event held"}</title></rect>
-          {#if h}<rect {x} y={133 - h} width="16" height={h} rx="8" class="cap" style={`--dl:${.35 + i * .055}s`}/>{/if}
-          {#if hot}<rect {x} y={133 - h - Math.min(14 + hot * 11, 128 - h)} width="16" height={Math.min(14 + hot * 11, 128 - h)} rx="8" fill="url(#cap-hot)" class="cap hot" style={`--dl:${.35 + i * .055}s`}/>{/if}
-        {/each}
-        <text x="10" y="148" class="cap-l">{fmtDay(days[0]!.day)}</text><text x="403" y="148" text-anchor="end" class="cap-l">TODAY</text>
-      </svg>
-      {#each waiting.slice(0, 2) as w (w.e.id)}
-        <div class="wait-row warm"><span class="sev warm" aria-hidden="true"><i></i></span><span>{w.e.name} has {w.commit} waiting for a deploy<small>{w.e.server}{w.e.source ? ` · ${w.e.source}` : ""}</small></span></div>
-      {/each}
-      {#if !deploys && !waiting.length}<p class="note">No deploys in the events held. Rollouts and Argo syncs appear as capsules.</p>
-      {:else}<p class="note">capsule = rollouts and Argo syncs that day · hollow = before the oldest event held{waiting.length ? " · ember = waiting on you" : ""}</p>{/if}
-    {/if}
-  </section>
-
-  {#if on(budget)}
-    <section class="mod raised c3" style="--in:.22s" aria-labelledby="h-budget" data-module="budget">
-      <h4 id="h-budget"><span>ERROR BUDGET</span><span>{slo[0]?.facts.windowDays ? `${slo[0].facts.windowDays.value} d` : ""}<a class="to" href="/alerts" aria-label="Open Alerts">open →</a></span></h4>
-      {#if budget.fail}<Waiting title="Can't read the error budget." warm>{budget.fail.server}: {budget.fail.error}</Waiting>
-      {:else if budget.mode === "empty"}<Waiting title="No SLO reported.">The error budget appears when an SLO is defined.</Waiting>
-      {:else}<Budget {slo} />{/if}
-    </section>
-  {/if}
-
-  {#if on(logs)}
-    <section class={`mod raised ${span(!on(cs), "c7")}`} style="--in:.28s" aria-labelledby="h-logs" data-module="logs">
-      <h4 id="h-logs"><span>LOG FLOW → OPS</span><span>{!logs.fail && perMinute(flows[0]) ? `24 h · ${perMinute(flows[0])}/min` : ""}<a class="to" href="/security" aria-label="Open Security">open →</a></span></h4>
-      {#if logs.fail}<Waiting title="Can't read Elasticsearch." warm>{logs.fail.server}: {logs.fail.error}. The log flow is not shown until it answers.</Waiting>
-      {:else if logs.mode === "empty"}<Waiting title="No log streams reported.">The default and security streams appear here, per 10 minutes.</Waiting>
+{#snippet deploysMod()}
+  <section class="mod raised c8" style="--in:.16s" aria-labelledby="h-deploys" data-module="deploys">
+      <h4 id="h-deploys"><span>DEPLOYS · 14 DAYS</span><span>{!eventsError && deploys ? `${deploys} in 14 d` : ""}<a class="to" href="/timeline" aria-label="Open the Timeline">open →</a></span></h4>
+      {#if eventsError}<Waiting title="Can't read the event log." warm>Deploys come from the Change Timeline; they are not shown until it answers again.</Waiting>
       {:else}
-        <Terrain series={flows} from={t - DAY} to={t} label="Lab log documents per 10 minutes over 24 hours, default and security streams" />
-        <p class="note">{flows.map((s, i) => `${i ? "grey" : "silver"} = ${s.label.replace(/^Lab logs: /i, "")} stream`).join(" · ")}</p>
-      {/if}
-    </section>
-  {/if}
-
-  {#if on(cs)}
-    <section class={`mod raised ${span(!on(logs), "c5")}`} style="--in:.34s" aria-labelledby="h-knocks" data-module="knocks">
-      <h4 id="h-knocks"><span>WHO KNOCKS · CROWDSEC</span><span>{!cs.fail && decisions.length ? `${decisions.length} banned` : ""}<a class="to" href="/security" aria-label="Open Security">open →</a></span></h4>
-      {#if cs.fail}<Waiting title="Can't read CrowdSec." warm>{cs.fail.server}: {cs.fail.error}</Waiting>
-      {:else}
-        <KnockMap {decisions} w={400} h={170} step={6} labels={false} />
-        <p class="note">{decisions.length ? "silver = banned sources, sized by count · white = the lab" : "Nothing is banned right now · white = the lab"}</p>
-      {/if}
-    </section>
-  {/if}
-
-  <Timeline events={events.slice(0, shown)} error={eventsError} wide={!on(snaps)} />
-
-  {#if on(snaps)}
-    <section class="mod raised c5 list" style="--in:.46s" aria-labelledby="h-backups" data-module="backups">
-      <h4 id="h-backups"><span>BACKUPS · LAST RESULT</span><span><a class="to" href="/backups" aria-label="Open Backups">open →</a></span></h4>
-      {#if snaps.fail}<Waiting title="Can't read the snapshots." warm>{snaps.fail.server}: {snaps.fail.error}</Waiting>
-      {:else}
-        {#each backups as e (e.id)}
-          {@const v = backupView(e, t)} {@const warm = needsYou(e.status)}
-          <a class="row" class:now={warm} href="/backups" data-backup={e.id}>
-            <span class="n mono" class:warm>{v.ok ? hhmm(v.ok) : "never"}</span>
-            <span class="t">{e.name}<small class:warm>{warm ? (e.statusReason ?? e.status) : `${str(e, "repository") ? `to ${str(e, "repository")} · ` : ""}last ok ${v.ok ? ago(v.ok, t) : "never"}`}</small></span>
-            <span class="tag pressed" class:warm>{warm ? (v.failedLast ? "FAILED" : "OVERDUE") : "OK"}</span>
-          </a>
-        {:else}<Waiting title="No snapshot policies reported.">Each policy appears with its last result.</Waiting>{/each}
-      {/if}
-    </section>
-  {/if}
-
-  {#if on(gatus)}
-    <section class="mod raised c12" style="--in:.52s" aria-labelledby="h-sites" data-module="sites">
-      <h4 id="h-sites"><span>SITES · UPTIME 24 H</span><span>{!gatus.fail && sites.length ? `${sites.filter(s => s.status === "ok").length}/${sites.length} up` : ""}<a class="to" href="/apps" aria-label="Open Apps">open →</a></span></h4>
-      {#if gatus.fail}<Waiting title="Can't read Gatus." warm>{gatus.fail.server}: {gatus.fail.error}</Waiting>
-      {:else if gatus.mode === "empty"}<Waiting title="No sites reported.">Public sites and products appear with their 24 h uptime.</Waiting>
-      {:else}
-        <div class="strip">
-          {#each sites as e (e.id)}
-            {@const u = num(e, "uptime24h")} {@const warm = needsYou(e.status)}
-            <div class="cell" class:hot={warm} data-site={e.id} title={e.statusReason ?? e.status}>
-              <span class="t">{e.name}</span>
-              <span class="up pressed" aria-hidden="true"><i class:warm style={`transform:scaleX(${uptimeFill(u)})`}></i></span>
-              <span class="mono pct" class:warm>{warm ? e.status.toUpperCase() : u === undefined ? "—" : `${u.toFixed(2)}%`}</span>
-            </div>
+        <svg class="capsules" bind:clientWidth={capW} viewBox={`0 0 ${CW} 150`} role="img" aria-label={`Deploys per day over 14 days: ${days.map(d => d.known ? d.n : "unknown").join(", ")}${waiting.length ? `; ${plural(waiting.length, "deploy")} waiting on you` : ""}`}>
+          <defs><linearGradient id="cap-hot" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#c2391a"/><stop offset="1" stop-color="#ff9a3c"/></linearGradient></defs>
+          {#each days as d, i (d.day)}
+            {@const x = 10 + i * (CW - 36) / 13} {@const h = d.n ? 14 + (d.n / peak) * 104 : 0} {@const hot = i === days.length - 1 ? waiting.length : 0}
+            <rect x={x - 1} y="2" width="18" height="132" rx="9" class="cap-track" class:unknown={!d.known}><title>{d.day}: {d.known ? plural(d.n, "deploy") : "before the oldest event held"}</title></rect>
+            {#if h}<rect {x} y={133 - h} width="16" height={h} rx="8" class="cap" style={`--dl:${.35 + i * .055}s`}/>{/if}
+            {#if hot}<rect {x} y={133 - h - Math.min(14 + hot * 11, 128 - h)} width="16" height={Math.min(14 + hot * 11, 128 - h)} rx="8" fill="url(#cap-hot)" class="cap hot" style={`--dl:${.35 + i * .055}s`}/>{/if}
           {/each}
-        </div>
-        <p class="note">the bar spans 90 to 100% uptime · ember = failing now</p>
+          <text x="10" y="148" class="cap-l">{fmtDay(days[0]!.day)}</text><text x={CW - 17} y="148" text-anchor="end" class="cap-l">TODAY</text>
+        </svg>
+        {#each waiting.slice(0, 2) as w (w.e.id)}
+          <div class="wait-row warm"><span class="sev warm" aria-hidden="true"><i></i></span><span>{w.e.name} has {w.commit} waiting for a deploy<small>{w.e.server}{w.e.source ? ` · ${w.e.source}` : ""}</small></span></div>
+        {/each}
+        {#if !deploys && !waiting.length}<p class="note">No deploys in the events held. Rollouts and Argo syncs appear as capsules.</p>
+        {:else}<p class="note">capsule = rollouts and Argo syncs that day · hollow = before the oldest event held{waiting.length ? " · ember = waiting on you" : ""}</p>{/if}
       {/if}
     </section>
-  {/if}
+{/snippet}
+{#snippet budgetMod()}
+  <section class="mod raised c4" style="--in:.22s" aria-labelledby="h-budget" data-module="budget">
+        <h4 id="h-budget"><span>ERROR BUDGET</span><span>{slo[0]?.facts.windowDays ? `${slo[0].facts.windowDays.value} d` : ""}<a class="to" href="/alerts" aria-label="Open Alerts">open →</a></span></h4>
+        {#if budget.fail}<Waiting title="Can't read the error budget." warm>{budget.fail.server}: {budget.fail.error}</Waiting>
+        {:else if budget.mode === "empty"}<Waiting title="No SLO reported.">The error budget appears when an SLO is defined.</Waiting>
+        {:else}<Budget {slo} />{/if}
+      </section>
+{/snippet}
+{#snippet logsMod()}
+  <section class="mod raised c8 grow" style="--in:.28s" aria-labelledby="h-logs" data-module="logs">
+        <h4 id="h-logs"><span>LOG FLOW → OPS</span><span>{!logs.fail && perMinute(flows[0]) ? `24 h · ${perMinute(flows[0])}/min` : ""}<a class="to" href="/security" aria-label="Open Security">open →</a></span></h4>
+        {#if logs.fail}<Waiting title="Can't read Elasticsearch." warm>{logs.fail.server}: {logs.fail.error}. The log flow is not shown until it answers.</Waiting>
+        {:else if logs.mode === "empty"}<Waiting title="No log streams reported.">The default and security streams appear here, per 10 minutes.</Waiting>
+        {:else}
+          <Terrain series={flows} from={t - DAY} to={t} label="Lab log documents per 10 minutes over 24 hours, default and security streams" />
+          <p class="note">{flows.map((s, i) => `${i ? "grey" : "silver"} = ${s.label.replace(/^Lab logs: /i, "")} stream`).join(" · ")}</p>
+        {/if}
+      </section>
+{/snippet}
+{#snippet knocksMod()}
+  <section class="mod raised c4 grow" style="--in:.34s" aria-labelledby="h-knocks" data-module="knocks">
+        <h4 id="h-knocks"><span>WHO KNOCKS · CROWDSEC</span><span>{!cs.fail && decisions.length ? `${decisions.length} banned` : ""}<a class="to" href="/security" aria-label="Open Security">open →</a></span></h4>
+        {#if cs.fail}<Waiting title="Can't read CrowdSec." warm>{cs.fail.server}: {cs.fail.error}</Waiting>
+        {:else}
+          <KnockMap {decisions} w={400} h={170} step={6} labels={false} />
+          <p class="note">{decisions.length ? "silver = banned sources, sized by count · white = the lab" : "Nothing is banned right now · white = the lab"}</p>
+        {/if}
+      </section>
+{/snippet}
+{#snippet backupsMod()}
+  <section class="mod raised c4 list" style="--in:.46s" aria-labelledby="h-backups" data-module="backups">
+        <h4 id="h-backups"><span>BACKUPS · LAST RESULT</span><span><a class="to" href="/backups" aria-label="Open Backups">open →</a></span></h4>
+        {#if snaps.fail}<Waiting title="Can't read the snapshots." warm>{snaps.fail.server}: {snaps.fail.error}</Waiting>
+        {:else}
+          {#each backups as e (e.id)}
+            {@const v = backupView(e, t)} {@const warm = needsYou(e.status)}
+            <a class="row" class:now={warm} href="/backups" data-backup={e.id}>
+              <span class="n mono" class:warm>{v.ok ? hhmm(v.ok) : "never"}</span>
+              <span class="t">{e.name}<small class:warm>{warm ? (e.statusReason ?? e.status) : `${str(e, "repository") ? `to ${str(e, "repository")} · ` : ""}last ok ${v.ok ? ago(v.ok, t) : "never"}`}</small></span>
+              <span class="tag pressed" class:warm>{warm ? (v.failedLast ? "FAILED" : "OVERDUE") : "OK"}</span>
+            </a>
+          {:else}<Waiting title="No snapshot policies reported.">Each policy appears with its last result.</Waiting>{/each}
+        {/if}
+      </section>
+{/snippet}
+{#snippet sitesMod()}
+  <section class="mod raised c12" style="--in:.52s" aria-labelledby="h-sites" data-module="sites">
+        <h4 id="h-sites"><span>SITES · UPTIME 24 H</span><span>{!gatus.fail && sites.length ? `${sites.filter(s => s.status === "ok").length}/${sites.length} up` : ""}<a class="to" href="/apps" aria-label="Open Apps">open →</a></span></h4>
+        {#if gatus.fail}<Waiting title="Can't read Gatus." warm>{gatus.fail.server}: {gatus.fail.error}</Waiting>
+        {:else if gatus.mode === "empty"}<Waiting title="No sites reported.">Public sites and products appear with their 24 h uptime.</Waiting>
+        {:else}
+          <div class="strip">
+            {#each sites as e (e.id)}
+              {@const u = num(e, "uptime24h")} {@const warm = needsYou(e.status)}
+              <div class="cell" class:hot={warm} data-site={e.id} title={e.statusReason ?? e.status}>
+                <span class="t">{e.name}</span>
+                <span class="up pressed" aria-hidden="true"><i class:warm style={`transform:scaleX(${uptimeFill(u)})`}></i></span>
+                <span class="mono pct" class:warm>{warm ? e.status.toUpperCase() : u === undefined ? "—" : `${u.toFixed(2)}%`}</span>
+              </div>
+            {/each}
+          </div>
+          <p class="note">the bar spans 90 to 100% uptime · ember = failing now</p>
+        {/if}
+      </section>
+{/snippet}
+
+<!-- two columns that end level: the instruments down the side, the flows down the middle; the log terrain takes up any slack.
+     Sites joins the side column when the optional modules are missing, else it runs full width below. -->
+<div class="grid home">
+  <div class="lane side c4">
+    <HostLoad state={estate} />
+    {#if on(budget)}{@render budgetMod()}{/if}
+    {#if on(cs)}{@render knocksMod()}{/if}
+    {#if on(snaps)}{@render backupsMod()}{/if}
+    {#if on(gatus) && sideSites}{@render sitesMod()}{/if}
+  </div>
+  <div class="lane main c8">
+    {@render deploysMod()}
+    {#if on(logs)}{@render logsMod()}{/if}
+    <Timeline events={events.slice(0, shown)} error={eventsError} />
+  </div>
+  {#if on(gatus) && !sideSites}{@render sitesMod()}{/if}
 </div>

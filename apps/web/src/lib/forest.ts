@@ -3,8 +3,9 @@ import { worst, type ServerId, type Status } from "@hetops-control/contracts";
 /** x, y are offsets from the branch tip; tone in [0,1) picks the leaf grey (floor(tone·5)) and its opacity (the fractional part). */
 export type Leaf = { x: number; y: number; r: number; tone: number; ember: boolean };
 /** id is the app id (the render key), app its display name; tip is where the leaves hang. */
-export type Branch = { id: string; app: string; d: string; width: number; tip: { x: number; y: number }; leaves: Leaf[]; restarts: number; status: Status };
-export type Tree = { server: ServerId; x: number; trunk: string; roots: string[]; branches: Branch[] };
+export type Branch = { id: string; app: string; d: string; width: number; base: { x: number; y: number }; tip: { x: number; y: number }; leaves: Leaf[]; restarts: number; status: Status };
+/** top is where the crown pivots in the wind; roots fan from the trunk foot. */
+export type Tree = { server: ServerId; x: number; top: { x: number; y: number }; trunk: string; roots: string[]; branches: Branch[] };
 export type ForestApp = { id: string; name: string; pods: number; restarts: number; status: Status };
 
 export const MAX_BRANCHES = 14;
@@ -56,8 +57,8 @@ export function growTree(server: ServerId, x: number, apps: ForestApp[]): Tree {
     const leaves: Leaf[] = Array.from({ length: count }, (_, p) => ({ r: r1(6 + B() * 9), x: r1((B() - .5) * (26 + pods * 4)),
       y: r1((B() - .5) * (22 + pods * 3)), tone: B(), ember: p < embers }));
     return { id: a.id, app: a.name, d: `M${r1(sx)} ${r1(sy)} Q ${r1(cx)} ${r1(cy)} ${r1(ex)} ${r1(ey)}`, width: r1(2 + pods * .35),
-      tip: { x: r1(ex), y: r1(ey) }, leaves, restarts: a.restarts, status: a.status };
+      base: { x: r1(sx), y: r1(sy) }, tip: { x: r1(ex), y: r1(ey) }, leaves, restarts: a.restarts, status: a.status };
   });
 
-  return { server, x, trunk, roots, branches };
+  return { server, x, top: { x: r1(tx), y: ty }, trunk, roots, branches };
 }

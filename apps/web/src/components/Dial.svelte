@@ -17,7 +17,7 @@
       {#if hot}<linearGradient id={`hg-${id}`} x1="0" x2="1"><stop offset="0" stop-color="#c2391a"/><stop offset="1" stop-color="#ff9a3c"/></linearGradient>{/if}
       <circle class="arc" {cx} {cy} {r} stroke={hot ? `url(#hg-${id})` : "#d8d6d0"} stroke-width="6" fill="none" stroke-dasharray={`${full} ${C}`}
         stroke-linecap="round" transform={`rotate(135 ${cx} ${cy})`}
-        style={`stroke-dashoffset:${offset};--full:${full}${hot ? ";filter:drop-shadow(0 0 5px rgba(242,88,42,.6))" : ""}`}/>
+        style={`stroke-dashoffset:${offset};--full:${full};--off:${offset}px;--over:${Math.max(0, offset - 7)}px${hot ? ";filter:drop-shadow(0 0 5px rgba(242,88,42,.6))" : ""}`}/>
     </svg>
     {#if value === undefined}<b class="none">—</b>{:else}<b><span use:countUp={Math.round(value)}></span>%</b>{/if}
   </div>
