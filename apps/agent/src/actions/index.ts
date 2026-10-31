@@ -4,6 +4,7 @@ import type { Registry } from "../registry.js";
 import { realEs } from "../sources/elasticsearch.js";
 import { realEsOperator, snapshotNow } from "./snapshot.js";
 import { argoRefresh, argoSync, realArgo } from "./argo.js";
+import { alertSilence, realSilences } from "./silence.js";
 
 /** The descriptor published in /v1/state: the zod params become JSON Schema, refused if outside the shared subset. */
 export const describeAction = (a: Action<any>): ActionDescriptor => ({
@@ -20,6 +21,7 @@ export const MAKERS: Record<string, Maker> = {
     realEsOperator(origin(need(env, "ES_URL", "snapshot.now")), need(env, "ES_OPERATOR_DIR", "snapshot.now"))),
   "argo.sync": () => argoSync(argo ??= realArgo()),
   "argo.refresh": () => argoRefresh(argo ??= realArgo()),
+  "alert.silence": env => alertSilence(realSilences(origin(need(env, "ALERTMANAGER_URL", "alert.silence")))),
 };
 /** Reads a setting an action needs; a missing one stops the agent at start, never at the owner's click. */
 export const need = (env: NodeJS.ProcessEnv, key: string, id: string) => { const v = env[key]; if (!v) throw new Error(`${id} needs ${key}`); return v; };
