@@ -5,7 +5,7 @@ import type { Source } from "../registry.js";
 import { json } from "./http.js";
 
 // The calls the control-reader user may make (role control_reader: cluster monitor + read_slm, read on the two streams).
-export interface EsReader { health(): Promise<any>; flow(): Promise<any>; slm(): Promise<any> }
+export interface EsReader { health(): Promise<any>; flow(): Promise<any>; slm(signal?: AbortSignal): Promise<any> }
 
 export const STREAMS = ["default", "security"] as const;
 const STEP = 10 * 60_000;
@@ -29,7 +29,7 @@ export function realEs(base: string, authDir: string): EsReader {
     health: () => json(`${base}/_cluster/health`, { headers: auth() }),
     flow: () => json(`${base}/${STREAMS.map(s => `logs-lab-${s}`).join(",")}/_search`,
       { method: "POST", headers: { ...auth(), "content-type": "application/json" }, body: JSON.stringify(FLOW) }),
-    slm: () => json(`${base}/_slm/policy`, { headers: auth() }),
+    slm: signal => json(`${base}/_slm/policy`, { headers: auth(), ...(signal ? { signal } : {}) }),
   };
 }
 

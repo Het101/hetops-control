@@ -43,6 +43,13 @@ describe("snapshot.now (recorded)", () => {
     expect(await a.preview!(backup("nightly-all"), {}, ctx)).toContain("already running");
     expect(calls).toEqual([]);
   });
+  it("hands the run's abort signal to both Elasticsearch calls, so the 55 s limit cancels them", async () => {
+    const seen: unknown[] = [];
+    const a = snapshotNow({ slm: async signal => { seen.push(signal); return slm; }, health: async () => ({}), flow: async () => ({}) },
+      { execute: async (_p, signal) => { seen.push(signal); return executed; } });
+    await a.run(backup("nightly-all"), {}, ctx);
+    expect(seen).toEqual([ctx.signal, ctx.signal]);
+  });
   it("refuses a policy that no longer exists, and an answer without a name", async () => {
     await expect(setup().a.run(backup("gone"), {}, ctx)).rejects.toThrow("no SLM policy gone");
     const op: EsOperator = { execute: async () => ({}) };

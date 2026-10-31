@@ -4,17 +4,21 @@ import type { Action, Entity } from "@hetops-control/contracts";
 
 // Argo CD Applications through the Kubernetes API (the agent's Role: get, patch in argocd). RBAC cannot see inside a patch,
 // so the ValidatingAdmissionPolicy in hetops-k8s-lab (control-agent-argo-actions) allows only the two shapes sent below.
-export interface ArgoApps { get(name: string): Promise<any>; patch(name: string, body: object): Promise<unknown> }
+export interface ArgoApps { get(name: string, signal?: AbortSignal): Promise<any>; patch(name: string, body: object, signal?: AbortSignal): Promise<unknown> }
 
-export function realArgo(): ArgoApps {
+/** Hands the caller's signal to the client's fetch, so an action's 55 s limit really ends the request. */
+const abortable = (signal?: AbortSignal): k8s.ConfigurationOptions | undefined => signal && { middlewareMergeStrategy: "append", middleware: [{
+  pre: c => { c.setSignal(signal); return new k8s.Observable(Promise.resolve(c)); }, post: r => new k8s.Observable(Promise.resolve(r)) }] };
+
+export function realArgo(load: (kc: k8s.KubeConfig) => void = kc => kc.loadFromDefault()): ArgoApps {
   let api: k8s.CustomObjectsApi | undefined;
-  const c = () => { if (!api) { const kc = new k8s.KubeConfig(); kc.loadFromDefault(); api = kc.makeApiClient(k8s.CustomObjectsApi); } return api; };
+  const c = () => { if (!api) { const kc = new k8s.KubeConfig(); load(kc); api = kc.makeApiClient(k8s.CustomObjectsApi); } return api; };
   const where = { group: "argoproj.io", version: "v1alpha1", namespace: "argocd", plural: "applications" };
   return {
-    get: name => c().getNamespacedCustomObject({ ...where, name }),
+    get: (name, signal) => c().getNamespacedCustomObject({ ...where, name }, abortable(signal)),
     // a JSON merge patch: only the keys sent change
-    patch: (name, body) => c().patchNamespacedCustomObject({ ...where, name, body, fieldManager: "hetops-control" },
-      k8s.setHeaderOptions("Content-Type", k8s.PatchStrategy.MergePatch)),
+    patch: (name, body, signal) => c().patchNamespacedCustomObject({ ...where, name, body, fieldManager: "hetops-control" },
+      k8s.setHeaderOptions("Content-Type", k8s.PatchStrategy.MergePatch, abortable(signal))),
   };
 }
 
@@ -29,8 +33,8 @@ export function argoSync(api: ArgoApps): Action<z.infer<typeof Sync>> {
     id: "argo.sync", label: "Sync", targets: ["argo-app"], risk: "safe",
     description: "Asks Argo CD to sync the application to the revision in git, as its Sync button does, without pruning.",
     params: Sync, applies: e => e.source === "argo",
-    async preview(t) {
-      const a = await api.get(nameOf(t)); const src = a?.spec?.source ?? a?.spec?.sources?.[0] ?? {};
+    async preview(t, _p, ctx) {
+      const a = await api.get(nameOf(t), ctx.signal); const src = a?.spec?.source ?? a?.spec?.sources?.[0] ?? {};
       return `Syncs ${t.name} on ${t.server} to ${src.targetRevision ?? "HEAD"} of ${src.repoURL ?? "its repository"}${src.path ? ` (${src.path})` : ""}. `
         + `Now: ${a?.status?.sync?.status ?? "Unknown"}, ${a?.status?.health?.status ?? "Unknown"}. `
         + "Nothing is pruned: anything removed from git stays until Argo CD's own automated sync prunes it."
@@ -38,8 +42,8 @@ export function argoSync(api: ArgoApps): Action<z.infer<typeof Sync>> {
     },
     async run(t, _p, ctx) {
       const name = nameOf(t);
-      if (running(await api.get(name))) return { ok: true, already: true, summary: `a sync of ${name} is already running` };
-      await api.patch(name, { operation: { initiatedBy: { username: `${ctx.actor} (hetops-control)` }, sync: { syncStrategy: { hook: {} } } } });
+      if (running(await api.get(name, ctx.signal))) return { ok: true, already: true, summary: `a sync of ${name} is already running` };
+      await api.patch(name, { operation: { initiatedBy: { username: `${ctx.actor} (hetops-control)` }, sync: { syncStrategy: { hook: {} } } } }, ctx.signal);
       return { ok: true, summary: `sync of ${name} started` };
     },
   };
@@ -53,9 +57,9 @@ export function argoRefresh(api: ArgoApps): Action<z.infer<typeof Refresh>> {
     async preview(t, p) {
       return `Refreshes ${t.name} on ${t.server}: Argo CD re-reads git${p.hard ? " without its manifest cache (hard)" : ""} and updates the sync status. Nothing in the cluster changes.`;
     },
-    async run(t, p) {
+    async run(t, p, ctx) {
       const name = nameOf(t);
-      await api.patch(name, { metadata: { annotations: { "argocd.argoproj.io/refresh": p.hard ? "hard" : "normal" } } });
+      await api.patch(name, { metadata: { annotations: { "argocd.argoproj.io/refresh": p.hard ? "hard" : "normal" } } }, ctx.signal);
       return { ok: true, summary: `${p.hard ? "hard " : ""}refresh of ${name} requested` };
     },
   };
