@@ -12,8 +12,8 @@ importers:
         specifier: 22.9.0
         version: 22.9.0
       typescript:
-        specifier: 5.6.3
-        version: 5.6.3
+        specifier: 6.0.3
+        version: 6.0.3
       vitest:
         specifier: 2.1.4
         version: 2.1.4(@types/node@22.9.0)
@@ -94,7 +94,7 @@ importers:
         version: 5.57.3
       svelte-check:
         specifier: 4.7.7
-        version: 4.7.7(picomatch@4.0.7)(svelte@5.57.3)(typescript@5.6.3)
+        version: 4.7.7(picomatch@4.0.7)(svelte@5.57.3)(typescript@6.0.3)
       vite:
         specifier: 6.4.5
         version: 6.4.5(@types/node@24.19.2)
@@ -1657,8 +1657,8 @@ packages:
   tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
 
-  typescript@5.6.3:
-    resolution: {integrity: sha512-hjcS1mhfuyi4WW8IWtjP7brDrG2cuDZukyrYrSauoXGNgx0S7zceP07adYkJycEr56BOUTNPzbInooiN3fn1qw==}
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -3106,7 +3106,7 @@ snapshots:
 
   strip-json-comments@2.0.1: {}
 
-  svelte-check@4.7.7(picomatch@4.0.7)(svelte@5.57.3)(typescript@5.6.3):
+  svelte-check@4.7.7(picomatch@4.0.7)(svelte@5.57.3)(typescript@6.0.3):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@sveltejs/load-config': 0.2.3
@@ -3115,7 +3115,7 @@ snapshots:
       picocolors: 1.1.1
       sade: 1.8.1
       svelte: 5.57.3
-      typescript: 5.6.3
+      typescript: 6.0.3
     transitivePeerDependencies:
       - picomatch
 
@@ -3219,7 +3219,7 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  typescript@5.6.3: {}
+  typescript@6.0.3: {}
 
   undici-types@6.19.8: {}
 
