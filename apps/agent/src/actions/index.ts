@@ -1,6 +1,8 @@
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { ActionPreviewSchema, ActionRequestSchema, ActionResultSchema, ParamsJsonSchema, type Action, type ActionDescriptor } from "@hetops-control/contracts";
 import type { Registry } from "../registry.js";
+import { realEs } from "../sources/elasticsearch.js";
+import { realEsOperator, snapshotNow } from "./snapshot.js";
 
 /** The descriptor published in /v1/state: the zod params become JSON Schema, refused if outside the shared subset. */
 export const describeAction = (a: Action<any>): ActionDescriptor => ({
@@ -10,7 +12,11 @@ export const describeAction = (a: Action<any>): ActionDescriptor => ({
 
 type Maker = (env: NodeJS.ProcessEnv) => Action<any>;
 /** Every verb this agent can offer; Tasks 3-6 add theirs. Which ones run is the deployment's choice (ACTIONS). */
-export const MAKERS: Record<string, Maker> = {};
+const origin = (v: string) => new URL(v).origin;
+export const MAKERS: Record<string, Maker> = {
+  "snapshot.now": env => snapshotNow(realEs(origin(need(env, "ES_URL", "snapshot.now")), env.ES_AUTH_DIR ?? "/secrets/es"),
+    realEsOperator(origin(need(env, "ES_URL", "snapshot.now")), need(env, "ES_OPERATOR_DIR", "snapshot.now"))),
+};
 /** Reads a setting an action needs; a missing one stops the agent at start, never at the owner's click. */
 export const need = (env: NodeJS.ProcessEnv, key: string, id: string) => { const v = env[key]; if (!v) throw new Error(`${id} needs ${key}`); return v; };
 

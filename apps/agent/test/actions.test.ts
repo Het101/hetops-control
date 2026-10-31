@@ -63,6 +63,11 @@ describe("agent actions", () => {
     expect(buildActions({ ACTIONS: " test.poke " }, make)).toEqual([poke]);
     expect(() => buildActions({ ACTIONS: "test.nope" }, make)).toThrow("unknown action test.nope in ACTIONS");
   });
+  it("snapshot.now needs ES_URL and ES_OPERATOR_DIR", () => {
+    expect(() => buildActions({ ACTIONS: "snapshot.now" })).toThrow("snapshot.now needs ES_URL");
+    expect(() => buildActions({ ACTIONS: "snapshot.now", ES_URL: "https://es:9200" })).toThrow("needs ES_OPERATOR_DIR");
+    expect(buildActions({ ACTIONS: "snapshot.now", ES_URL: "https://es:9200", ES_OPERATOR_DIR: "/x" })[0]!.id).toBe("snapshot.now");
+  });
   it("every params schema stays inside the subset the web and center understand", () => {
     expect(describeAction(poke).params.additionalProperties).toBe(false);
     const wild = { ...poke, params: z.object({ x: z.string().regex(/a/) }) };
