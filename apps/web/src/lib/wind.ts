@@ -1,4 +1,5 @@
 import { hash, rng } from "./forest.js";
+import { drained } from "./later.js";
 
 /**
  * The forest's wind, in scene units (the forest viewBox is 1200 wide). A soft breeze is always moving; every ~11 s a gust
@@ -91,9 +92,13 @@ export function mark(kind: "ring" | "breathe" | "scan", e: number, f: number, cx
 /**
  * The shared clock: one requestAnimationFrame for every scene on the page, ticking at 30 Hz, so the forest and the map
  * repaint in the same frame. A scene subscribes while it runs.
+ *
+ * It waits for the page to settle: the load event, then the last deferred module slice (lib/later.ts), then one idle
+ * callback (at most 1.5 s). Until then every scene stays in the rest pose its markup draws, so loading work and motion
+ * never compete for the main thread; the first frame looks the same, only still.
  */
 const scenes = new Set<(now: number) => void>();
-let raf = 0, last = 0;
+let raf = 0, last = 0, settled = false;
 const tick = (now: number) => {
   raf = scenes.size ? requestAnimationFrame(tick) : 0;
   // the motion is slow, so 30 updates a second read as smooth; repainting at 60 would double the cost for nothing
@@ -101,7 +106,16 @@ const tick = (now: number) => {
   last = now;
   for (const f of scenes) f(now);
 };
-const join = (f: (now: number) => void) => { scenes.add(f); if (!raf) raf = requestAnimationFrame(tick); };
+const wake = () => { if (settled && scenes.size && !raf) raf = requestAnimationFrame(tick); };
+const join = (f: (now: number) => void) => { scenes.add(f); wake(); };
+if (typeof window !== "undefined") {
+  const loaded = document.readyState === "complete" ? Promise.resolve() : new Promise(r => addEventListener("load", r, { once: true }));
+  const idle = () => new Promise<void>(r => (typeof requestIdleCallback === "function" ? requestIdleCallback(() => r(), { timeout: 1500 }) : setTimeout(r, 1)));
+  void loaded.then(drained).then(idle).then(() => { settled = true; wake(); });
+}
+/** how far the motion has faded in, 0 to 1 over FADE ms from when a scene starts (or restarts) moving */
+const FADE = 1000;
+const fadeIn = (ms: number) => { const p = Math.min(1, Math.max(0, ms / FADE)); return p * p * (3 - 2 * p); };
 const leave = (f: (now: number) => void) => { scenes.delete(f); };
 
 type Part = { el: SVGGraphicsElement; kind: string; x: number; ox: number; oy: number; amp: number; ph: number; f: number; born: number };
@@ -129,7 +143,8 @@ const HOLD: Record<string, [string, string]> = { streak: ["opacity", "0"], scan:
  */
 export function windy(svg: SVGSVGElement, p: { on: boolean; key: unknown }) {
   let parts: Part[] = [], on = p.on, seen = true, dirty = true, running = false;
-  const t0 = performance.now(), born = new WeakMap<Element, number>();
+  let start = 0; // when this scene's clock began: its first tick, and again after every pause
+  const born = new WeakMap<Element, number>();
   const collect = (now: number) => {
     dirty = false;
     parts = [...svg.querySelectorAll<SVGGraphicsElement>("[data-wind]")].map(el => {
@@ -138,6 +153,7 @@ export function windy(svg: SVGSVGElement, p: { on: boolean; key: unknown }) {
       return { el, kind: d.wind!, x: n(d.x), ox: n(d.ox), oy: n(d.oy), amp: n(d.amp, 1), ph: n(d.ph), f: n(d.f, 1), born: born.get(el)! };
     });
   };
+  /** back to the rest pose the markup draws: a mote returns to its starting point rather than the scene's corner */
   const still = () => {
     if (dirty) collect(performance.now());
     for (const q of parts) {
@@ -145,44 +161,65 @@ export function windy(svg: SVGSVGElement, p: { on: boolean; key: unknown }) {
       q.el.style.removeProperty("stroke-dashoffset"); q.el.style.removeProperty("opacity");
       const h = HOLD[q.kind];
       if (h?.[0] === "opacity") q.el.style.opacity = h[1]; else if (h) q.el.setAttribute(h[0], h[1]);
+      if (q.kind === "mote") q.el.setAttribute("transform", `translate(${q.ox - 50} ${q.oy})`);
     }
   };
-  const put = (el: Element, f: Frame | undefined, attr: string) => { if (f) { el.setAttribute("transform", f.transform); el.setAttribute(attr, f.opacity.toFixed(3)); } };
+  // a: the fade-in, from the rest pose (0) to full motion (1); opacities and offsets scale by it, so nothing jumps
+  let a = 1;
+  // an element that is and stays invisible is not touched: a spark between cycles, a ring in its delay
+  const put = (el: Element, f: Frame | undefined, attr: string, fade = true) => {
+    if (!f) return;
+    const o = (fade ? f.opacity * a : f.opacity).toFixed(3);
+    if (o === "0.000" && el.getAttribute(attr) === "0.000") return;
+    el.setAttribute("transform", f.transform); el.setAttribute(attr, o);
+  };
+  /** a breathing dot rests at full size and strength, so it eases from there into its breath */
+  const settle = (f: Frame | undefined): Frame | undefined => {
+    if (!f || a === 1) return f;
+    const k = Number(/scale\(([\d.]+)\)/.exec(f.transform)?.[1] ?? 1);
+    return { transform: f.transform.replace(/scale\([\d.]+\)/, `scale(${(1 + (k - 1) * a).toFixed(4)})`), opacity: 1 + (f.opacity - 1) * a };
+  };
   const frame = (now: number) => {
     if (dirty) collect(now);
-    const t = (now - t0) / 1000 + 4; // start just before the first gust
+    if (!start) start = now;
+    a = fadeIn(now - start);
+    const t = (now - start) / 1000 + 4; // start just before the first gust
     for (const q of parts) {
       switch (q.kind) {
         case "pivot": {
-          const a = q.amp * (wind(q.x, t) + .3 * Math.sin(t * .9 * q.f + q.ph));
-          q.el.setAttribute("transform", `rotate(${a.toFixed(3)} ${q.ox} ${q.oy})`); break;
+          const r = a * q.amp * (wind(q.x, t) + .3 * Math.sin(t * .9 * q.f + q.ph));
+          q.el.setAttribute("transform", `rotate(${r.toFixed(3)} ${q.ox} ${q.oy})`); break;
         }
         case "flutter": {
           const g = .6 + Math.max(0, wind(q.x, t)) * 1.4, w = t * 2.1 * q.f + q.ph;
-          q.el.setAttribute("transform", `translate(${(Math.sin(w) * 1.3 * g + wind(q.x, t) * 1.6).toFixed(2)} ${(Math.cos(w * 1.3) * .9 * g).toFixed(2)})`); break;
+          q.el.setAttribute("transform", `translate(${(a * (Math.sin(w) * 1.3 * g + wind(q.x, t) * 1.6)).toFixed(2)} ${(a * Math.cos(w * 1.3) * .9 * g).toFixed(2)})`); break;
         }
         case "grass": {
-          const k = Math.tan((wind(q.x, t) * 7 + Math.sin(t * 2.4 + q.ph) * 1.2) * Math.PI / 180);
+          const k = Math.tan(a * (wind(q.x, t) * 7 + Math.sin(t * 2.4 + q.ph) * 1.2) * Math.PI / 180);
           q.el.setAttribute("transform", `matrix(1 0 ${k.toFixed(4)} 1 ${(-k * 300).toFixed(2)} 0)`); break;
         }
         case "streak": {
           // ride the latest gust's front, a little ahead of it, fading in and out across the scene
           const k = Math.floor((t - 3) / GUST_EVERY), x = gustX(k, t) + q.ox, life = (x + 200) / 1600;
           const o = life > 0 && life < 1 ? Math.sin(life * Math.PI) * gustAt(k).strength * q.amp : 0;
-          q.el.setAttribute("transform", `translate(${x.toFixed(1)} ${q.oy})`); q.el.style.opacity = o.toFixed(3); break;
+          const v = (o * a).toFixed(3);
+          if (v === "0.000" && q.el.style.opacity === "0") break; // between gusts the streak stays hidden and untouched
+          q.el.setAttribute("transform", `translate(${x.toFixed(1)} ${q.oy})`); q.el.style.opacity = v === "0.000" ? "0" : v; break;
         }
         case "root": {
           const b = .5 - .5 * Math.cos(2 * Math.PI * t / q.f + q.ph);
-          q.el.style.strokeDashoffset = (.04 + .46 * b).toFixed(3); break;
+          q.el.style.strokeDashoffset = (a * (.04 + .46 * b)).toFixed(3); break;
         }
         case "fall": case "rise": put(q.el, spark(q.kind, t - 4 - q.ph, q.f, q.amp, q.ox, q.oy), "fill-opacity"); break;
         case "drop": put(q.el, spark("drop", (now - q.born) / 1000, q.f, q.amp, q.ox, q.oy), "fill-opacity"); break;
         case "ring": case "scan": put(q.el, mark(q.kind, t - 4 - q.ph, q.f, q.ox, q.oy), "stroke-opacity"); break;
-        case "breathe": put(q.el, mark("breathe", t - 4 - q.ph, q.f, q.ox, q.oy), "fill-opacity"); break;
-        case "ghost": q.el.style.opacity = (.47 + .15 * Math.sin(2 * Math.PI * t / 9 + q.ph)).toFixed(3); break;
+        case "breathe": put(q.el, settle(mark("breathe", t - 4 - q.ph, q.f, q.ox, q.oy)), "fill-opacity", false); break;
+        // the dormant tree rests at its CSS .55 and eases into its breath
+        case "ghost": q.el.style.opacity = (.55 + a * (.47 + .15 * Math.sin(2 * Math.PI * t / 9 + q.ph) - .55)).toFixed(3); break;
         case "mote": {
           const x = ((q.ox + t * 9 * q.f) % 1300) - 50, y = q.oy + Math.sin(t * .7 * q.f + q.ph) * 10;
-          q.el.setAttribute("transform", `translate(${(x + wind(x, t) * 22).toFixed(1)} ${y.toFixed(1)})`); break;
+          const rx = q.ox - 50; // where the markup draws it
+          q.el.setAttribute("transform", `translate(${(rx + a * (x + wind(x, t) * 22 - rx)).toFixed(1)} ${(q.oy + a * (y - q.oy)).toFixed(1)})`); break;
         }
       }
     }
@@ -190,7 +227,7 @@ export function windy(svg: SVGSVGElement, p: { on: boolean; key: unknown }) {
   const run = () => {
     const go = on && seen && !document.hidden;
     if (go && !running) join(frame);
-    if (!go) { leave(frame); still(); }
+    if (!go) { leave(frame); still(); start = 0; }
     running = go;
   };
   const io = typeof IntersectionObserver === "function" ? new IntersectionObserver(([e]) => { seen = !!e?.isIntersecting; run(); }) : undefined;

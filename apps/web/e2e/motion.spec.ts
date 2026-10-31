@@ -8,7 +8,8 @@ const sample = (page: Page) => page.evaluate(() =>
 test("the forest moves by default: the wind changes its transforms over time", async ({ page }) => {
   await mockApi(page, roughNight(), roughEvents); await page.goto("/");
   await expect(page.locator(".limb").first()).toBeAttached();
-  await page.waitForTimeout(400);
+  // the clock starts once the page has settled
+  await expect.poll(async () => (await sample(page)).every(t => t !== null), { timeout: 5000 }).toBe(true);
   const a = await sample(page);
   await page.waitForTimeout(700);
   const b = await sample(page);
@@ -17,6 +18,36 @@ test("the forest moves by default: the wind changes its transforms over time", a
   // the roots breathe and the wind streaks exist only while motion is on
   await expect(page.locator(".streak")).toHaveCount(5);
   expect(await page.evaluate(() => document.getAnimations().filter(x => x.playState === "running").length)).toBeGreaterThan(0);
+});
+
+test("motion waits for the page to settle, in its rest pose, then fades in and runs", async ({ page }) => {
+  await mockApi(page, roughNight(), roughEvents);
+  // hold the load event: the preloaded fonts arrive 2.5 s late
+  await page.route("**/*.woff2", async r => { await new Promise(f => setTimeout(f, 2500)); await r.continue(); });
+  // keep the first transform each limb is given
+  await page.addInitScript(() => {
+    const w = window as unknown as { first: string[] }; w.first = []; const seen = new WeakSet<Element>();
+    new MutationObserver(ms => { for (const m of ms) { const el = m.target as Element;
+      if (el.classList?.contains("limb") && !seen.has(el) && el.getAttribute("transform")) { seen.add(el); w.first.push(el.getAttribute("transform")!); } } })
+      .observe(document, { subtree: true, attributes: true, attributeFilter: ["transform"] });
+  });
+  const t0 = Date.now();
+  await page.goto("/", { waitUntil: "commit" });
+  await expect(page.locator(".limb").first()).toBeAttached();
+  await page.waitForTimeout(1200);
+  // before load: drawn, but in the rest pose the markup gives it, and nothing on the clock has moved
+  expect(await page.evaluate(() => document.readyState)).not.toBe("complete");
+  expect((await sample(page)).every(t => t === null)).toBe(true);
+  expect(await page.locator("svg.forest .ember-p").evaluateAll(els => els.every(el => el.getAttribute("fill-opacity") === "0"))).toBe(true);
+  // after load, the last slice and an idle moment: the clock runs, and the motion grows over its first second
+  await expect.poll(async () => (await sample(page)).every(t => t !== null), { timeout: 6000 }).toBe(true);
+  expect(Date.now() - t0).toBeGreaterThan(2500);
+  const a = await sample(page); await page.waitForTimeout(400); const b = await sample(page);
+  expect(b).not.toEqual(a);
+  // the very first tick writes the rest pose itself: the fade starts from zero, so nothing jumps
+  const first = await page.evaluate(() => (window as unknown as { first: string[] }).first);
+  expect(first.length).toBeGreaterThan(3);
+  expect(first.every(t => /^rotate\(-?0\.000 /.test(t))).toBe(true);
 });
 
 test("the embers and falling leaves ride the same 30 Hz loop, not CSS animations", async ({ page }) => {

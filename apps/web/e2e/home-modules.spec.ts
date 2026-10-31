@@ -67,7 +67,8 @@ test("each module links to its page", async ({ page }) => {
 
 test("a rough night: the budget, silver bans, and ember only where the owner is needed", async ({ page }) => {
   await mockApi(page, roughNight(), [...roughEvents, ...deployHistory]); await page.goto("/");
-  await expect(mod(page, "budget").locator(".budget-num")).toContainText("58");
+  // the value it counts to, read where the count-up keeps it: the digits themselves are still easing on a loaded machine
+  await expect(mod(page, "budget").locator(".budget-num b")).toHaveAttribute("data-final", "58");
   await expect(mod(page, "budget").locator(".budget-num.warm")).toHaveCount(0);
   await expect(mod(page, "knocks").locator(".knock")).toHaveCount(7);
   await expect(mod(page, "knocks").locator(".knock").first()).toHaveCSS("fill", "rgb(201, 199, 193)"); // --quiet, never ember

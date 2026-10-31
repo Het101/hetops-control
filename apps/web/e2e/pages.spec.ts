@@ -81,7 +81,7 @@ test.describe("Alerts", () => {
     await expect(page.locator('.row[data-severity="info"]')).toContainText("CPUThrottlingHigh");
     await expect(page.getByRole("link", { name: "Grafana for KubePodCrashLooping" })).toHaveAttribute("href", /grafana/);
     await expect(page.getByRole("button", { name: /Silence KubePodCrashLooping: arrives in stage 2/ })).toHaveAttribute("aria-disabled", "true");
-    await expect(page.locator(".budget-num")).toContainText("58");
+    await expect(page.locator(".budget-num b")).toHaveAttribute("data-final", "58"); // the value it counts to
     await page.getByRole("group", { name: "Server" }).getByRole("button", { name: /ops/ }).click();
     await expect(rows).toHaveCount(1);
     await rows.first().getByRole("button").first().click();
