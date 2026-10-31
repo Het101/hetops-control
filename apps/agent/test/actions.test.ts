@@ -68,6 +68,10 @@ describe("agent actions", () => {
     expect(() => buildActions({ ACTIONS: "snapshot.now", ES_URL: "https://es:9200" })).toThrow("needs ES_OPERATOR_DIR");
     expect(buildActions({ ACTIONS: "snapshot.now", ES_URL: "https://es:9200", ES_OPERATOR_DIR: "/x" })[0]!.id).toBe("snapshot.now");
   });
+  it("every known verb builds with its settings and publishes a valid descriptor", () => {
+    const env = { ACTIONS: "snapshot.now,argo.sync,argo.refresh,alert.silence,coolify.redeploy", ES_URL: "https://es:9200", ES_OPERATOR_DIR: "/x", ALERTMANAGER_URL: "http://am:9093", COOLIFY_URL: "http://10.0.0.11:8000", COOLIFY_DEPLOY_TOKEN_FILE: "/x" };
+    expect(buildActions(env).map(describeAction).map(d => d.id)).toEqual(env.ACTIONS.split(","));
+  });
   it("every params schema stays inside the subset the web and center understand", () => {
     expect(describeAction(poke).params.additionalProperties).toBe(false);
     const wild = { ...poke, params: z.object({ x: z.string().regex(/a/) }) };
