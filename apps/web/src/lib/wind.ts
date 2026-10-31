@@ -35,6 +35,40 @@ export const breeze = (x: number, t: number) => .35 * Math.sin(t * .55 - x * .00
 /** wind at x, t: roughly -0.5 .. 1.7, positive pushes right */
 export const wind = (x: number, t: number) => breeze(x, t) + gust(x, t);
 
+/** CSS cubic-bezier(x1, y1, x2, y2) as a function of progress 0..1 (Newton steps, then bisection), for keyframes replayed in JS */
+export function bezier(x1: number, y1: number, x2: number, y2: number) {
+  const c = (a: number, b: number, s: number) => 3 * a * s * (1 - s) ** 2 + 3 * b * s * s * (1 - s) + s ** 3;
+  return (x: number) => {
+    if (x <= 0 || x >= 1) return x <= 0 ? 0 : 1;
+    let s = x;
+    for (let i = 0; i < 6; i++) {
+      const d = 3 * x1 * (1 - s) ** 2 + 6 * (x2 - x1) * s * (1 - s) + 3 * (1 - x2) * s * s, e = c(x1, x2, s) - x;
+      if (Math.abs(e) < 1e-6) return c(y1, y2, s);
+      if (Math.abs(d) < 1e-6) break;
+      s -= e / d;
+    }
+    let lo = 0, hi = 1; s = x;
+    for (let i = 0; i < 30; i++) { if (c(x1, x2, s) < x) lo = s; else hi = s; s = (lo + hi) / 2; }
+    return c(y1, y2, s);
+  };
+}
+const ease = bezier(.22, 1, .36, 1); // --ease in tokens.css
+
+/**
+ * One frame of the mock's ember keyframes, `e` seconds into a particle's life (negative: still in its delay, so it rests
+ * untouched as a CSS animation would), with a cycle of `f` seconds and a sideways drift `dx`. Transforms are about the
+ * scene origin, exactly as the CSS ones were (an SVG element's transform-box is the view box).
+ *   fall: linear; translate(dx, 120) rotate(320deg) at the end; opacity 0, .95 at 10%, 0
+ *   rise: --ease on every keyframe interval; translate(dx, -70) scale(.3) at the end; opacity 0, 1 at 15%, 0
+ */
+export function spark(kind: "fall" | "rise", e: number, f: number, dx: number): { transform: string; opacity: number } | undefined {
+  if (e < 0) return undefined;
+  const p = (e % f) / f;
+  if (kind === "fall") return { transform: `translate(${(dx * p).toFixed(2)} ${(120 * p).toFixed(2)}) rotate(${(320 * p).toFixed(1)})`, opacity: p < .1 ? .95 * p / .1 : .95 * (1 - (p - .1) / .9) };
+  const k = ease(p);
+  return { transform: `translate(${(dx * k).toFixed(2)} ${(-70 * k).toFixed(2)}) scale(${(1 - .7 * k).toFixed(4)})`, opacity: p < .15 ? ease(p / .15) : 1 - ease((p - .15) / .85) };
+}
+
 type Part = { el: SVGGraphicsElement; kind: string; x: number; ox: number; oy: number; amp: number; ph: number; f: number };
 const n = (v: string | undefined, d = 0) => (v === undefined ? d : Number(v));
 
@@ -49,7 +83,9 @@ const n = (v: string | undefined, d = 0) => (v === undefined ? d : Number(v));
  *   data-wind="mote"    a drifting mote carried by the breeze
  *   data-wind="root"    a root that grows and shrinks over data-f seconds (stroke-dashoffset on a pathLength 1 path)
  *   data-wind="ghost"   the dormant tree's slow breath (opacity)
- * Roots and the ghost live here rather than in CSS so the whole scene repaints at the loop's 30 Hz, not at 60.
+ *   data-wind="fall"    a leaf falling from a struggling branch, and "rise" an ember rising from it: data-f s cycles after
+ *                       data-ph s, drifting data-amp sideways (fill-opacity, which needs no transparency layer)
+ * Roots, the ghost and the embers live here rather than in CSS so the whole scene repaints at the loop's 30 Hz, not at 60.
  */
 export function windy(svg: SVGSVGElement, p: { on: boolean; key: unknown }) {
   let parts: Part[] = [], raf = 0, on = p.on, seen = true, t0 = performance.now();
@@ -60,7 +96,7 @@ export function windy(svg: SVGSVGElement, p: { on: boolean; key: unknown }) {
     });
   };
   const still = () => {
-    for (const q of parts) { q.el.removeAttribute("transform"); q.el.style.removeProperty("stroke-dashoffset"); q.el.style.removeProperty("opacity"); if (q.kind === "streak") q.el.style.opacity = "0"; }
+    for (const q of parts) { q.el.removeAttribute("transform"); q.el.style.removeProperty("stroke-dashoffset"); q.el.style.removeProperty("opacity"); q.el.removeAttribute("fill-opacity"); if (q.kind === "streak") q.el.style.opacity = "0"; }
   };
   let last = 0;
   const frame = (now: number) => {
@@ -92,6 +128,11 @@ export function windy(svg: SVGSVGElement, p: { on: boolean; key: unknown }) {
         case "root": {
           const b = .5 - .5 * Math.cos(2 * Math.PI * t / q.f + q.ph);
           q.el.style.strokeDashoffset = (.04 + .46 * b).toFixed(3); break;
+        }
+        case "fall": case "rise": {
+          const s = spark(q.kind, t - 4, q.f, q.amp);
+          if (s) { q.el.setAttribute("transform", s.transform); q.el.setAttribute("fill-opacity", s.opacity.toFixed(3)); }
+          break;
         }
         case "ghost": q.el.style.opacity = (.47 + .15 * Math.sin(2 * Math.PI * t / 9 + q.ph)).toFixed(3); break;
         case "mote": {

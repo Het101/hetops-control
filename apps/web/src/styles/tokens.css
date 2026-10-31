@@ -4,10 +4,13 @@
   --ink:#ecebe7; --ink-2:#b4b2ac; --ink-3:#9a9993; --quiet:#c9c7c1;
   --ember-1:#ff9a3c; --ember-2:#f0582a; --ember-3:#c2391a; --ember:#f2702f;
   --ease:cubic-bezier(.22,1,.36,1); --ease-io:cubic-bezier(.65,0,.35,1);
+  /* type: the app's own fonts (fonts.css), each followed by a metric-matched local face for the moment before it loads;
+     every use keeps its own generic tail, so a glyph the font lacks falls back exactly as it did */
+  --serif:Fraunces,"Fraunces fallback"; --sans:"Plus Jakarta Sans","Plus Jakarta Sans fallback"; --mono:"IBM Plex Mono","IBM Plex Mono fallback";
 }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans),system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:var(--mono),ui-monospace,monospace}
 /* raised and pressed surfaces (neumorphic) */
 .raised{background:linear-gradient(145deg,#2f3034,#27282b);box-shadow:-6px -6px 14px var(--hi),8px 10px 22px var(--lo)}
 .pressed{background:linear-gradient(145deg,#25262a,#2d2e32);box-shadow:inset -4px -4px 10px var(--hi),inset 6px 6px 14px var(--lo)}
@@ -23,7 +26,7 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Plus Jakar
 .nav.on{color:var(--ember)}
 .nav svg{width:22px;height:22px;overflow:visible}
 .nav svg *{vector-effect:non-scaling-stroke}
-.nav .tip{position:absolute;left:62px;white-space:nowrap;font:500 12px "Plus Jakarta Sans";color:var(--ink);background:#1f2023;padding:5px 10px;border-radius:8px;opacity:0;transform:translateX(-6px);pointer-events:none;transition:opacity .25s,transform .35s var(--ease);box-shadow:0 8px 18px var(--lo)}
+.nav .tip{position:absolute;left:62px;white-space:nowrap;font:500 12px var(--sans);color:var(--ink);background:#1f2023;padding:5px 10px;border-radius:8px;opacity:0;transform:translateX(-6px);pointer-events:none;transition:opacity .25s,transform .35s var(--ease);box-shadow:0 8px 18px var(--lo)}
 .nav:hover .tip{opacity:1;transform:none}
 .rail .sp{flex:1}
 
@@ -58,8 +61,8 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Plus Jakar
 main{padding:24px 28px 34px 8px}
 /* ---------- top bar ---------- */
 .top{display:flex;align-items:center;gap:18px;margin-bottom:22px}
-.brand{font:600 13px "IBM Plex Mono";letter-spacing:.16em;color:var(--ink-2)}
-.live{display:flex;align-items:center;gap:9px;font:500 12px "IBM Plex Mono";color:var(--ink-2)}
+.brand{font:600 13px var(--mono);letter-spacing:.16em;color:var(--ink-2)}
+.live{display:flex;align-items:center;gap:9px;font:500 12px var(--mono);color:var(--ink-2)}
 .pulse{position:relative;width:9px;height:9px;border-radius:50%;background:var(--quiet)}
 /* the live dot is re-keyed on every stream message: it blips and sends one ring out, so the pulse is the data arriving */
 .pulse{animation:blip .7s var(--ease)}
@@ -70,12 +73,12 @@ main{padding:24px 28px 34px 8px}
 /* ---------- hero ---------- */
 .hero{position:relative;border-radius:30px;overflow:hidden;min-height:520px}
 .hero-copy{position:absolute;left:34px;top:30px;max-width:540px;z-index:3}
-.date{font:500 12px "IBM Plex Mono";color:var(--ink-3);letter-spacing:.08em}
-.headline{font:600 36px/1.08 Fraunces,Georgia,serif;margin:10px 0 12px;letter-spacing:-.01em}
+.date{font:500 12px var(--mono);color:var(--ink-3);letter-spacing:.08em}
+.headline{font:600 36px/1.08 var(--serif),Georgia,serif;margin:10px 0 12px;letter-spacing:-.01em}
 .headline em{font-style:normal;background:linear-gradient(90deg,var(--ember-1),var(--ember-2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .sub{font-size:14.5px;line-height:1.65;color:var(--ink-2)}
 .needs{position:absolute;right:28px;top:28px;width:350px;z-index:3;border-radius:24px;padding:16px 18px}
-.needs h3{margin:0 0 6px;font:600 12px "IBM Plex Mono";letter-spacing:.14em;color:var(--ember)}
+.needs h3{margin:0 0 6px;font:600 12px var(--mono);letter-spacing:.14em;color:var(--ember)}
 .need{display:flex;align-items:center;gap:12px;padding:12px 8px;border-radius:16px;margin:0 -8px;transition:background .3s}
 .need:hover{background:rgba(0,0,0,.18)}
 .need .txt{flex:1;font-size:13.5px}
@@ -94,49 +97,47 @@ svg.forest{position:absolute;left:0;right:0;bottom:70px;width:100%;height:320px;
 svg.forest{will-change:transform;contain:paint}
 .stations{position:absolute;left:28px;right:28px;bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);z-index:2}
 .st{text-align:center}
-.st b{display:block;font:600 16px Fraunces,serif}
-.st span{font:500 11.5px "IBM Plex Mono";color:var(--ink-3)}
-.st i{font-style:normal;font:600 11px "IBM Plex Mono";letter-spacing:.08em;color:var(--quiet)}
+.st b{display:block;font:600 16px var(--serif),serif}
+.st span{font:500 11.5px var(--mono);color:var(--ink-3)}
+.st i{font-style:normal;font:600 11px var(--mono);letter-spacing:.08em;color:var(--quiet)}
 .st i.warm{color:var(--ember)}
 /* forest motion */
-/* the wind, the breathing roots and the ghost tree are one 30 Hz rAF loop in lib/wind.ts; these are the CSS halves:
+/* the wind, the breathing roots, the ghost tree, the falling leaves and the rising embers are one 30 Hz rAF loop in lib/wind.ts; these are the CSS halves:
    the light that runs down the roots on each reading, the weather's colours, a leaf shaken loose */
 .root{stroke-dasharray:1 1}
 .root-pulse{stroke:#d9d7d1;stroke-width:2.4;stroke-dasharray:.16 2;stroke-dashoffset:.16;opacity:0}
 .streak{fill:none;stroke:var(--quiet);stroke-width:.9;stroke-linecap:round}
 .mote{fill:var(--quiet)}
 .drop{animation:fall 4.2s cubic-bezier(.45,.05,.55,.95) forwards}
-.fall{animation:fall var(--d,6s) linear infinite;animation-delay:var(--dl,0s)}
 @keyframes fall{0%{transform:translate(0,0) rotate(0);opacity:0}10%{opacity:.95}100%{transform:translate(var(--dx,20px),120px) rotate(320deg);opacity:0}}
-.ember-p{animation:rise var(--d,3s) var(--ease) infinite;animation-delay:var(--dl,0s)}
-@keyframes rise{0%{transform:translate(0,0) scale(1);opacity:0}15%{opacity:1}100%{transform:translate(var(--dx,6px),-70px) scale(.3);opacity:0}}
+/* the falling leaves (.fall) and rising embers (.ember-p) replay the mock's fall and rise keyframes in lib/wind.ts; fall stays for .drop */
 
 /* ---------- modules ---------- */
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:22px;margin-top:24px}
 /* modules float in, staggered by --in; visible by default, so a failed script never hides the page, and free to lift on hover */
 .mod{border-radius:26px;padding:20px 22px;position:relative;overflow:hidden;animation:enter .8s var(--ease) backwards;animation-delay:var(--in,0s);transition:transform .45s var(--ease),box-shadow .45s var(--ease)}
 @keyframes enter{from{opacity:0;transform:translateY(14px)}}
-.mod h4{margin:0;font:600 11.5px "IBM Plex Mono";letter-spacing:.13em;color:var(--ink-3);display:flex;justify-content:space-between}
+.mod h4{margin:0;font:600 11.5px var(--mono);letter-spacing:.13em;color:var(--ink-3);display:flex;justify-content:space-between}
 .note{font-size:12px;color:var(--ink-3);margin-top:6px}
 .c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c7{grid-column:span 7}
 .dials{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
-.dial{text-align:center;font:500 11px "IBM Plex Mono";color:var(--ink-3)}
+.dial{text-align:center;font:500 11px var(--mono);color:var(--ink-3)}
 .dial .face{width:96px;height:96px;margin:0 auto 8px;border-radius:50%;display:grid;place-items:center;position:relative}
 .dial svg{position:absolute;inset:0}
-.dial b{font:600 20px Fraunces,serif;color:var(--ink);position:relative}
+.dial b{font:600 20px var(--serif),serif;color:var(--ink);position:relative}
 .arc{transition:stroke-dashoffset 1.6s var(--ease)}
 /* track list (from the player reference) */
 .list .row{display:flex;align-items:center;gap:14px;padding:10px 10px;margin:0 -10px;border-radius:16px;transition:background .3s}
 .list .row:hover{background:rgba(0,0,0,.16)}
 .list .row.now{background:#212225;box-shadow:inset 0 0 0 1px #34353a}
-.row .n{font:500 11.5px "IBM Plex Mono";color:var(--ink-3);width:44px}
+.row .n{font:500 11.5px var(--mono);color:var(--ink-3);width:44px}
 .row .t{flex:1;font-size:13.5px}
 .row .t small{display:block;color:var(--ink-3);font-size:11.5px;margin-top:2px}
 .knob{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--ink-3);cursor:pointer;transition:transform .3s var(--ease),color .3s}
 .knob:hover{color:var(--ink);transform:scale(1.06)}
 .knob svg{width:12px;height:12px}
 .knob.ember{background:radial-gradient(circle at 35% 30%,var(--ember-1),var(--ember-2) 60%,var(--ember-3));box-shadow:0 0 14px rgba(242,88,42,.55);color:#2a1408}
-.tag{font:600 10px "IBM Plex Mono";letter-spacing:.08em;padding:3px 8px;border-radius:999px;color:var(--ink-2)}
+.tag{font:600 10px var(--mono);letter-spacing:.08em;padding:3px 8px;border-radius:999px;color:var(--ink-2)}
 /* reduced motion: the OS setting, unless Settings chose (data-motion on stills, off keeps motion) */
 @media (prefers-reduced-motion:reduce){:root:not([data-motion="off"]) *,:root:not([data-motion="off"]) *::before,:root:not([data-motion="off"]) *::after{animation:none!important;transition:none!important}:root:not([data-motion="off"]) .mod{opacity:1;transform:none}}
 :root[data-motion="on"] *,:root[data-motion="on"] *::before,:root[data-motion="on"] *::after{animation:none!important;transition:none!important}
@@ -174,20 +175,20 @@ a.nav{text-decoration:none}
 /* ---------- pages (router) ---------- */
 h1:focus{outline:none}
 .page-intro{margin:6px 0 22px;max-width:760px}
-.kicker{font:600 12px "IBM Plex Mono";letter-spacing:.14em;color:var(--ink-3)}
-.page-intro h1{font:600 32px/1.12 Fraunces,Georgia,serif;letter-spacing:-.01em;margin:10px 0 0}
+.kicker{font:600 12px var(--mono);letter-spacing:.14em;color:var(--ink-3)}
+.page-intro h1{font:600 32px/1.12 var(--serif),Georgia,serif;letter-spacing:-.01em;margin:10px 0 0}
 .waiting{max-width:760px}
 .waiting p{font-size:14px;line-height:1.65;color:var(--ink-2);margin:12px 0}
 .waiting ul{margin:0 0 18px;padding:0;list-style:none}
 .waiting li{position:relative;padding:7px 0 7px 22px;font-size:13.5px;color:var(--ink-2)}
 .waiting li::before{content:"";position:absolute;left:4px;top:14px;width:7px;height:7px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--ink-3)}
-.back{display:inline-block;padding:10px 18px;border-radius:999px;color:var(--ink);font:500 13px "Plus Jakarta Sans";text-decoration:none;transition:transform .3s var(--ease)}
+.back{display:inline-block;padding:10px 18px;border-radius:999px;color:var(--ink);font:500 13px var(--sans);text-decoration:none;transition:transform .3s var(--ease)}
 .back:hover{transform:translateY(-1px)}
 .back:focus-visible,.facts a:focus-visible{outline:2px solid var(--quiet);outline-offset:3px}
 .tag.warm,small.warm,.note.warm{color:var(--ember)}
 .list .group{font-size:11px;letter-spacing:.12em;color:var(--ink-3);margin:14px 0 2px}
 .list .group:first-of-type{margin-top:10px}
-.big{font:600 20px Fraunces,Georgia,serif;margin:12px 0 0;overflow-wrap:anywhere}
+.big{font:600 20px var(--serif),Georgia,serif;margin:12px 0 0;overflow-wrap:anywhere}
 .sub-h{margin-top:22px!important}
 .facts{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;margin:12px 0 0;font-size:13px}
 .facts dt{color:var(--ink-3)}
@@ -200,7 +201,7 @@ h1:focus{outline:none}
 .pick legend{padding:0;font-size:13.5px;color:var(--ink);margin-bottom:8px}
 .pick small{display:block;margin-top:8px;font-size:11.5px;color:var(--ink-3)}
 .seg{display:inline-flex;gap:4px;padding:4px;border-radius:999px}
-.seg label{position:relative;padding:7px 14px;border-radius:999px;font:500 12px "IBM Plex Mono";color:var(--ink-3);cursor:pointer;transition:color .3s,background .3s}
+.seg label{position:relative;padding:7px 14px;border-radius:999px;font:500 12px var(--mono);color:var(--ink-3);cursor:pointer;transition:color .3s,background .3s}
 .seg label:hover{color:var(--ink)}
 .seg label.on{color:var(--ink);background:linear-gradient(145deg,#2f3034,#27282b);box-shadow:-3px -3px 8px var(--hi),4px 5px 12px var(--lo)}
 .seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}

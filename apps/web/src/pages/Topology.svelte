@@ -101,7 +101,7 @@
   .topo{position:relative;aspect-ratio:1200/540;margin-top:10px}
   .wires{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
   .tailnet{fill:var(--bg-deep);opacity:.55}
-  .net-l{font:600 12px "IBM Plex Mono";letter-spacing:.14em;fill:var(--ink-3)}
+  .net-l{font:600 12px var(--mono);letter-spacing:.14em;fill:var(--ink-3)}
   .groove{fill:none;stroke:var(--bg-deep);stroke-width:9;stroke-linecap:round}
   .wire{fill:none;stroke:var(--quiet);stroke-width:2.4;stroke-linecap:round}
   .wire.attention,.wire.down{stroke:var(--ember)}
@@ -114,7 +114,7 @@
   .flow.warm{fill:var(--ember-1)}
   @keyframes run{from{offset-distance:0%;opacity:0}8%{opacity:1}92%{opacity:1}to{offset-distance:100%;opacity:0}}
 
-  .link-chip{position:absolute;transform:translate(-50%,-50%);border:0;cursor:pointer;padding:4px 10px;border-radius:999px;font:600 10.5px "IBM Plex Mono";letter-spacing:.08em;
+  .link-chip{position:absolute;transform:translate(-50%,-50%);border:0;cursor:pointer;padding:4px 10px;border-radius:999px;font:600 10.5px var(--mono);letter-spacing:.08em;
     color:var(--ink-2);background:var(--bg-deep);box-shadow:inset 0 0 0 1px var(--ink-3);white-space:nowrap;transition:transform .3s var(--ease)}
   .link-chip:hover{transform:translate(-50%,-50%) scale(1.06)}
   .link-chip.attention,.link-chip.down{color:var(--ember);box-shadow:inset 0 0 0 1px var(--ember)}
@@ -126,7 +126,7 @@
   .stn:hover{transform:translate(-50%,-50%) translateY(-2px)}
   .stn.srv{padding:12px 18px 12px 14px;border-radius:24px}
   .stn.planned{background:var(--bg);box-shadow:none;outline:1.5px dashed var(--ink-3);outline-offset:-1.5px}
-  .stn-t b{display:block;font:600 15px Fraunces,Georgia,serif}
+  .stn-t b{display:block;font:600 15px var(--serif),Georgia,serif}
   .stn.srv .stn-t b{font-size:18px}
   .stn-t small{display:block;font-size:10.5px;color:var(--ink-3);margin-top:2px;white-space:nowrap}
   .stn-t i{display:block;font-style:normal;font-size:10px;letter-spacing:.1em;color:var(--quiet);margin-top:5px}
