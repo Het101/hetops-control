@@ -11,11 +11,11 @@
   "dependencies": {
     "@hetops-control/contracts": "workspace:*",
     "@kubernetes/client-node": "1.4.0",
-    "fastify": "5.1.0",
+    "fastify": "5.12.7",
     "zod": "3.23.8",
-    "zod-to-json-schema": "3.23.5"
+    "zod-to-json-schema": "3.25.2"
   },
   "devDependencies": {
-    "esbuild": "0.24.0"
+    "esbuild": "0.28.2"
   }
 }
