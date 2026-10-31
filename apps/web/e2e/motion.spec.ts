@@ -60,13 +60,23 @@ test("the knock map's land is one static layer; its marks move on the same loop"
 
 test("the hero paints first and the modules that follow move nothing: no layout shift, wide or phone", async ({ page }) => {
   await mockApi(page, roughNight(), roughEvents);
-  await page.addInitScript(() => { (window as unknown as { cls: number }).cls = 0; new PerformanceObserver(l => { for (const e of l.getEntries() as unknown as { value: number }[]) (window as unknown as { cls: number }).cls += e.value; }).observe({ type: "layout-shift", buffered: true }); });
+  // every shift, with what moved and from where to where, so a failure says which element and by how much
+  await page.addInitScript(() => {
+    const w = window as unknown as { shifts: unknown[] }; w.shifts = [];
+    const name = (n: Node | null) => { const el = n instanceof Element ? n : n?.parentElement; if (!el) return "?";
+      const m = el.closest("[data-module]")?.getAttribute("data-module"); return `${m ? `[${m}] ` : ""}${el.tagName.toLowerCase()}.${String(el.getAttribute("class") ?? "").replace(/ /g, ".")}${n instanceof Text ? ` "${n.data.slice(0, 30)}"` : ""}`; };
+    const r = (b: DOMRectReadOnly) => [b.x, b.y, b.width, b.height].map(Math.round).join(",");
+    new PerformanceObserver(l => { for (const e of l.getEntries() as unknown as { value: number; startTime: number; hadRecentInput: boolean; sources: { node: Node | null; previousRect: DOMRectReadOnly; currentRect: DOMRectReadOnly }[] }[])
+      if (!e.hadRecentInput) w.shifts.push({ value: e.value, at: Math.round(e.startTime), sources: e.sources.map(s => `${name(s.node)} ${r(s.previousRect)} -> ${r(s.currentRect)}`) }); }).observe({ type: "layout-shift", buffered: true });
+  });
   for (const [w, h] of [[1366, 900], [412, 823]] as const) {
     await page.setViewportSize({ width: w, height: h });
     await page.goto("/"); await expect(page.locator('[data-module="sites"] .site').first()).toBeAttached();
     await page.waitForTimeout(500);
+    const shifts = await page.evaluate(() => (window as unknown as { shifts: { value: number }[] }).shifts);
+    const cls = shifts.reduce((n, s) => n + s.value, 0);
     // the only movement left is the top bar's "connecting" turning into "live · 0 s ago", a few millionths
-    expect(await page.evaluate(() => (window as unknown as { cls: number }).cls), `at ${w}`).toBeLessThan(.001);
+    expect(cls, `layout shift at ${w}: ${JSON.stringify(shifts, null, 1)}`).toBeLessThan(.001);
   }
 });
 
