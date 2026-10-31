@@ -1,18 +1,19 @@
 import { existsSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import Fastify from "fastify";
+import Fastify, { type FastifyReply } from "fastify";
 import fastifyStatic from "@fastify/static";
 import type { Store } from "./store.js";
 import type { EventsDb } from "./events-db.js";
-import { headline } from "./headline.js";
+import { ActionError, centerState, type Actions, type LocalAction } from "./actions.js";
 
 const DEBOUNCE_MS = 250, PING_MS = 15_000, SERIES_PER_REQUEST = 16;
 const cookieJwt = (c?: string) => c?.split(";").map(p => p.trim()).find(p => p.startsWith("CF_Authorization="))?.slice("CF_Authorization=".length);
 
-export function buildCenter(o: { store: Store; db: Pick<EventsDb, "recent">; access: (jwt: string | undefined) => Promise<{ email: string }>; webRoot: string; version?: string; logger?: false }) {
+export function buildCenter(o: { store: Store; db: Pick<EventsDb, "recent" | "acks">; access: (jwt: string | undefined) => Promise<{ email: string }>; webRoot: string;
+  version?: string; logger?: false; actions?: Pick<Actions, "start" | "preview">; origin?: string; local?: LocalAction[] }) {
   const { store, db } = o;
   const app = Fastify({ forceCloseConnections: true, logger: o.logger === false ? false : { level: process.env.LOG_LEVEL ?? "info", redact: ["req.headers.authorization", "req.headers.cookie", 'req.headers["cf-access-jwt-assertion"]'] } });
-  const state = () => { const s = store.snapshot(); return { ...s, headline: headline(s) }; };
+  const state = () => centerState(store, db, o.local ?? []);
 
   const who = new WeakMap<object, string>(); // the Access email, per request
   app.get("/healthz", async () => ({ ok: true }));
@@ -50,7 +51,7 @@ export function buildCenter(o: { store: Store; db: Pick<EventsDb, "recent">; acc
     let debounce: NodeJS.Timeout | undefined;
     sendState();
     const off = store.on(m => {
-      if (m.type === "event") send(m);
+      if (m.type !== "state") send(m); // events and action runs go out at once
       else if (!debounce) debounce = setTimeout(() => { debounce = undefined; sendState(); }, DEBOUNCE_MS);
     });
     // the ping also re-sends the state: readings age into "unknown" with no store change to announce it
@@ -59,6 +60,26 @@ export function buildCenter(o: { store: Store; db: Pick<EventsDb, "recent">; acc
     const end = () => { done(); rep.raw.end(); };
     streams.add(end);
     req.raw.on("close", done); rep.raw.on("close", done);
+  });
+
+  // CSRF: the Access cookie is ambient, so a POST must prove it comes from our own page. The Origin must be exactly ours (a sibling
+  // *.hetops.dev site is same-site, so SameSite would not stop it); the custom header cannot be sent cross-origin without a
+  // preflight, which we never answer; Sec-Fetch-Site, when the browser sends it, must agree. Bodies are JSON only (else 415).
+  const fromOurPage = (h: Record<string, string | string[] | undefined>) => !!o.origin && h.origin === o.origin && h["x-hetops-action"] === "1"
+    && (h["sec-fetch-site"] === undefined || h["sec-fetch-site"] === "same-origin");
+  const failed = (rep: FastifyReply, e: unknown) => {
+    if (e instanceof ActionError) { if (e.retryAfter) rep.header("retry-after", String(e.retryAfter)); return rep.code(e.code).send({ error: e.message }); }
+    app.log.error({ err: e instanceof Error ? e.message : String(e) }, "action failed"); return rep.code(500).send({ error: "internal error" });
+  };
+  app.post("/api/actions/preview", { bodyLimit: 16_384 }, async (req, rep) => {
+    if (!o.actions || !fromOurPage(req.headers)) return rep.code(403).send({ error: "forbidden" });
+    try { return await o.actions.preview(req.body, who.get(req)!); } catch (e) { return failed(rep, e); }
+  });
+  app.post("/api/actions", { bodyLimit: 16_384 }, async (req, rep) => {
+    if (!o.actions || !fromOurPage(req.headers)) return rep.code(403).send({ error: "forbidden" });
+    const k = req.headers["idempotency-key"];
+    try { const { run, replay } = o.actions.start(req.body, who.get(req)!, typeof k === "string" ? k : undefined); return rep.code(replay ? 200 : 202).send({ run }); }
+    catch (e) { return failed(rep, e); }
   });
 
   const spa = (req: { method: string; url: string }) => (req.method === "GET" || req.method === "HEAD") && req.url !== "/api" && !req.url.startsWith("/api/") && !req.url.startsWith("/api?");

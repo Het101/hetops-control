@@ -77,6 +77,23 @@ describe("center actions", () => {
     expect(code(() => actions.start({ ...sync, target: "lab/argo-app/web" }, OWNER, k))).toBe(409);
     expect(calls).toHaveLength(1);
   });
+  it("a retry is answered from the audit first: never a 404, 409 or 403 for a run that was started", async () => {
+    const { actions, calls, store, db, local, now } = setup(); const k = key();
+    const first = actions.start(sync, OWNER, k).run; await settle();
+    const recorded = db.run(k);
+    store.apply("lab", { server: "lab", version: "t", generatedAt: now.toISOString(), entities: [], sources: [] });   // clinic is gone
+    expect(actions.start(sync, OWNER, k)).toEqual({ replay: true, run: recorded });
+    store.markUnreachable("lab", now);                                                                         // lab went dark
+    expect(actions.start(sync, OWNER, k)).toEqual({ replay: true, run: recorded });
+    const later = new Actions({ state: () => centerState(store, db, local, now.getTime()), db, local, actors: [], publish: () => {},
+      call: async () => { throw new Error("must not be called"); }, now: () => now });                         // the owner left ACTORS
+    expect(later.start(sync, OWNER, k)).toEqual({ replay: true, run: recorded });
+    expect(first.id).toBe(k); expect(calls).toHaveLength(1);
+    // the replay is still the same caller's: another identity, or a different request under the key, is refused
+    expect(code(() => actions.start(sync, "someone@else.dev", k))).toBe(409);
+    expect(code(() => actions.start({ ...sync, action: "test.wipe" }, OWNER, k))).toBe(409);
+    expect(code(() => actions.start({ nonsense: 1 }, OWNER, k))).toBe(400);
+  });
   it("a disruptive action needs the target's name typed", async () => {
     const { actions } = setup(); const wipe = { action: "test.wipe", target: "lab/argo-app/clinic", params: {} };
     expect(code(() => actions.start(wipe, OWNER, key()))).toBe(422);

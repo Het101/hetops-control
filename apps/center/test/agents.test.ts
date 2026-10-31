@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach, beforeEach, type MockInstance } from "vitest"; import { createServer, type IncomingMessage, type ServerResponse } from "node:http"; import { mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs"; import { execFileSync } from "node:child_process"; import { tmpdir } from "node:os"; import { join } from "node:path";
 import { Registry } from "../../agent/src/registry.js"; import { buildServer } from "../../agent/src/server.js";
-import { AgentLink, backoffMs } from "../src/agents.js"; import { Store } from "../src/store.js"; import { EventsDb } from "../src/events-db.js";
+import { AgentLink, backoffMs, startLinks } from "../src/agents.js"; import { Store } from "../src/store.js"; import { EventsDb } from "../src/events-db.js";
 
 const fake = { id: "fake", periodMs: 10_000, async collect() {
   return { entities: [{ id: "lab/app/x", kind: "app" as const, server: "lab" as const, name: "x", status: "ok" as const, facts: {}, links: [], actions: [], observedAt: new Date().toISOString() }] }; } };
@@ -172,5 +172,17 @@ describe.skipIf(!hasOpenssl)("agent link over TLS", () => {
     // the untrusted link did try, and failed on the certificate
     await vi.waitFor(() => expect(logged().some(l => /^agent lab: fetch failed: .*certificate/.test(l))).toBe(true), { timeout: 5000 });
     expect(untrusted.snapshot().entities).toEqual([]); expect(untrusted.snapshot().servers.lab.reachable).toBe(false);
+  }, 15_000);
+  it("startLinks starts every link, so an action call trusts the CA from the very first post", async () => {
+    const { ca, cert, key } = tlsPair();
+    const reg = new Registry("lab", [fake]); await reg.runOnce("fake");
+    const app = buildServer(reg, "s3cret", { https: { cert, key } }); app.log.level = "silent";
+    await app.listen({ port: 0, host: "127.0.0.1" }); const url = `https://127.0.0.1:${(app.server.address() as { port: number }).port}`;
+    const dir = mkdtempSync(join(tmpdir(), "center-")); const db = new EventsDb(join(dir, "events.db"));
+    const links = startLinks([{ server: "lab", url, token: "s3cret", ca }], new Store(), db);
+    const unstarted = new AgentLink("lab", url, "s3cret", ca);   // the hazard: the CA is loaded only by start()
+    cleanup = async () => { for (const l of links.values()) l.stop(); await app.close(); db.close(); rmSync(dir, { recursive: true, force: true }); };
+    expect((await links.get("lab")!.post("/v1/actions/none", {}, AbortSignal.timeout(5000))).status).toBe(404);   // TLS held; the agent has no such action
+    await expect(unstarted.post("/v1/actions/none", {}, AbortSignal.timeout(5000))).rejects.toThrow(/fetch failed/);
   }, 15_000);
 });

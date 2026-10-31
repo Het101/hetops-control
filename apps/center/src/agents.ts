@@ -11,6 +11,13 @@ const MAX_PENDING = 1 << 20; // 1 MiB of SSE text without a complete message dro
 export const backoffMs = (attempt: number, rand = Math.random) =>
   Math.min(BACKOFF_MAX_MS, BACKOFF_MIN_MS * 2 ** Math.min(attempt, 30) * (0.8 + rand() * 0.4));
 
+/** Builds and starts one link per agent. start() loads the CA, so every link is started here, before any post can use it. */
+export function startLinks(agents: { server: ServerId; url: string; token: string; ca?: Buffer }[], store: Store, db: EventsDb): Map<ServerId, AgentLink> {
+  const links = new Map(agents.map(a => [a.server, new AgentLink(a.server, a.url, a.token, a.ca)] as const));
+  for (const l of links.values()) l.start(store, db);
+  return links;
+}
+
 /** One agent's feed into the store: GET /v1/state, then follow /v1/stream; reconnects with jittered backoff. */
 export class AgentLink {
   private dispatcher?: Agent;

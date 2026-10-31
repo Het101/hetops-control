@@ -92,12 +92,17 @@ export class Actions {
   /** Validates, audits and starts; the result follows on the stream. A repeated key returns the recorded run. */
   start(raw: unknown, actor: string, key: string | undefined): { run: ActionRun; replay: boolean } {
     if (!key || !UUID.test(key)) throw new ActionError(400, "an Idempotency-Key (a UUID) is required");
+    // a retry is answered from the audit before anything else, so a network retry never turns into a misleading 404, 409 or 403
+    // because the target, its server or ACTORS changed since; it acts on nothing, and it must be the same caller's same request
     const earlier = this.o.db.run(key.toLowerCase());
-    const r = this.resolve(raw, actor);
     if (earlier) {
-      if (earlier.actor !== actor || earlier.action !== r.d.id || earlier.target !== r.target.id) throw new ActionError(409, "that Idempotency-Key belongs to another request");
+      const c = ActionCallSchema.safeParse(raw);
+      if (!c.success) throw new ActionError(400, "bad request");
+      if (earlier.actor.toLowerCase() !== actor.toLowerCase() || earlier.action !== c.data.action || earlier.target !== c.data.target)
+        throw new ActionError(409, "that Idempotency-Key belongs to another request");
       return { run: earlier, replay: true };
     }
+    const r = this.resolve(raw, actor);
     if (r.d.risk === "disruptive" && r.call.confirm !== r.target.name) throw new ActionError(422, `type ${r.target.name} to confirm`);
     if (this.inflight.has(r.target.id)) throw new ActionError(409, `an action on ${r.target.name} is still running`);
     const now = this.now().getTime(), kT = `${r.d.id}|${r.target.id}`, kA = r.d.id;

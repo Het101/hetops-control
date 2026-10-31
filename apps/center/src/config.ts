@@ -31,3 +31,13 @@ export function accessConfig(env = process.env): { dev: true } | { dev: false; t
   if (!env.ACCESS_TEAM_DOMAIN || !env.ACCESS_AUD) throw new Error("ACCESS_TEAM_DOMAIN and ACCESS_AUD are required");
   return { dev: false, teamDomain: env.ACCESS_TEAM_DOMAIN, aud: env.ACCESS_AUD };
 }
+
+/** Who may act and from which page. Empty ACTORS = actions off; PUBLIC_ORIGIN is the only Origin a POST may come from. */
+export function actionsConfig(env = process.env): { origin: string; actors: string[] } {
+  const actors = (env.ACTORS ?? "").split(",").map(a => a.trim().toLowerCase()).filter(Boolean);
+  if (env.CONTROL_DEV === "1") return { origin: (env.PUBLIC_ORIGIN ?? `http://127.0.0.1:${env.PORT ?? 8080}`).replace(/\/+$/, ""), actors: actors.length ? actors : ["dev@local"] };
+  if (!env.PUBLIC_ORIGIN) return { origin: "", actors: [] };
+  const u = new URL(env.PUBLIC_ORIGIN);
+  if (u.protocol !== "https:") throw new Error("PUBLIC_ORIGIN must be https");
+  return { origin: u.origin, actors };
+}
