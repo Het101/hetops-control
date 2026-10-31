@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest"; import { mkdtempSync, rmSync } from "node:fs"; import { tmpdir } from "node:os"; import { join } from "node:path";
 import Database from "better-sqlite3";
 import { EventsDb } from "../src/events-db.js";
+import type { ActionRun } from "@hetops-control/contracts";
 
 describe("events db", () => {
   it("returns the newest first and prunes old events", () => {
@@ -49,6 +50,41 @@ describe("events db", () => {
       expect(db.recent(5)).toEqual([
         { at: "2026-10-30T03:12:00.000Z", server: "lab", source: "kubernetes", kind: "status", summary: "new row", level: "down" },
         { at: "2026-10-29T22:10:00.000Z", server: "ops", source: "center", kind: "info", summary: "old row" }]);
+    } finally { db.close(); rmSync(dir, { recursive: true, force: true }); }
+  });
+});
+
+const run: ActionRun = { id: "6f1c2a52-8c2e-4c43-9a43-1f2f5d3c9b10", action: "argo.sync", label: "Sync", server: "lab", target: "lab/argo-app/clinic", targetName: "clinic",
+  actor: "het@hetops.dev", params: { hard: false }, state: "running", at: "2026-10-31T10:00:00.000Z" };
+const tmp = () => { const dir = mkdtempSync(join(tmpdir(), "center-")); return { dir, path: join(dir, "events.db") }; };
+
+describe("audit", () => {
+  it("records a run once per id, finishes it once, and keeps it across a reopen and a prune", () => {
+    const { dir, path } = tmp(); let db = new EventsDb(path);
+    try {
+      expect(db.addRun(run)).toBe(true); expect(db.addRun({ ...run, actor: "x@y.z" })).toBe(false);
+      db.finishRun({ ...run, state: "succeeded", finishedAt: "2026-10-31T10:00:02.000Z", result: { ok: true, summary: "sync of clinic started" } });
+      db.finishRun({ ...run, state: "failed", error: "late" });   // only a running row changes
+      db.prune(0); db.close(); db = new EventsDb(path);
+      expect(db.run(run.id)).toEqual({ ...run, state: "succeeded", finishedAt: "2026-10-31T10:00:02.000Z", result: { ok: true, summary: "sync of clinic started" } });
+      expect(db.run("00000000-0000-4000-8000-000000000000")).toBeUndefined();
+    } finally { db.close(); rmSync(dir, { recursive: true, force: true }); }
+  });
+  it("closes runs the center restarted on as failed, result unknown", () => {
+    const { dir, path } = tmp(); const db = new EventsDb(path);
+    try {
+      db.addRun(run); expect(db.abandonRunning("2026-10-31T10:05:00.000Z")).toBe(1);
+      expect(db.run(run.id)).toMatchObject({ state: "failed", finishedAt: "2026-10-31T10:05:00.000Z", error: "the center restarted before the agent answered; the result is unknown" });
+      expect(db.abandonRunning("2026-10-31T10:06:00.000Z")).toBe(0);
+    } finally { db.close(); rmSync(dir, { recursive: true, force: true }); }
+  });
+  it("keeps acks and returns only the unexpired", () => {
+    const { dir, path } = tmp(); const db = new EventsDb(path);
+    try {
+      const ack = { entity: "ops/site/blog", server: "ops" as const, status: "down" as const, actor: "het@hetops.dev", at: "2026-10-31T10:00:00.000Z", until: "2026-10-31T14:00:00.000Z" };
+      db.addAck(ack); db.addAck({ ...ack, entity: "ops/check/x", until: "2026-10-31T11:00:00.000Z", note: "known" });
+      expect(db.acks("2026-10-31T10:30:00.000Z").map(a => a.entity)).toEqual(["ops/site/blog", "ops/check/x"]);
+      expect(db.acks("2026-10-31T12:00:00.000Z")).toEqual([ack]);
     } finally { db.close(); rmSync(dir, { recursive: true, force: true }); }
   });
 });
