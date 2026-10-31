@@ -51,9 +51,9 @@ const sites: Entity[] = [
   gatus("site", "products_domain-watch", "Domain Watch", "products", 100, 164), gatus("site", "sites_blog", "blog.hetops.dev", "sites", 99.98, 92),
 ];
 const checks: Entity[] = [
-  gatus("check", "logs_lab-default", "lab logs arriving", "logs", 100, 38), gatus("check", "logs_lab-security", "lab security logs arriving", "logs", 100, 41),
+  gatus("check", "logs_logs-arriving-from-the-lab", "Logs arriving from the lab", "logs", 100, 38), gatus("check", "logs_lab-security", "lab security logs arriving", "logs", 100, 41),
   gatus("check", "snapshots_nightly-all", "nightly snapshot", "snapshots", 100, 22), gatus("check", "snapshots_nightly-security", "security snapshot", "snapshots", 100, 24),
-  gatus("check", "watcher_kuma", "Kuma reachable", "watchers", 100, 57), gatus("check", "watcher_tailscale-lab", "lab over Tailscale", "watchers", 100, 31),
+  gatus("check", "watcher_kuma", "Kuma reachable", "watchers", 100, 57), gatus("check", "watchers_lab-gateway", "Lab gateway", "watchers", 100, 31),
   gatus("check", "watcher_argo-ops", "ops Argo CD", "watchers", 100, 45), gatus("check", "watcher_center", "control center health", "watchers", 100, 12),
   { ...base, id: "ops/check/elasticsearch", kind: "check", server: "ops", name: "Elasticsearch", parent: "ops/cluster", source: "elasticsearch", status: "ok",
     facts: { health: { value: "green" }, nodes: { value: 1 }, unassignedShards: { value: 0 }, activeShards: { value: 100, unit: "%", max: 100 } } },

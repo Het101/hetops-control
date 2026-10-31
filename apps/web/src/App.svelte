@@ -10,9 +10,9 @@
   import Apps from "./pages/Apps.svelte";
   import Backups from "./pages/Backups.svelte";
   import Security from "./pages/Security.svelte";
-  import Upcoming from "./pages/Upcoming.svelte";
+  import Topology from "./pages/Topology.svelte";
   import NotFound from "./pages/NotFound.svelte";
-  import { isPage, PAGES, route, type Upcoming as UpcomingPath } from "./lib/router.svelte.js";
+  import { isPage, PAGES, route } from "./lib/router.svelte.js";
 
   // Home shows the latest 6; the Timeline page keeps the most the center serves
   const SHOWN = 6, KEEP = 500, DOWN_MS = 10_000;
@@ -70,10 +70,10 @@
       <Backups {estate} {events} {now} />
     {:else if route.path === "/security"}
       <Security {estate} {events} {now} />
+    {:else if route.path === "/topology"}
+      <Topology {estate} {now} />
     {:else if route.path === "/settings"}
       <Settings {estate} {now} />
-    {:else if isPage(route.path)}
-      <Upcoming path={route.path as UpcomingPath} /><!-- every other page is matched above -->
     {:else}
       <NotFound path={route.path} />
     {/if}
