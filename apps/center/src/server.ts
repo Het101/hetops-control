@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import type { Store } from "./store.js";
@@ -63,7 +63,11 @@ export function buildCenter(o: { store: Store; db: Pick<EventsDb, "recent">; acc
 
   const spa = (req: { method: string; url: string }) => (req.method === "GET" || req.method === "HEAD") && req.url !== "/api" && !req.url.startsWith("/api/") && !req.url.startsWith("/api?");
   if (existsSync(join(o.webRoot, "index.html"))) {
-    void app.register(fastifyStatic, { root: o.webRoot });
+    // Vite names everything under assets/ by content hash, so it can be cached for good; index.html (also the SPA fallback)
+    // names the current hashes, so the browser must check it on every load
+    const forever = (path: string) => relative(o.webRoot, path).split(sep)[0] === "assets";
+    void app.register(fastifyStatic, { root: o.webRoot, cacheControl: false,
+      setHeaders: (res, path) => res.setHeader("cache-control", forever(path) ? "public, max-age=31536000, immutable" : "no-cache") });
     app.setNotFoundHandler((req, rep) => spa(req) ? rep.sendFile("index.html") : rep.code(404).send({ error: "not found" }));
   } else {
     app.setNotFoundHandler((req, rep) => spa(req) ? rep.code(503).type("text/plain").send("web build missing") : rep.code(404).send({ error: "not found" }));

@@ -85,15 +85,16 @@
     }
   });
 
-  /** Falling leaves and rising embers around a struggling branch's ember leaves; seeded, so they stay put between readings. */
+  /** Falling leaves and rising embers around a struggling branch's ember leaves; seeded, so they stay put between readings.
+   The wind loop moves them (data-wind fall and rise): f is the cycle in seconds, dl the delay, dx the sideways drift. */
   function sparks(server: ServerId, b: Branch) {
     const hot = b.leaves.filter(l => l.ember);
     if ($reduced || !struggling(b) || !hot.length) return { falls: [], embers: [] };
     const R = rng(hash(`${server}|${b.id}|sparks`)), rs = Math.min(Math.max(b.restarts, 1), 4);
     const ex = b.tip.x + hot.reduce((n, l) => n + l.x, 0) / hot.length, ey = b.tip.y + hot.reduce((n, l) => n + l.y, 0) / hot.length;
     return {
-      falls: Array.from({ length: rs * 3 }, (_, f) => ({ id: `${b.id}/f${f}`, cx: ex + (R() - .5) * 30, cy: ey + 10, style: `--d:${5 + R() * 3}s;--dl:${f * 1.4}s;--dx:${(R() - .3) * 60}px` })),
-      embers: Array.from({ length: rs * 9 }, (_, k) => ({ id: `${b.id}/e${k}`, cx: ex + (R() - .5) * 40, cy: ey + (R() - .5) * 20, r: 1 + R() * 1.6, style: `--d:${2.2 + R() * 2}s;--dl:${R() * 3}s;--dx:${(R() - .5) * 30}px` })),
+      falls: Array.from({ length: rs * 3 }, (_, f) => ({ id: `${b.id}/f${f}`, cx: ex + (R() - .5) * 30, cy: ey + 10, f: 5 + R() * 3, dl: f * 1.4, dx: (R() - .3) * 60 })),
+      embers: Array.from({ length: rs * 9 }, (_, k) => ({ id: `${b.id}/e${k}`, cx: ex + (R() - .5) * 40, cy: ey + (R() - .5) * 20, r: 1 + R() * 1.6, f: 2.2 + R() * 2, dl: R() * 3, dx: (R() - .5) * 30 })),
     };
   }
 </script>
@@ -158,8 +159,8 @@
       </g>
       {#each t.branches as b (b.id)}
         {@const s = sparks(t.server, b)}
-        {#each s.falls as f (f.id)}<ellipse class="fall" cx={f.cx} cy={f.cy} rx="3.4" ry="1.9" fill="#f2702f" style={f.style}/>{/each}
-        {#each s.embers as e (e.id)}<circle class="ember-p" cx={e.cx} cy={e.cy} r={e.r} fill="url(#sparkGlow)" style={e.style}/>{/each}
+        {#each s.falls as f (f.id)}<ellipse class="fall" data-wind="fall" data-f={f.f} data-ph={f.dl} data-amp={f.dx} cx={f.cx} cy={f.cy} rx="3.4" ry="1.9" fill="#f2702f"/>{/each}
+        {#each s.embers as e (e.id)}<circle class="ember-p" data-wind="rise" data-f={e.f} data-ph={e.dl} data-amp={e.dx} cx={e.cx} cy={e.cy} r={e.r} fill="url(#sparkGlow)"/>{/each}
       {/each}
     </g>
     {/if}

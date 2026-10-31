@@ -19,6 +19,17 @@ test("the forest moves by default: the wind changes its transforms over time", a
   expect(await page.evaluate(() => document.getAnimations().filter(x => x.playState === "running").length)).toBeGreaterThan(0);
 });
 
+test("the embers and falling leaves ride the same 30 Hz loop, not CSS animations", async ({ page }) => {
+  await mockApi(page, roughNight(), roughEvents); await page.goto("/");
+  await expect(page.locator(".ember-p").first()).toBeAttached();
+  const read = () => page.evaluate(() => [...document.querySelectorAll("svg.forest .ember-p, svg.forest .fall")].map(el => `${el.getAttribute("transform")}|${el.getAttribute("fill-opacity")}`));
+  // each particle waits out its seeded delay (up to 3 s for an ember), then moves
+  await page.waitForTimeout(3500);
+  const a = await read(); await page.waitForTimeout(300); const b = await read();
+  expect(a.filter((x, i) => x !== b[i]).length).toBeGreaterThan(a.length / 2);
+  expect(await page.evaluate(() => [...document.querySelectorAll("svg.forest .ember-p, svg.forest .fall")].flatMap(el => el.getAnimations()).length)).toBe(0);
+});
+
 for (const how of ["os", "settings"] as const) {
   test(`reduced motion (${how}): the forest is still and the weather is gone`, async ({ page }) => {
     await mockApi(page, roughNight(), roughEvents);

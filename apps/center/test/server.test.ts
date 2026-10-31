@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AddressInfo } from "node:net";
@@ -58,6 +58,14 @@ describe("center http", () => {
     expect((await b.app.inject("/api/nothing")).statusCode).toBe(404);
     const api = await b.app.inject("/api"); expect(api.statusCode).toBe(404); expect(api.json()).toEqual({ error: "not found" });
     expect((await b.app.inject({ method: "HEAD", url: "/deep/route" })).statusCode).toBe(200);
+  });
+  it("hashed assets are cached for a year, index.html is revalidated on every load", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "web-")); writeFileSync(join(dir, "index.html"), "<p>hi</p>");
+    mkdirSync(join(dir, "assets")); writeFileSync(join(dir, "assets", "fraunces-latin-opsz-normal-DihXLNYH.woff2"), "w");
+    const b = mk(ok, dir); apps.push(b.app);
+    const font = await b.app.inject("/assets/fraunces-latin-opsz-normal-DihXLNYH.woff2");
+    expect(font.statusCode).toBe(200); expect(font.headers["cache-control"]).toBe("public, max-age=31536000, immutable");
+    for (const u of ["/", "/index.html", "/deep/route"]) expect((await b.app.inject(u)).headers["cache-control"], u).toBe("no-cache");
   });
   it("streams state on connect and events, and closes cleanly", async () => {
     const { app, store } = mk(ok); await app.listen({ port: 0, host: "127.0.0.1" });
