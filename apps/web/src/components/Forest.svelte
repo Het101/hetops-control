@@ -6,7 +6,10 @@
   import { reduced } from "../lib/motion.js";
   import { windy } from "../lib/wind.js";
 
-  let { state: estate, events = [] }: { state: State; events?: Event[] } = $props();
+  // only: one server's tree, centred and drawn large (its own page); otherwise the three, with their stations under them
+  let { state: estate, events = [], only }: { state: State; events?: Event[]; only?: ServerId } = $props();
+  const ids = $derived(only ? [only] : ServerIdSchema.options);
+  const at = (s: ServerId) => (only ? 600 : X[s]);
 
   const X: Record<ServerId, number> = { lab: 200, staging: 600, ops: 1000 };
   const NAME: Record<ServerId, string> = { lab: "Lab", staging: "Staging", ops: "Ops" };
@@ -34,13 +37,13 @@
   const DORMANT: ForestApp[] = Array.from({ length: 7 }, (_, i) => ({ id: `dormant/${i}`, name: "", pods: 0, restarts: 0, status: "unknown" }));
   const never = (id: ServerId) => !estate.servers[id].reachable && !estate.servers[id].agentVersion;
 
-  const trees = $derived(ServerIdSchema.options.map(s => ({ dormant: never(s), tree: growTree(s, X[s], never(s) ? DORMANT : apps(s, estate.entities).map(e => ({
+  const trees = $derived(ids.map(s => ({ dormant: never(s), tree: growTree(s, at(s), never(s) ? DORMANT : apps(s, estate.entities).map(e => ({
     id: e.id, name: e.name, status: e.status, restarts: num(e, "restarts24h") ?? 0,
     // the canopy is the intended size; a missing pod shows as ember, not as a smaller tree
     pods: Math.max(num(e, "podsDesired") ?? 0, num(e, "pods") ?? 0) }))) })));
 
   type Station = { id: ServerId; name: string; line: string; word: string; warm: boolean; bare: boolean };
-  const stations = $derived(ServerIdSchema.options.map((id): Station => {
+  const stations = $derived(ids.map((id): Station => {
     const view = estate.servers[id], list = apps(id, estate.entities);
     const cluster = estate.entities.find(e => e.kind === "cluster" && e.server === id);
     const restarts = list.reduce((n, e) => n + (num(e, "restarts24h") ?? 0), 0);
@@ -105,7 +108,7 @@
   }
 </script>
 
-<svg class="forest" bind:this={svg} use:windy={{ on: !$reduced, key: [trees, drops] }} viewBox="0 0 1200 320" preserveAspectRatio="xMidYMax meet" role="img" aria-label="One tree per server; branches are apps, leaves are pods, ember leaves are restarts">
+<svg class="forest" bind:this={svg} use:windy={{ on: !$reduced, key: [trees, drops] }} viewBox={only ? "360 0 480 320" : "0 0 1200 320"} preserveAspectRatio="xMidYMax meet" role="img" aria-label={only ? `${NAME[only]}'s tree: branches are its apps, leaves are pods, ember leaves are restarts` : "One tree per server; branches are apps, leaves are pods, ember leaves are restarts"}>
   <defs>
     <radialGradient id="glow"><stop offset="0" stop-color="#4a4b51" stop-opacity=".55"/><stop offset="1" stop-color="#4a4b51" stop-opacity="0"/></radialGradient>
     <radialGradient id="emberHalo"><stop offset=".45" stop-color="#f0582a" stop-opacity=".5"/><stop offset="1" stop-color="#f0582a" stop-opacity="0"/></radialGradient>
@@ -173,8 +176,8 @@
   {/each}
   {#each drops as d (d.id)}<ellipse class="drop" data-wind="drop" data-f={DROP_S} data-amp={d.dx} data-ox={d.cx} data-oy={d.cy} fill-opacity="0" cx={d.cx} cy={d.cy} rx="3.6" ry="2" fill="url(#emberLeaf)"/>{/each}
 </svg>
-<div class="stations">
+{#if !only}<div class="stations">
   {#each stations as s (s.id)}
-    <div class="st" data-server={s.id}><b>{s.name}</b><span>{s.line}</span><br><i class:warm={s.warm} class:ok={s.word === "HEALTHY"}>● {s.word}</i></div>
+    <div class="st" data-server={s.id}><b><a class="st-l" href={`/servers/${s.id}`} aria-label={`Open ${s.name}'s page`}>{s.name}</a></b><span>{s.line}</span><br><i class:warm={s.warm} class:ok={s.word === "HEALTHY"}>● {s.word}</i></div>
   {/each}
-</div>
+</div>{/if}

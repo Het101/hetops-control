@@ -12,7 +12,8 @@
   import Security from "./pages/Security.svelte";
   import Topology from "./pages/Topology.svelte";
   import NotFound from "./pages/NotFound.svelte";
-  import { isPage, PAGES, route } from "./lib/router.svelte.js";
+  import Server from "./pages/Server.svelte";
+  import { isPage, PAGES, route, serverOf } from "./lib/router.svelte.js";
   import ActionDialog from "./components/ActionDialog.svelte";
   import Toasts from "./components/Toasts.svelte";
   import NeedsQueue from "./components/NeedsQueue.svelte";
@@ -47,7 +48,8 @@
   let first = true;
   $effect(() => {
     const path = route.path;
-    document.title = `${isPage(path) ? PAGES[path] : "Not found"} · HetOps Control`;
+    const srv = serverOf(path);
+    document.title = `${isPage(path) ? PAGES[path] : srv ? srv.charAt(0).toUpperCase() + srv.slice(1) : "Not found"} · HetOps Control`;
     if (first) { first = false; return; }
     tick().then(() => document.querySelector<HTMLElement>("main h1")?.focus());
   });
@@ -112,6 +114,8 @@
       <Topology {estate} now={shown} />
     {:else if route.path === "/settings"}
       <Settings {estate} now={shown} />
+    {:else if serverOf(route.path)}
+      {#key route.path}<Server id={serverOf(route.path)!} {estate} {events} now={shown} />{/key}
     {:else}
       <NotFound path={route.path} />
     {/if}

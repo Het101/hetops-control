@@ -4,14 +4,14 @@
   import { cubicOut } from "svelte/easing";
   import { reduced } from "../lib/motion.js";
   import { heat, hhmm } from "../lib/pages.js";
-  let { events, error = false, wide = false }: { events: Event[]; error?: boolean; wide?: boolean } = $props();
+  let { events, error = false, wide = false, title = "TIMELINE · ALL SERVERS" }: { events: Event[]; error?: boolean; wide?: boolean; title?: string } = $props();
   const time = (at: string) => at.slice(11, 16);
   // a move to attention or down is something to look at, until the same entity recovers (lib/pages.ts heat)
   const heated = $derived(heat(events));
 </script>
 
 <section class={`mod raised ${wide ? "c12" : "c7"} list`} style="--in:.4s" aria-labelledby="h-timeline" data-module="timeline">
-  <h2 id="h-timeline"><span>TIMELINE · ALL SERVERS</span><span>latest {events.length}<a class="to" href="/timeline" aria-label="Open the Timeline">open →</a></span></h2>
+  <h2 id="h-timeline"><span>{title}</span><span>latest {events.length}<a class="to" href="/timeline" aria-label="Open the Timeline">open →</a></span></h2>
   {#if error}<div class="empty warm">Could not load the event log; showing what the stream has sent.</div>{/if}
   {#each events as e, i (`${e.at}|${e.server}|${e.summary}|${e.entity ?? ""}`)}
     {@const warm = heated.hot(e)}

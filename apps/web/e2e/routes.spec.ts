@@ -151,3 +151,29 @@ test("a desktop has no More: every page sits in the rail", async ({ page }) => {
   await expect(page.locator(".rail a.nav")).toHaveCount(8);
   for (const l of await page.locator(".rail a.nav").all()) await expect(l).toBeVisible();
 });
+
+test("a server's own page: from its name under the tree, with its tree, load over the day, workloads, sources and timeline", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-10-30T07:42:00.000Z"));
+  await page.goto("/");
+  await page.getByRole("link", { name: "Open Lab's page" }).click();
+  await expect(page).toHaveURL("/servers/lab");
+  await expect(page).toHaveTitle("Lab · HetOps Control");
+  await expect(page.locator("main h1")).toHaveText("Lab needs a look.");
+  await expect(page.locator(".srv-tree svg.forest")).toBeVisible();
+  await expect(page.locator(".stations")).toHaveCount(0);   // one tree, no station row
+  const load = page.locator('[aria-labelledby="sv-load"]');
+  await expect(load.locator("h2")).toContainText("SINCE");      // lab's agent has kept 9 h, and the page says so
+  await expect(load.locator("path.cpu-l")).toHaveCount(1);
+  await expect(load.locator("path.mem-l")).toHaveCount(1);
+  await expect(page.locator('[aria-labelledby="sv-work"] button.row')).toContainText(["chaos-api"]);
+  await expect(page.locator('[aria-labelledby="sv-work"] .calm')).toContainText("The other 19 are healthy");
+  await expect(page.locator('[aria-labelledby="sv-src"] .row').first()).toBeVisible();
+  await expect(page.locator('[aria-labelledby="h-timeline"]')).toContainText("TIMELINE · LAB");
+  await page.screenshot({ path: "e2e/__screens__/server-lab.png", fullPage: true, animations: "disabled" });
+  await page.goto("/servers/ops");
+  await expect(page.locator('[aria-labelledby="sv-load"] h2')).toContainText("24 H");
+  await page.goto("/servers/staging");
+  await expect(page.locator("main h1")).toHaveText("Staging is not connected.");
+  await page.goto("/servers/nope");
+  await expect(page.locator("main h1")).toContainText("no page at /servers/nope");   // an unknown server is a 404
+});
