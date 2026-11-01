@@ -33,7 +33,7 @@
 {:else}
 <div class="grid">
   <section class="mod raised c12 topo-mod" style="--in:.04s" aria-labelledby="t-map">
-    <h4 id="t-map"><span>THE ESTATE · CLOUDFLARE, THE TAILNET, BACKUPS</span><span class:warm={hotN > 0}>{hotN ? `${hotN} link${hotN === 1 ? "" : "s"} need${hotN === 1 ? "s" : ""} you` : `${view.edges.filter(e => e.state === "ok").length} of ${view.edges.length} carrying`}</span></h4>
+    <h2 id="t-map"><span>THE ESTATE · CLOUDFLARE, THE TAILNET, BACKUPS</span><span class:warm={hotN > 0}>{hotN ? `${hotN} link${hotN === 1 ? "" : "s"} need${hotN === 1 ? "s" : ""} you` : `${view.edges.filter(e => e.state === "ok").length} of ${view.edges.length} carrying`}</span></h2>
     <div class="topo">
       <svg viewBox={`0 0 ${W} ${H}`} class="wires" aria-hidden="true">
         <rect x="40" y="196" width="1120" height="316" rx="34" class="tailnet"/>
@@ -72,7 +72,7 @@
   </section>
 
   <section class="mod raised c7 list" style="--in:.08s" aria-labelledby="t-links">
-    <h4 id="t-links"><span>EVERY LINK · ITS SIGNAL</span><span>{view.edges.length} links</span></h4>
+    <h2 id="t-links"><span>EVERY LINK · ITS SIGNAL</span><span>{view.edges.length} links</span></h2>
     {#each view.edges as e (e.id)}
       <button type="button" class="row" class:now={hot(e.state)} data-link={e.id} onclick={() => show(undefined, e.id)}>
         <i class="pip {e.state}"></i>
@@ -83,7 +83,7 @@
   </section>
 
   <section class="mod raised c5 list" style="--in:.12s" aria-labelledby="t-stn">
-    <h4 id="t-stn"><span>STATIONS</span><span>{view.nodes.length}</span></h4>
+    <h2 id="t-stn"><span>STATIONS</span><span>{view.nodes.length}</span></h2>
     {#each view.nodes as n (n.id)}
       <button type="button" class="row" class:now={hot(n.state)} onclick={() => show(n.id)}>
         <i class="pip {n.state}"></i>
@@ -114,7 +114,7 @@
   .flow.warm{fill:var(--ember-1)}
   @keyframes run{from{offset-distance:0%;opacity:0}8%{opacity:1}92%{opacity:1}to{offset-distance:100%;opacity:0}}
 
-  .link-chip{position:absolute;transform:translate(-50%,-50%);border:0;cursor:pointer;padding:4px 10px;border-radius:999px;font:600 10.5px var(--mono);letter-spacing:.08em;
+  .link-chip{position:absolute;transform:translate(-50%,-50%);border:0;cursor:pointer;padding:4px 10px;min-height:24px;border-radius:999px;font:600 11px var(--mono);letter-spacing:.08em;
     color:var(--ink-2);background:var(--bg-deep);box-shadow:inset 0 0 0 1px var(--ink-3);white-space:nowrap;transition:transform .3s var(--ease)}
   .link-chip:hover{transform:translate(-50%,-50%) scale(1.06)}
   .link-chip.attention,.link-chip.down{color:var(--ember);box-shadow:inset 0 0 0 1px var(--ember)}
@@ -128,8 +128,8 @@
   .stn.planned{background:var(--bg);box-shadow:none;outline:1.5px dashed var(--ink-3);outline-offset:-1.5px}
   .stn-t b{display:block;font:600 15px var(--serif),Georgia,serif}
   .stn.srv .stn-t b{font-size:18px}
-  .stn-t small{display:block;font-size:10.5px;color:var(--ink-3);margin-top:2px;white-space:nowrap}
-  .stn-t i{display:block;font-style:normal;font-size:10px;letter-spacing:.1em;color:var(--quiet);margin-top:5px}
+  .stn-t small{display:block;font-size:11px;color:var(--ink-3);margin-top:2px;white-space:nowrap}
+  .stn-t i{display:block;font-style:normal;font-size:11px;letter-spacing:.1em;color:var(--quiet);margin-top:5px}
   .stn-t i.warm{color:var(--ember)}
   .tree{width:30px;height:32px;flex:none;fill:none;stroke:var(--quiet);stroke-width:1.6;stroke-linecap:round}
   .tree circle{fill:var(--ink-3);fill-opacity:.35}

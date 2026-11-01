@@ -11,7 +11,7 @@
 </script>
 
 <div class="needs pressed">
-  <h3 class:calm={!needs.length}>NEEDS YOU · {needs.length}</h3>
+  <h2 class:calm={!needs.length}>NEEDS YOU · {needs.length}</h2>
   {#each needs as n, i (i)}
     {@const a = act(n)}
     <div class="need"><div class="txt">{n.text}<small>{n.detail}</small></div>

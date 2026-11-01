@@ -37,7 +37,7 @@
 <!-- whatever is firing takes the wide column; on a quiet day every check does, and "nothing is firing" moves to the side -->
 {#snippet firingMod()}
   <section class="mod raised c8 list" style="--in:.12s" aria-labelledby="a-firing">
-    <h4 id="a-firing"><span>FIRING · BY SEVERITY</span><span>{shown.length} of {all.length}</span></h4>
+    <h2 id="a-firing"><span>FIRING · BY SEVERITY</span><span>{shown.length} of {all.length}</span></h2>
     {#if all.length}
       <div class="filters">
         <Search bind:q placeholder="Search alerts and checks" />
@@ -89,7 +89,7 @@
 {/snippet}
 {#snippet checksMod()}
   <section class="mod raised c4 list" style="--in:.16s" aria-labelledby="a-checks">
-    <h4 id="a-checks"><span>EVERY CHECK</span><span>{checks.length}</span></h4>
+    <h2 id="a-checks"><span>EVERY CHECK</span><span>{checks.length}</span></h2>
     {#if checks.length}
       <div class="pills">
         {#each checks as c (c.id)}
@@ -116,7 +116,7 @@
   </div>
   <div class="lane c4">
     <section class="mod raised c4 budget" style="--in:.08s" aria-labelledby="a-budget">
-      <h4 id="a-budget"><span>ERROR BUDGET</span><span>{slo[0]?.facts.windowDays ? `${slo[0].facts.windowDays.value} d` : ""}</span></h4>
+      <h2 id="a-budget"><span>ERROR BUDGET</span><span>{slo[0]?.facts.windowDays ? `${slo[0].facts.windowDays.value} d` : ""}</span></h2>
       {#if sloSrc.failing.length}<Waiting title={`Can't read the error budget on ${sloSrc.failing[0]!.server}.`} warm>{sloSrc.failing[0]!.error}</Waiting>
       {:else if !slo.length}<Waiting title="No error budget reporting yet.">The lab's chaos SLO appears here when its source lands.</Waiting>
       {:else}<Budget {slo} />

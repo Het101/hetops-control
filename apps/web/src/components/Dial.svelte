@@ -11,7 +11,7 @@
 
 <div class="dial">
   <div class="face pressed">
-    <svg viewBox="0 0 96 96">
+    <svg viewBox="0 0 96 96" aria-hidden="true">
       <circle {cx} {cy} {r} stroke="#1f2023" stroke-width="6" fill="none" stroke-dasharray={`${full} ${C}`} stroke-linecap="round" transform={`rotate(135 ${cx} ${cy})`}/>
       {#each ticks as t}<line {...t} stroke="#56575c" stroke-width="1"/>{/each}
       {#if hot}<linearGradient id={`hg-${id}`} x1="0" x2="1"><stop offset="0" stop-color="#c2391a"/><stop offset="1" stop-color="#ff9a3c"/></linearGradient>{/if}

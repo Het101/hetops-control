@@ -18,17 +18,17 @@ test("a calm morning: the modules whose sources report, and none of the ones sti
   await expect(mod(page, "deploys").locator(".cap-track.unknown")).toHaveCount(12);
   await expect(mod(page, "deploys").locator(".cap")).toHaveCount(1); // today: 2 Argo syncs and 2 rollouts
   await expect(mod(page, "deploys").locator(".cap.hot")).toHaveCount(0);
-  await expect(mod(page, "deploys").locator("h4")).toContainText("4 in 14 d");
+  await expect(mod(page, "deploys").locator("h2")).toContainText("4 in 14 d");
   // log flow: both streams, the 40-min gap hatched once
   await expect(mod(page, "logs").locator("path.l1")).toHaveCount(2);
   await expect(mod(page, "logs").locator("path.l2")).toHaveCount(2);
   await expect(mod(page, "logs").locator("rect.gap")).toHaveCount(1);
-  await expect(mod(page, "logs").locator("h4")).toContainText("/min");
+  await expect(mod(page, "logs").locator("h2")).toContainText("/min");
   await expect(mod(page, "backups").locator("a.row")).toHaveCount(2);
   await expect(mod(page, "backups").locator(".row.now")).toHaveCount(0);
   await expect(mod(page, "sites").locator(".site")).toHaveCount(10);
   await expect(mod(page, "sites").locator(".site.hot, .sdot.warm")).toHaveCount(0);
-  await expect(mod(page, "sites").locator("h4")).toContainText("10/10 up · slowest chaos.hetops.dev 301 ms · 5 incidents in 24 h");
+  await expect(mod(page, "sites").locator("h2")).toContainText("10/10 up · slowest chaos.hetops.dev 301 ms · 5 incidents in 24 h");
 });
 
 test("the sites board: 24 ticks a row, Sites then Products, hollow before a Gatus restart, a drawer and a link per row", async ({ page }) => {
@@ -72,7 +72,7 @@ test("a rough night: the budget, silver bans, and ember only where the owner is 
   await expect(mod(page, "budget").locator(".budget-num.warm")).toHaveCount(0);
   await expect(mod(page, "knocks").locator(".knock")).toHaveCount(7);
   await expect(mod(page, "knocks").locator(".knock").first()).toHaveCSS("fill", "rgb(201, 199, 193)"); // --quiet, never ember
-  await expect(mod(page, "knocks").locator("h4")).toContainText("37 banned");
+  await expect(mod(page, "knocks").locator("h2")).toContainText("37 banned");
   await expect(mod(page, "deploys").locator(".cap-track.unknown")).toHaveCount(0);
   await expect(mod(page, "deploys").locator(".cap.hot")).toHaveCount(1);
   await expect(mod(page, "deploys").locator(".wait-row")).toContainText("radar-cloud has 7a5cba8 waiting for a deploy");
@@ -85,7 +85,7 @@ test("a rough night: the budget, silver bans, and ember only where the owner is 
   await expect(mod(page, "sites").locator('[data-site="ops/site/products_threadvault"] .beats i:last-child')).toHaveClass(/down/);
   await expect(mod(page, "sites").locator('[data-site="ops/site/products_threadvault"] .beats i.dip')).toHaveCount(3);
   await expect(mod(page, "sites").locator(".board-g:not(.cont) + .site").nth(1)).toHaveAttribute("data-site", "ops/site/products_threadvault");
-  await expect(mod(page, "sites").locator("h4")).toContainText("9/10 up · slowest dns.hetops.dev 1840 ms");
+  await expect(mod(page, "sites").locator("h2")).toContainText("9/10 up · slowest dns.hetops.dev 1840 ms");
   await expect(mod(page, "sites").locator('[data-site="ops/site/sites_dns"] .pct')).not.toHaveClass(/warm/);
 });
 

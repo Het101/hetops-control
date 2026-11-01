@@ -119,3 +119,35 @@ test("screenshot of Settings", async ({ page }) => {
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
   await page.screenshot({ path: "e2e/__screens__/settings.png", fullPage: true });
 });
+
+test("on a phone every page is reachable: four in the bottom bar, the rest in More, nothing off-screen", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  const bar = page.locator(".rail");
+  for (const name of ["Home", "Timeline", "Alerts", "Apps"]) await expect(bar.getByRole("link", { name, exact: true })).toBeInViewport();
+  const more = page.getByRole("button", { name: "More pages" });
+  await expect(more).toBeInViewport();
+  const box = (await bar.boundingBox())!;
+  expect(box.y + box.height).toBeCloseTo(844, 0);   // at the foot, under the thumb
+  await more.click();
+  const sheet = page.locator("#more-pages");
+  await expect(sheet.getByRole("link")).toHaveText(["Topology", "Backups", "Security", "Settings"]);
+  await page.screenshot({ path: "e2e/__screens__/nav-phone-more.png", animations: "disabled" });
+  await sheet.getByRole("link", { name: "Security" }).click();
+  await expect(page).toHaveURL("/security");
+  await expect(sheet).toBeHidden();
+  await expect(more).toHaveClass(/\bon\b/);   // More says where you are
+  await expect(page.locator("main h1")).toBeVisible();
+  // the last module clears the bar
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  const last = (await page.locator("main > *").last().boundingBox())!;
+  expect(last.y + last.height).toBeLessThanOrEqual((await bar.boundingBox())!.y + 1);
+});
+
+test("a desktop has no More: every page sits in the rail", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "More pages" })).toBeHidden();
+  await expect(page.locator(".rail a.nav")).toHaveCount(8);
+  for (const l of await page.locator(".rail a.nav").all()) await expect(l).toBeVisible();
+});

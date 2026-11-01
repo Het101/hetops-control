@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }, info) => {
 test("the headline renders from the state", async ({ page }) => {
   await expect(page.locator(".headline")).toContainText("The estate is healthy.");
   await expect(page.locator(".headline em")).toHaveText("1 thing is waiting on you.");
-  await expect(page.locator(".needs h3")).toHaveText("NEEDS YOU · 1");
+  await expect(page.locator(".needs h2")).toHaveText("NEEDS YOU · 1");
   await expect(page.locator(".ember-btn")).toBeDisabled();
 });
 

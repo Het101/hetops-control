@@ -32,7 +32,7 @@
 <div class="grid">
   <div class="lane c5">
     <section class="mod raised c5 list servers" style="--in:.04s" aria-labelledby="s-agents">
-      <h4 id="s-agents"><span>AGENTS</span><span>{servers.length} servers</span></h4>
+      <h2 id="s-agents"><span>AGENTS</span><span>{servers.length} servers</span></h2>
       {#if !estate}<div class="empty">Waiting for the first state from the center.</div>
       {:else}
         {#each servers as id (id)}
@@ -49,7 +49,7 @@
     </section>
 
     <section class="mod raised c5" style="--in:.16s" aria-labelledby="s-prefs">
-      <h4 id="s-prefs"><span>PREFERENCES</span><span>this browser</span></h4>
+      <h2 id="s-prefs"><span>PREFERENCES</span><span>this browser</span></h2>
       <fieldset class="pick">
         <legend>Reduce motion</legend>
         <div class="seg pressed">
@@ -68,11 +68,11 @@
     </section>
 
     <section class="mod raised c5" style="--in:.08s" aria-labelledby="s-you">
-      <h4 id="s-you"><span>SIGNED IN</span></h4>
+      <h2 id="s-you"><span>SIGNED IN</span></h2>
       {#if me}<p class="big">{me.email || "unknown"}</p><p class="note">Identity from Cloudflare Access, read by the center on every request.</p>
       {:else if meFailed}<p class="note warm">Could not read who is signed in.</p>
       {:else}<p class="note">Reading…</p>{/if}
-      <h4 class="sub-h"><span>ABOUT</span></h4>
+      <h2 class="sub-h"><span>ABOUT</span></h2>
       <dl class="facts">
         <dt>Build</dt><dd class="mono">{me ? me.version : "…"}</dd>
         <dt>Source</dt><dd><a href={REPO} target="_blank" rel="noreferrer">github.com/Het101/hetops-control</a></dd>
@@ -82,7 +82,7 @@
   </div>
   <div class="lane c7">
     <section class="mod raised c7 list" style="--in:.12s" aria-labelledby="s-sources">
-      <h4 id="s-sources"><span>SOURCES</span></h4>
+      <h2 id="s-sources"><span>SOURCES</span></h2>
       {#if !estate}<div class="empty">Waiting for the first state from the center.</div>
       {:else}
         {#each servers as id (id)}

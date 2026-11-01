@@ -38,7 +38,7 @@
 <div class="grid">
   <div class="lane c8">
     <section class="mod raised c8 map-mod grow" style="--in:.04s" aria-labelledby="s-map">
-      <h4 id="s-map"><span>WHO KNOCKS · CROWDSEC DECISIONS</span><span>{decisions.length ? `${decisions.length} active` : ""}</span></h4>
+      <h2 id="s-map"><span>WHO KNOCKS · CROWDSEC DECISIONS</span><span>{decisions.length ? `${decisions.length} active` : ""}</span></h2>
       <KnockMap {decisions} w={800} h={340} step={4} />
       {#if cs.failing.length}<Waiting title={`Can't read CrowdSec on ${cs.failing[0]!.server}.`} warm>{cs.failing[0]!.error}</Waiting>
       {:else if !cs.reporting.length}<div class="overlay"><Waiting title="CrowdSec is not reporting yet.">Bans by country appear on this map when the lab's CrowdSec source lands. The white dot is the lab.</Waiting></div>
@@ -46,7 +46,7 @@
     </section>
 
     <section class="mod raised c8 list" style="--in:.12s" aria-labelledby="s-bans">
-      <h4 id="s-bans"><span>RECENT BANS</span><span>{recent.length ? `latest ${recent.length}` : ""}</span></h4>
+      <h2 id="s-bans"><span>RECENT BANS</span><span>{recent.length ? `latest ${recent.length}` : ""}</span></h2>
       {#each recent as d (d.id)}
         <button type="button" class="row" onclick={() => (open = d)}>
           <span class="n mono">{str(d, "country") ?? "··"}</span>
@@ -58,20 +58,20 @@
   </div>
   <div class="lane c4">
     <section class="mod raised c4 list" style="--in:.08s" aria-labelledby="s-scen">
-      <h4 id="s-scen"><span>WHAT THEY TRIED</span><span>{scen.length ? "scenarios" : ""}</span></h4>
+      <h2 id="s-scen"><span>WHAT THEY TRIED</span><span>{scen.length ? "scenarios" : ""}</span></h2>
       {#each scen as s (s.v)}
         <div class="bar-row"><span class="t mono">{s.v}</span><span class="bar pressed"><i style={`transform:scaleX(${s.n / scen[0]!.n})`}></i></span><b class="mono">{s.n}</b></div>
       {:else}<Waiting title="No decisions yet.">CrowdSec scenarios, most frequent first.</Waiting>{/each}
       {#if bans}
         {@const c = chart(bans, 300, 60)}
-        <h4 class="sub-h"><span>BANS PER HOUR · 24 H</span><span>{sumSeries(bans, t - DAY)}</span></h4>
+        <h2 class="sub-h"><span>BANS PER HOUR · 24 H</span><span>{sumSeries(bans, t - DAY)}</span></h2>
         <svg class="spark" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><clipPath id="spark-reveal"><rect class="reveal" width="300" height="60"/></clipPath>
           <g clip-path="url(#spark-reveal)">{#each c.segments as g, i (i)}<path d={g.area} class="a1"/><path d={g.line} class="l1"/>{/each}</g></svg>
       {/if}
     </section>
 
     <section class="mod raised c4 list" style="--in:.16s" aria-labelledby="s-drift">
-      <h4 id="s-drift"><span>BEDROCK · HOST DRIFT</span><span>{drift.length ? `${drift.filter(d => d.facts.drift?.value === true).length} drifted` : ""}</span></h4>
+      <h2 id="s-drift"><span>BEDROCK · HOST DRIFT</span><span>{drift.length ? `${drift.filter(d => d.facts.drift?.value === true).length} drifted` : ""}</span></h2>
       {#if br.failing.length}<Waiting title={`Can't read Bedrock's state on ${br.failing[0]!.server}.`} warm>{br.failing[0]!.error}</Waiting>{/if}
       {#each drift as d (d.id)}
         {@const warm = d.facts.drift?.value === true || needsYou(d.status)} {@const run = time(d, "lastRun") ?? time(d, "lastCheck")}
@@ -84,7 +84,7 @@
     </section>
 
     <section class="mod raised c4 list" style="--in:.24s" aria-labelledby="s-audit">
-      <h4 id="s-audit"><span>AUDIT HIGHLIGHTS</span><span>{audit.length || ""}</span></h4>
+      <h2 id="s-audit"><span>AUDIT HIGHLIGHTS</span><span>{audit.length || ""}</span></h2>
       {#each audit as e (keyOf(e))}
         {@const warm = heated.hot(e)}
         <button type="button" class="row" class:now={warm} onclick={() => { openEv = e; open = estate?.entities.find(x => x.id === e.entity); }}>
@@ -95,7 +95,7 @@
     </section>
 
     <section class="mod raised c4 grow" style="--in:.2s" aria-labelledby="s-log">
-      <h4 id="s-log"><span>SECURITY LOG STREAM · 24 H</span><span>{secLog ? `${sumSeries(secLog, t - DAY).toLocaleString()} docs` : ""}</span></h4>
+      <h2 id="s-log"><span>SECURITY LOG STREAM · 24 H</span><span>{secLog ? `${sumSeries(secLog, t - DAY).toLocaleString()} docs` : ""}</span></h2>
       {#if secLog}
         <Terrain series={[secLog]} from={t - DAY} to={t} label="Security log documents per 10 minutes over 24 hours" />
       {:else}<Waiting title="The security log stream is not reporting.">Documents per 10 minutes in logs-lab-security, from the ops Elasticsearch.</Waiting>{/if}
