@@ -117,7 +117,7 @@ button.row,.open{border:0;background:none;color:inherit;font:inherit;text-align:
 .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .pill{border:0;cursor:pointer;display:flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;background:#25262a;color:var(--ink-2);font:500 12px var(--sans);transition:transform .3s var(--ease)}
 .pill:hover{transform:translateY(-1px)}
-.pill i{width:7px;height:7px;border-radius:50%;background:var(--quiet)}
+.pill i{width:7px;height:7px;border-radius:50%;background:var(--moss)}
 .pill small{font:500 11px var(--mono);color:var(--ink-3)}
 .pill.blind i{background:none;box-shadow:inset 0 0 0 1.5px var(--ink-3)}
 .pill.warm{color:var(--ember)}
@@ -139,7 +139,7 @@ button.row,.open{border:0;background:none;color:inherit;font:inherit;text-align:
 .card.hot{box-shadow:inset -4px -4px 10px var(--hi),inset 6px 6px 14px var(--lo),inset 0 0 0 1px rgba(242,112,47,.45)}
 .duo{display:flex;gap:6px;margin:4px 0 2px}
 .duo i{font:600 11px var(--mono);font-style:normal;letter-spacing:.06em;padding:3px 8px;border-radius:999px;box-shadow:inset 0 0 0 1px #45464b;color:var(--ink-2)}
-.duo i.ok{color:var(--ink-2)}
+.duo i.ok{color:var(--moss);box-shadow:inset 0 0 0 1px var(--moss-dim)}
 .duo i.warm{color:var(--ember);box-shadow:inset 0 0 0 1px rgba(242,112,47,.6)}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin:6px 0 4px}
 .tile{border:0;cursor:pointer;text-align:left;color:var(--ink);font:inherit;display:flex;flex-direction:column;gap:7px;padding:12px 14px;border-radius:16px;background:#26272b;
@@ -152,7 +152,7 @@ button.row,.open{border:0;background:none;color:inherit;font:inherit;text-align:
 .tile.hot{box-shadow:inset 0 0 0 1px rgba(242,112,47,.55)}
 .pips{display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-height:9px}
 .pips i{width:9px;height:9px;border-radius:50%}
-.pips i.up{background:var(--quiet)}
+.pips i.up{background:var(--moss)}
 .pips i.missing{box-shadow:inset 0 0 0 1.5px var(--ember)}
 .pips small{font-size:11px}
 .board-h{flex-wrap:wrap;gap:4px 16px}
@@ -169,7 +169,7 @@ button.row,.open{border:0;background:none;color:inherit;font:inherit;text-align:
 .site-open:focus-visible,.go:focus-visible{outline:2px solid var(--quiet);outline-offset:2px}
 .site .t{font-size:13.5px;min-width:0}
 .site .t small{display:block;margin-top:2px;font-size:11px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sdot{width:9px;height:9px;border-radius:50%;background:var(--quiet)}
+.sdot{width:9px;height:9px;border-radius:50%;background:var(--moss)}
 .sdot.unknown{background:none;box-shadow:inset 0 0 0 1.5px var(--ink-3)}
 .sdot.warm{background:radial-gradient(circle at 35% 30%,var(--ember-1),var(--ember-2) 60%,var(--ember-3));box-shadow:0 0 10px rgba(242,88,42,.6)}
 .beats{display:flex;align-items:flex-end;gap:2px;height:24px}
@@ -196,7 +196,7 @@ button.row,.open{border:0;background:none;color:inherit;font:inherit;text-align:
 .age{position:relative;width:46px;height:46px;display:grid;place-items:center}
 .age svg{position:absolute;inset:0}
 .age .track{fill:none;stroke:#1f2023;stroke-width:4}
-.arc-age{fill:none;stroke:#d8d6d0;stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset 1.6s var(--ease);animation:sweep-age 1.6s var(--ease) backwards}
+.arc-age{fill:none;stroke:var(--moss);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset 1.6s var(--ease);animation:sweep-age 1.6s var(--ease) backwards}
 .arc-age.warm{stroke:var(--ember)}
 @keyframes sweep-age{from{stroke-dashoffset:107}}
 .age b{position:relative;font-size:11px;color:var(--ink-2)}
@@ -422,6 +422,7 @@ a.row{color:inherit;text-decoration:none}
 .toast .tg{width:22px;height:22px;margin-top:1px;fill:none;stroke:var(--quiet);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .toast .tg-ring{stroke:var(--ink-3);opacity:.35}
 .toast .tg-arc{stroke-width:2.2;transform-origin:12px 12px;transform-box:view-box;animation:spin 1.4s linear infinite}
+.toast[data-tone="done"] .tg{stroke:var(--moss)}
 .toast[data-tone="failed"] .tg{stroke:var(--ember-2);filter:drop-shadow(0 0 6px rgba(242,88,42,.45))}
 .toast-b{min-width:0;display:grid;gap:3px}
 .toast-h{margin:0;font:600 14.5px/1.3 var(--sans),system-ui,sans-serif;color:var(--ink);overflow-wrap:anywhere}

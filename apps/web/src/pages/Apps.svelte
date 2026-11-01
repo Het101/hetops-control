@@ -47,7 +47,7 @@
 <div class="grid">
   {#each sums as s, i (s.id)}
     <section class="mod raised c4 srv" data-server={s.id} style={`--in:${.04 + i * .04}s`} aria-label={`${s.id} apps`}>
-      <h2><span>{s.id.toUpperCase()}</span><span class:warm={s.needs > 0 || (!!s.view?.configured && !s.view?.reachable)}>{word(s)}</span></h2>
+      <h2><span>{s.id.toUpperCase()}</span><span class:warm={s.needs > 0 || (!!s.view?.configured && !s.view?.reachable)} class:moss={word(s) === "steady"}>{word(s)}</span></h2>
       {#if s.apps || s.argo}
         <div class="nums">
           <div><b>{s.apps}</b><span>workloads</span></div>

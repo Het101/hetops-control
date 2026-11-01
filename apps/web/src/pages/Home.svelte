@@ -125,7 +125,7 @@
             <a class="row" class:now={warm} href="/backups" data-backup={e.id}>
               <span class="n mono" class:warm>{v.ok ? hhmm(v.ok) : "never"}</span>
               <span class="t">{e.name}<small class:warm>{warm ? (e.statusReason ?? e.status) : `${str(e, "repository") ? `to ${str(e, "repository")} · ` : ""}last ok ${v.ok ? ago(v.ok, t) : "never"}`}</small></span>
-              <span class="tag pressed" class:warm>{warm ? (v.failedLast ? "FAILED" : "OVERDUE") : "OK"}</span>
+              <span class="tag pressed" class:warm class:ok={!warm}>{warm ? (v.failedLast ? "FAILED" : "OVERDUE") : "OK"}</span>
             </a>
           {:else}<Waiting title="No snapshot policies reported.">Each policy appears with its last result.</Waiting>{/each}
         {/if}

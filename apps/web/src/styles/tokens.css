@@ -4,6 +4,9 @@
   --bg:#2a2b2f; --bg-deep:#232427; --hi:rgba(255,255,255,.055); --lo:rgba(0,0,0,.42);
   --ink:#ecebe7; --ink-2:#b4b2ac; --ink-3:#9a9993; --quiet:#c9c7c1;
   --ember-1:#ff9a3c; --ember-2:#f0582a; --ember-3:#c2391a; --ember:#f2702f;
+  /* moss: alive and healthy. The second accent beside ember (needs you): a vivid emerald leaning teal, 7:1 on every surface,
+     and kept well apart from ember for red-green colour vision. It never means "look at this"; only ember does. */
+  --moss:#46d6b0; --moss-2:#2fa587; --moss-dim:rgba(70,214,176,.4);
   --ease:cubic-bezier(.22,1,.36,1); --ease-io:cubic-bezier(.65,0,.35,1);
   /* type: the app's own fonts (fonts.css), each followed by a metric-matched local face for the moment before it loads;
      every use keeps its own generic tail, so a glyph the font lacks falls back exactly as it did */
@@ -29,7 +32,7 @@ html{scrollbar-gutter:stable}
 .logo i{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffc08a,var(--ember-2) 60%,var(--ember-3));box-shadow:0 0 14px rgba(242,112,47,.55);animation:breathe 4.5s var(--ease-io) infinite}
 .nav{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:var(--ink-3);cursor:pointer;transition:transform .35s var(--ease),color .3s,box-shadow .35s var(--ease);position:relative}
 .nav:hover{color:var(--ink);transform:translateY(-1px)}
-.nav.on{color:var(--ink)}   /* where you are is not something that needs you: ember is kept for that */
+.nav.on{color:var(--moss)}   /* where you are: moss, not ember, which is kept for what needs you */
 .nav svg{width:22px;height:22px;overflow:visible}
 .nav svg *{vector-effect:non-scaling-stroke}
 .nav .tip{position:absolute;left:62px;white-space:nowrap;font:500 12px var(--sans);color:var(--ink);background:#1f2023;padding:5px 10px;border-radius:8px;opacity:0;transform:translateX(-6px);pointer-events:none;transition:opacity .25s,transform .35s var(--ease);box-shadow:0 8px 18px var(--lo)}
@@ -69,11 +72,11 @@ main{padding:24px 28px 34px 8px}
 .top{display:flex;align-items:center;gap:18px;margin-bottom:22px}
 .brand{font:600 13px var(--mono);letter-spacing:.16em;color:var(--ink-2)}
 .live{display:flex;align-items:center;gap:9px;font:500 12px var(--mono);color:var(--ink-2)}
-.pulse{position:relative;width:9px;height:9px;border-radius:50%;background:var(--quiet)}
+.pulse{position:relative;width:9px;height:9px;border-radius:50%;background:var(--moss);box-shadow:0 0 8px rgba(70,214,176,.5)}
 /* the live dot is re-keyed on every stream message: it blips and sends one ring out, so the pulse is the data arriving */
 .pulse{animation:blip .7s var(--ease)}
 @keyframes blip{from{transform:scale(1.6)}}
-.pulse::after{content:"";position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--quiet);opacity:0;animation:ping 1.8s var(--ease)}
+.pulse::after{content:"";position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--moss);opacity:0;animation:ping 1.8s var(--ease)}
 @keyframes ping{0%{transform:scale(1);opacity:.8}100%{transform:scale(3);opacity:0}}
 
 /* ---------- hero ---------- */
@@ -107,6 +110,7 @@ svg.forest{will-change:transform;contain:paint}
 .st span{font:500 11.5px var(--mono);color:var(--ink-3)}
 .st i{font-style:normal;font:600 11px var(--mono);letter-spacing:.08em;color:var(--quiet)}
 .st i.warm{color:var(--ember)}
+.st i.ok{color:var(--moss)}
 /* forest motion */
 /* the wind, the breathing roots, the ghost tree, the falling leaves, the rising embers and a shaken-loose leaf are one 30 Hz rAF loop in lib/wind.ts; these are the CSS halves:
    the light that runs down the roots on each reading, and the weather's colours */
@@ -153,12 +157,13 @@ svg.forest{will-change:transform;contain:paint}
 /* ---------- live-data additions (same tokens) ---------- */
 .live{margin-left:auto}
 .live.warm{color:var(--ember)}
-.live.warm .pulse{background:var(--ember)}.live.warm .pulse::after{border-color:var(--ember)}
+.live.warm .pulse{background:var(--ember);box-shadow:none}.live.warm .pulse::after{border-color:var(--ember)}
 a.nav{text-decoration:none}
 .nav:focus-visible .tip{opacity:1;transform:none}
 .nav:focus-visible,.ember-btn:focus-visible{outline:2px solid var(--quiet);outline-offset:3px}
 .needs h2.calm{color:var(--ink-3)}
 .need-none{font-size:13.5px;color:var(--ink-2);padding:12px 0 4px}
+.need-none::before{content:"";display:inline-block;width:7px;height:7px;margin-right:9px;border-radius:50%;background:var(--moss);vertical-align:1px;box-shadow:0 0 8px rgba(70,214,176,.5)}
 /* an action that is not wired yet: dimmed and still, but focusable so its title can be reached */
 .ember-btn[aria-disabled="true"]{cursor:not-allowed;animation:none;opacity:.5}
 .ember-btn[aria-disabled="true"]:hover,.ember-btn[aria-disabled="true"]:active{transform:none}
@@ -193,6 +198,7 @@ h1:focus{outline:none}
 .back:hover{transform:translateY(-1px)}
 .back:focus-visible,.facts a:focus-visible{outline:2px solid var(--quiet);outline-offset:3px}
 .tag.warm,small.warm,.note.warm{color:var(--ember)}
+.tag.ok,.mod h2 .moss{color:var(--moss)}
 .list .group{font-size:11px;letter-spacing:.12em;color:var(--ink-3);margin:14px 0 2px}
 .list .group:first-of-type{margin-top:10px}
 .big{font:600 20px var(--serif),Georgia,serif;margin:12px 0 0;overflow-wrap:anywhere}

@@ -11,6 +11,8 @@
   const X: Record<ServerId, number> = { lab: 200, staging: 600, ops: 1000 };
   const NAME: Record<ServerId, string> = { lab: "Lab", staging: "Staging", ops: "Ops" };
   const PAL = ["#5f6065", "#7b7c81", "#9c9b98", "#c4c2bd", "#d9d7d1"];
+  // a healthy app's leaves: the same five steps, in moss (tokens.css --moss); silver stays for what can't be told
+  const MOSS = ["#2f5a4f", "#36806b", "#3ea98a", "#5fcaa8", "#a2e8cf"];
 
   // the ground never changes: one blade every 5 units, as in the mock (without its decorative ember blades)
   const blades = Array.from({ length: 240 }, (_, i) => ({ x: i * 5, h: 4 + Math.abs(Math.sin(i * .21) * 10 + Math.sin(i * .07) * 14), d: 1400 + ((i * 37) % 700), dl: i * 4 }));
@@ -153,7 +155,7 @@
                   {#each b.leaves as l, i (i)}
                     <!-- the ember glow is a precomputed halo, not a CSS filter re-rasterised on every sway frame -->
                     {#if l.ember}<circle cx={l.x} cy={l.y} r={l.r * 1.8} fill="url(#emberHalo)"/><circle class="leaf ember" cx={l.x} cy={l.y} r={l.r} fill="url(#emberLeaf)" fill-opacity=".95"/>
-                    {:else}<circle class="leaf" cx={l.x} cy={l.y} r={l.r} fill={PAL[Math.floor(l.tone * 5)]} fill-opacity={.5 + ((l.tone * 5) % 1) * .42}/>{/if}
+                    {:else}<circle class="leaf" cx={l.x} cy={l.y} r={l.r} fill={(b.status === "ok" ? MOSS : PAL)[Math.floor(l.tone * 5)]} fill-opacity={.5 + ((l.tone * 5) % 1) * .42}/>{/if}
                   {/each}
                 </g>
               </g>
@@ -173,6 +175,6 @@
 </svg>
 <div class="stations">
   {#each stations as s (s.id)}
-    <div class="st" data-server={s.id}><b>{s.name}</b><span>{s.line}</span><br><i class:warm={s.warm}>● {s.word}</i></div>
+    <div class="st" data-server={s.id}><b>{s.name}</b><span>{s.line}</span><br><i class:warm={s.warm} class:ok={s.word === "HEALTHY"}>● {s.word}</i></div>
   {/each}
 </div>
