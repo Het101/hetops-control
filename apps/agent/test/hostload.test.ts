@@ -49,3 +49,26 @@ describe("hostload source", () => {
     expect(Object.values(n.facts).every(f => Number.isFinite(f.value))).toBe(true);
   });
 });
+
+describe("hostload history", () => {
+  const at = (iso: string) => ({ server: "lab" as const, now: () => new Date(iso) });
+  const withCpu = (nano: number) => { const s = structuredClone(summary); s.node.cpu.usageNanoCores = nano; return s; };
+  it("keeps 10-minute means of the busiest node's cpu and memory as two series, and drops what is older than 24 h", async () => {
+    let s: unknown = withCpu(2e9);   // 50% of 4 cores
+    const src = hostloadSource({ listNodes: async () => nodes.items, nodeSummary: async () => s } as any);
+    await src.collect(at("2026-10-29T11:55:00Z"));                  // more than 24 h before the last: dropped
+    await src.collect(at("2026-10-30T12:01:00Z"));
+    s = withCpu(1e9); await src.collect(at("2026-10-30T12:08:00Z")); // same bucket: 50 and 25 → 37.5
+    s = withCpu(3e9); const out = await src.collect(at("2026-10-30T12:12:00Z")); // next bucket: 75
+    const cpu = out.series!.find(x => x.id === "lab/host/cpu")!;
+    expect(cpu).toMatchObject({ server: "lab", unit: "%", stepMs: 600_000, label: "CPU of the busiest node, 10-minute mean" });
+    expect(cpu.points).toEqual([[Date.parse("2026-10-30T12:00:00Z"), 37.5], [Date.parse("2026-10-30T12:10:00Z"), 75]]);
+    const mem = out.series!.find(x => x.id === "lab/host/memory")!;
+    expect(mem.points).toHaveLength(2); expect(mem.points.every(p => p[1] > 0 && p[1] <= 100)).toBe(true);
+  });
+  it("a reading it cannot make adds nothing to the history", async () => {
+    const s = structuredClone(summary) as any; delete s.node.cpu.usageNanoCores;
+    const out = await hostloadSource(kube(s)).collect(ctx);
+    expect(out.series!.find(x => x.id === "lab/host/cpu")!.points).toEqual([]);
+  });
+});
