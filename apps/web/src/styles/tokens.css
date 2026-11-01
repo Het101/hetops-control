@@ -19,6 +19,9 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans)
 .mono{font-family:var(--mono),ui-monospace,monospace}
 /* raised and pressed surfaces (neumorphic) */
 .raised{background:linear-gradient(145deg,#2f3034,#27282b);box-shadow:-6px -6px 14px var(--hi),8px 10px 22px var(--lo)}
+/* three depths, so the eye knows where to land: the hero is the one fully raised, glowing surface; a module sits a step
+   lower, a flatter plate with a thin light along its top edge; what is inside a module is pressed into it */
+.mod.raised{background:linear-gradient(180deg,#2e2f33,#2a2b2e);box-shadow:inset 0 1px 0 rgba(255,255,255,.055),inset 0 0 0 1px rgba(255,255,255,.018),0 18px 36px -18px rgba(0,0,0,.7)}
 .pressed{background:linear-gradient(145deg,#25262a,#2d2e32);box-shadow:inset -4px -4px 10px var(--hi),inset 6px 6px 14px var(--lo)}
 /* the modules mount a moment after the hero (components/Later.svelte): the scrollbar's gutter is kept from the start and the
    rows never stretch to fill the screen, so the page growing beneath the hero moves nothing already drawn */

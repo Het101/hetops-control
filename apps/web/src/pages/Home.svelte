@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Status from "../components/Status.svelte";
   import type { Entity, Event } from "@hetops-control/contracts";
   import type { State } from "../lib/api.js";
   import type { Away } from "../lib/away.js";
@@ -125,7 +126,7 @@
             <a class="row" class:now={warm} href="/backups" data-backup={e.id}>
               <span class="n mono" class:warm>{v.ok ? hhmm(v.ok) : "never"}</span>
               <span class="t">{e.name}<small class:warm>{warm ? (e.statusReason ?? e.status) : `${str(e, "repository") ? `to ${str(e, "repository")} · ` : ""}last ok ${v.ok ? ago(v.ok, t) : "never"}`}</small></span>
-              <span class="tag pressed" class:warm class:ok={!warm}>{warm ? (v.failedLast ? "FAILED" : "OVERDUE") : "OK"}</span>
+              <Status tone={warm ? "warn" : "ok"} label={warm ? (v.failedLast ? "FAILED" : "OVERDUE") : "OK"} />
             </a>
           {:else}<Waiting title="No snapshot policies reported.">Each policy appears with its last result.</Waiting>{/each}
         {/if}

@@ -138,9 +138,6 @@ button.row,.open{border:0;background:none;color:inherit;font:inherit;text-align:
 .card small.warm{color:var(--ember)}
 .card.hot{box-shadow:inset -4px -4px 10px var(--hi),inset 6px 6px 14px var(--lo),inset 0 0 0 1px rgba(242,112,47,.45)}
 .duo{display:flex;gap:6px;margin:4px 0 2px}
-.duo i{font:600 11px var(--mono);font-style:normal;letter-spacing:.06em;padding:3px 8px;border-radius:999px;box-shadow:inset 0 0 0 1px #45464b;color:var(--ink-2)}
-.duo i.ok{color:var(--moss);box-shadow:inset 0 0 0 1px var(--moss-dim)}
-.duo i.warm{color:var(--ember);box-shadow:inset 0 0 0 1px rgba(242,112,47,.6)}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin:6px 0 4px}
 .tile{border:0;cursor:pointer;text-align:left;color:var(--ink);font:inherit;display:flex;flex-direction:column;gap:7px;padding:12px 14px;border-radius:16px;background:#26272b;
   box-shadow:inset 0 0 0 1px #313237;transition:transform .3s var(--ease),box-shadow .3s}
@@ -261,9 +258,9 @@ a.row{color:inherit;text-decoration:none}
 .slider .thumb{animation:fade .5s var(--ease) 1.3s backwards}
 /* hover lifts a module a little, only while motion is allowed */
 @media (prefers-reduced-motion:no-preference){
-  :root:not([data-motion="on"]) .mod.raised:hover{transform:translateY(-3px);box-shadow:-6px -6px 14px var(--hi),10px 16px 30px rgba(0,0,0,.5)}
+  :root:not([data-motion="on"]) .mod.raised:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),inset 0 0 0 1px rgba(255,255,255,.03),0 24px 40px -18px rgba(0,0,0,.75)}
 }
-:root[data-motion="off"] .mod.raised:hover{transform:translateY(-3px);box-shadow:-6px -6px 14px var(--hi),10px 16px 30px rgba(0,0,0,.5)}
+:root[data-motion="off"] .mod.raised:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),inset 0 0 0 1px rgba(255,255,255,.03),0 24px 40px -18px rgba(0,0,0,.75)}
 
 /* ---------- columns that end level (Home, Security, Alerts, Settings) ----------
    Two flex columns side by side in the 12-column grid; a .grow module in each takes up the slack with its chart or map,
@@ -481,3 +478,34 @@ a.row{color:inherit;text-decoration:none}
 .away-x{border:0;background:none;color:var(--ink-3);cursor:pointer;font-size:15px;line-height:1;padding:2px 6px;margin-left:4px;border-radius:6px}
 .away-x:hover{color:var(--ink)}
 @media (max-width:720px){.q-pill{padding:5px 10px 5px 8px;font-size:11px}.q-do{display:none}}
+
+/* ---------- the Status badge (components/Status.svelte) ---------- */
+.status.tag{display:inline-flex;align-items:center;gap:7px;padding:4px 10px 4px 8px;background:rgba(0,0,0,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);color:var(--ink-2);white-space:nowrap}
+.status i{width:7px;height:7px;border-radius:50%;background:var(--quiet);flex:none}
+.status.ok{color:var(--moss)}.status.ok i{background:var(--moss);box-shadow:0 0 7px rgba(70,214,176,.55)}
+.status.warn{color:var(--ember)}.status.warn i{background:radial-gradient(circle at 35% 30%,var(--ember-1),var(--ember-2) 60%,var(--ember-3));box-shadow:0 0 8px rgba(242,88,42,.6)}
+.status.blind i{background:none;box-shadow:inset 0 0 0 1.5px var(--ink-3)}
+
+/* healthy workloads, folded: one chip per namespace (moss dot, count) that opens its tiles */
+.ns-fold{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;padding:4px 0 6px}
+.chip.ns{display:inline-flex;align-items:center;gap:8px;box-shadow:inset 0 0 0 1px #3a3b40}
+.chip.ns i{width:7px;height:7px;border-radius:50%;background:var(--moss)}
+.chip.ns b{font-weight:600;color:var(--ink-3)}
+.tile-h .warm{color:var(--ember)}.tile-h .moss{color:var(--moss)}
+
+/* ---------- the drawer: status, facts as tiles, its own thread of events ---------- */
+.drawer .state-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:6px 0 2px;font-size:13px;color:var(--ink-2)}
+.drawer .state-row .warm{color:var(--ember)}
+.fact-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:16px}
+.fact{border-radius:14px;padding:10px 12px;min-width:0}
+.fact.wide{grid-column:1/-1}
+.fact dt{font:500 11px var(--mono);letter-spacing:.06em;color:var(--ink-3);margin-bottom:3px}
+.fact dd{font-size:13.5px;color:var(--ink)}
+.drawer .acts{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:10px}
+.drawer .act-l{gap:8px}
+.thread{list-style:none;margin:12px 0 0;padding:0 0 0 4px;position:relative}
+.thread::before{content:"";position:absolute;left:17px;top:10px;bottom:10px;width:1px;background:#3a3b40}
+.thread li{position:relative;display:grid;grid-template-columns:28px 48px minmax(0,1fr);align-items:start;gap:8px;padding:7px 0;font-size:13px;color:var(--ink-2)}
+.thread li .n{font-size:11px;color:var(--ink-3);padding-top:2px}
+.thread li .t small{display:block;color:var(--moss);font:600 11px var(--mono);letter-spacing:.06em;margin-top:2px}
+.thread li.hot{color:var(--ink)}.thread li.hot .n{color:var(--ember)}
