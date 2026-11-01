@@ -1,14 +1,15 @@
 <script lang="ts">
   import type { Entity } from "@hetops-control/contracts";
   import { hhmm } from "../lib/pages.js";
-  import { columns, spark, tickHeight, type SiteRow } from "../lib/sites.js";
+  import { barHeights, columns, type SiteRow } from "../lib/sites.js";
 
-  // the Sites status board (Home and Apps): one row per site in two balanced columns, Sites then Products; each row a 24-hour
-  // heartbeat (one tick per clock hour, its height the uptime), the last response time with its hourly line, and the 24 h uptime.
-  // Ember only for "needs you": the current hour of a site that is failing now; a recovered hour is a shorter, dimmer silver tick.
+  // the Sites status board (Home and Apps): one row per site in two balanced columns, Sites then Products. Each row is one strip
+  // of the last 24 hours, a bar per clock hour: its colour how the hour went (moss fully up, silver some down time, hollow not
+  // watched, ember only for the current hour of a site failing now) and its height that hour's response time against the site's
+  // own range. Then the last response time and the 24 h uptime.
   let { rows, onopen }: { rows: SiteRow[]; onopen: (e: Entity) => void } = $props();
   const cols = $derived(columns(rows).map((items, i) => ({ key: i, items })));
-  const tip = (k: SiteRow["ticks"][number]) => `${hhmm(k.t)} UTC: ${k.up === undefined ? "not watched" : `${k.up.toFixed(2)}% up`}`;
+  const tip = (k: SiteRow["ticks"][number]) => `${hhmm(k.t)} UTC: ${k.up === undefined ? "not watched" : `${k.up.toFixed(2)}% up`}${k.ms === undefined ? "" : ` · ${Math.round(k.ms)} ms`}`;
   const said = (r: SiteRow) => { const up = r.ticks.filter(k => k.up === 100).length, hit = r.ticks.filter(k => k.up !== undefined && k.up < 100).length;
     return `Last 24 hours: ${up} hours up${hit ? `, ${hit} with down time` : ""}${24 - up - hit ? `, ${24 - up - hit} not watched` : ""}`; };
   // the line under the name: why it fails, else its domain, else (named after its domain) how its watched hours went
@@ -26,18 +27,18 @@
       {:else}
       {@const r = it.row}
       {@const link = r.e.links[0]}
+      {@const hs = barHeights(r.ticks)}
       <div class="site" class:hot={r.warm} data-site={r.e.id}>
         <button type="button" class="site-open" onclick={() => onopen(r.e)}>
           <span class="sdot" class:warm={r.warm} class:unknown={r.e.status === "unknown"} aria-hidden="true"></span>
           <span class="t">{r.e.name}<small class="mono" class:warm={r.warm}>{sub(r)}</small></span>
           <span class="beats" role="img" aria-label={said(r)}>
             {#each r.ticks as k, i (i === r.ticks.length - 1 ? `${k.t}:${k.up}` : k.t)}
-              <i class:dip={k.up !== undefined && k.up < 100} class:down={r.warm && i === r.ticks.length - 1} class:unknown={k.up === undefined} class:new={i === r.ticks.length - 1}
-                style={`--h:${k.up === undefined ? 1 : tickHeight(k.up)};--i:${i}`} title={tip(k)}></i>
+              <i class:ok={k.up === 100 && !(r.warm && i === r.ticks.length - 1)} class:dip={k.up !== undefined && k.up < 100} class:down={r.warm && i === r.ticks.length - 1}
+                class:unknown={k.up === undefined} class:new={i === r.ticks.length - 1} style={`--h:${hs[i]};--i:${i}`} title={tip(k)}></i>
             {/each}
           </span>
-          <span class="lat mono">{r.ms === undefined ? "—" : `${Math.round(r.ms)} ms`}
-            <svg viewBox="0 0 56 14" preserveAspectRatio="none" aria-hidden="true"><path d={spark(r.lat, 56, 14)}/></svg></span>
+          <span class="lat mono">{r.ms === undefined ? "—" : `${Math.round(r.ms)} ms`}</span>
           <span class="pct mono" class:warm={r.warm}>{r.pct === undefined ? "—" : `${r.pct.toFixed(2)}%`}</span>
         </button>
         {#if link}<a class="go knob" href={link.href} target="_blank" rel="noreferrer" aria-label={`Open ${link.label}`} title={link.label}>
@@ -48,4 +49,4 @@
   </div>
   {/each}
 </div>
-<p class="note">one tick per hour · shorter, dimmer = down time that hour · ember = failing now · hollow = not watched · line = mean response per hour</p>
+<p class="note">a bar per hour · green = fully up · silver = some down time · ember = failing now · hollow = not watched · height = response time that hour</p>

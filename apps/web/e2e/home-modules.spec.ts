@@ -14,11 +14,12 @@ test("a calm morning: the modules whose sources report, and none of the ones sti
   // the error budget and CrowdSec have not reported yet: not shown, no mock data
   await expect(mod(page, "budget")).toHaveCount(0);
   await expect(mod(page, "knocks")).toHaveCount(0);
-  // deploys: 2 days of events held, so 12 of the 14 days are hollow; nothing waits, so no ember
-  await expect(mod(page, "deploys").locator(".cap-track.unknown")).toHaveCount(12);
-  await expect(mod(page, "deploys").locator(".cap")).toHaveCount(1); // today: 2 Argo syncs and 2 rollouts
-  await expect(mod(page, "deploys").locator(".cap.hot")).toHaveCount(0);
-  await expect(mod(page, "deploys").locator("h2")).toContainText("4 in 14 d");
+  // deploys: the river spans only the 2 days held (no hollow days); a dot per rollout or sync, a lane per server; nothing waits
+  await expect(mod(page, "deploys").locator(".focal")).toContainText("4 deploys in the last");
+  await expect(mod(page, "deploys").locator(".dep")).toHaveCount(4);   // today: 2 Argo syncs and 2 rollouts
+  await expect(mod(page, "deploys").locator(".dep.last")).toHaveCount(1);
+  await expect(mod(page, "deploys").locator(".dep.hot")).toHaveCount(0);
+  await expect(mod(page, "deploys").locator("h2")).toContainText("since");
   // log flow: both streams, the 40-min gap hatched once
   await expect(mod(page, "logs").locator("path.l1")).toHaveCount(2);
   await expect(mod(page, "logs").locator("path.l2")).toHaveCount(2);
@@ -38,7 +39,8 @@ test("the sites board: 24 ticks a row, Sites then Products, hollow before a Gatu
   await expect(board.locator(".site .beats").first().locator("i")).toHaveCount(24);
   await expect(board.locator('[data-site="ops/site/sites_control"] .beats i.unknown')).toHaveCount(7);
   await expect(board.locator('[data-site="ops/site/sites_hetops-dev"] .beats i.dip, [data-site="ops/site/sites_hetops-dev"] .beats i.unknown')).toHaveCount(0);
-  // a recovered hour is a shorter, dimmer silver tick, never ember: ember is only for what needs the owner now
+  // a recovered hour is a silver bar, never ember: ember is only for what needs the owner now; a full hour is green
+  await expect(board.locator('[data-site="ops/site/sites_hetops-dev"] .beats i.ok')).toHaveCount(24);
   await expect(board.locator('[data-site="ops/site/sites_chaos"] .beats i.dip')).toHaveCount(1);
   await expect(board.locator(".beats i.down")).toHaveCount(0);
   await expect(board.locator('[data-site="ops/site/sites_chaos"]')).toContainText("98.61%");
@@ -73,8 +75,7 @@ test("a rough night: the budget, silver bans, and ember only where the owner is 
   await expect(mod(page, "knocks").locator(".knock")).toHaveCount(7);
   await expect(mod(page, "knocks").locator(".knock").first()).toHaveCSS("fill", "rgb(201, 199, 193)"); // --quiet, never ember
   await expect(mod(page, "knocks").locator("h2")).toContainText("37 banned");
-  await expect(mod(page, "deploys").locator(".cap-track.unknown")).toHaveCount(0);
-  await expect(mod(page, "deploys").locator(".cap.hot")).toHaveCount(1);
+  await expect(mod(page, "deploys").locator(".dep.hot")).toHaveCount(1);   // the waiting deploy sits at "now" in its lane, ember
   await expect(mod(page, "deploys").locator(".wait-row")).toContainText("radar-cloud has 7a5cba8 waiting for a deploy");
   const sec = mod(page, "backups").locator('[data-backup="ops/backup/nightly-security"]');
   await expect(sec).toHaveClass(/now/); await expect(sec).toContainText("FAILED"); await expect(sec).toContainText("r2-security is not reachable");
@@ -100,7 +101,7 @@ test("a failing source says so in ember and shows no numbers", async ({ page }) 
     ["knocks", "Can't read CrowdSec."], ["backups", "Can't read the snapshots."], ["sites", "Can't read Gatus."]] as const) {
     await expect(mod(page, m).locator(".wait.warm")).toContainText(title);
   }
-  await expect(page.locator(".capsules, .terrain, .world, .slider, [data-module] a.row, .site")).toHaveCount(0);
+  await expect(page.locator(".river, .terrain, .world, .slider, [data-module] a.row, .site")).toHaveCount(0);
   await expect(mod(page, "knocks")).toContainText("LAPI answered 403");
 });
 
