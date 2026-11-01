@@ -1,5 +1,5 @@
 import type { Entity, Event, Series, ServerId, Status } from "@hetops-control/contracts";
-import type { State } from "./api.js";
+import { num, type State } from "./api.js";
 
 /** Data shaping for the Timeline, Alerts, Apps, Backups and Security pages; pure, so it is unit-tested. */
 
@@ -115,6 +115,8 @@ export function alarms(entities: Entity[], events: Event[]): Alarm[] {
 }
 
 /* ---------- Apps ---------- */
+/** a workload that needs a look: ill, restarting in the last 24 h, or short of pods (Apps and a server's page show these first) */
+export const needsLook = (e: Entity) => needsYou(e.status) || (num(e, "restarts24h") ?? 0) > 0 || (num(e, "pods") ?? 0) < (num(e, "podsDesired") ?? 0);
 /** a server's Kubernetes workloads: the one count every page shows as "workloads" (Coolify's containers are counted apart) */
 export const workloads = (entities: Entity[], server?: ServerId) =>
   entities.filter(e => e.kind === "app" && e.source !== "coolify" && (!server || e.server === server));

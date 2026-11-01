@@ -2,7 +2,7 @@
   import Status from "../components/Status.svelte";
   import { ServerIdSchema, type Entity, type Event } from "@hetops-control/contracts";
   import { num, type State } from "../lib/api.js";
-  import { ago, facets, matches, needsYou, picked, pips, serverApps, sourceState, str, time, workloads } from "../lib/pages.js";
+  import { ago, facets, matches, needsYou, picked, pips, needsLook, serverApps, sourceState, str, time, workloads } from "../lib/pages.js";
   import Chips from "../components/Chips.svelte";
   import Search from "../components/Search.svelte";
   import Knob from "../components/Knob.svelte";
@@ -30,7 +30,7 @@
     apps: work.filter(e => e.server === server).sort((a, b) => nsOf(a).localeCompare(nsOf(b)) || a.name.localeCompare(b.name)) })).filter(g => g.apps.length));
   // quiet by default: a server shows the workloads that need a look (ill, restarting, short of pods); the healthy rest fold
   // into one chip per namespace that opens it. A search or a filter shows every match, folded or not.
-  const odd = (e: Entity) => needsYou(e.status) || (num(e, "restarts24h") ?? 0) > 0 || (num(e, "pods") ?? 0) < (num(e, "podsDesired") ?? 0);
+  const odd = needsLook;
   let unfolded = $state<string[]>([]), everything = $state(false);
   const filtering = $derived(!!q || server.length > 0 || mood.length > 0);
   const shelves = $derived(spaces.map(g => {

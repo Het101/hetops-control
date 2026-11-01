@@ -89,6 +89,12 @@ const siteHistory = (e: Entity, gap = 0): Series[] => {
 };
 const siteSeries = sites.flatMap(e => siteHistory(e, e.id === "ops/site/sites_control" ? 7 : 0));
 
+/** the agents' host load history (10-minute means): lab for the last 9 h only (its agent restarted at 22:40), ops for the full day */
+const load = (server: string, k: "cpu" | "memory", hours: number, base: number, swing: number): Series => {
+  const step = 600_000, end = Date.parse(at) - (Date.parse(at) % step), n = hours * 6;
+  return { id: `${server}/host/${k}`, server: server as Series["server"], label: `${k} of the busiest node, 10-minute mean`, unit: "%", stepMs: step, observedAt: at, source: "hostload",
+    points: Array.from({ length: n }, (_, i) => [end - (n - 1 - i) * step, Math.round((base + swing * Math.sin(i / 7) + (i % 5) * 1.3) * 10) / 10] as [number, number]) };
+};
 export const fixtureState: State = {
   generatedAt: at,
   servers: {
@@ -96,7 +102,8 @@ export const fixtureState: State = {
     staging: { status: "unknown", statusReason: "not connected yet", reachable: false, configured: false, since: "2026-10-30T06:00:00.000Z" },
     ops: { status: "ok", reachable: true, configured: true, since: "2026-10-29T22:10:00.000Z", agentVersion: "0.1.0", sources: opsSources },
   },
-  series: [flow("ops/logs/default", "Lab logs: default", 9000, 2600), flow("ops/logs/security", "Lab logs: security", 1400, 420), ...siteSeries],
+  series: [flow("ops/logs/default", "Lab logs: default", 9000, 2600), flow("ops/logs/security", "Lab logs: security", 1400, 420), ...siteSeries,
+    load("lab", "cpu", 9, 42, 14), load("lab", "memory", 9, 61, 3), load("ops", "cpu", 24, 60, 18), load("ops", "memory", 24, 76, 2)],
   entities: [
     cluster("lab", "v1.31.4+k3s1", 1, 34, 35), node("lab", "my-workspace", 48, 63, 41),
     ...labApps.map(([ns, n, p, r, l]) => app("lab", ns, n, p, r, l)), argo("lab", "clinic"), argo("lab", "chaos"),

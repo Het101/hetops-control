@@ -39,7 +39,7 @@
         {#each servers as id (id)}
           {@const v = estate.servers[id]} {@const l = link(v)}
           <div class="row" data-server={id}>
-            <span class="n">{id}</span>
+            <span class="n"><a class="st-l" href={`/servers/${id}`} aria-label={`Open ${id}'s page`}>{id}</a></span>
             <span class="t">{#if v.configured}{v.agentVersion ? `agent ${v.agentVersion}` : "agent version unknown"}
               · {v.reachable ? "reachable" : "unreachable"} since {hhmm(v.since)}{:else}no agent configured{/if}
               {#if v.lastError}<small class="warm">last error: {v.lastError}</small>{/if}</span>

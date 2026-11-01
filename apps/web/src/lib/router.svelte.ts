@@ -1,8 +1,11 @@
+import { ServerIdSchema, type ServerId } from "@hetops-control/contracts";
 /** The pages, in rail order; anything else is a 404. */
 export const PAGES = { "/": "Home", "/topology": "Topology", "/timeline": "Timeline", "/alerts": "Alerts", "/apps": "Apps",
   "/backups": "Backups", "/security": "Security", "/settings": "Settings" } as const;
 export type PagePath = keyof typeof PAGES;
 export const isPage = (p: string): p is PagePath => Object.hasOwn(PAGES, p);
+/** a server's own page, /servers/<id>: the id, or undefined for any other path */
+export const serverOf = (p: string): ServerId | undefined => { const id = /^\/servers\/([a-z]+)$/.exec(p)?.[1]; return ServerIdSchema.options.find(s => s === id); };
 
 const norm = (p: string) => (p.length > 1 ? p.replace(/\/+$/, "") : p) || "/";
 /** The current path; the History API is the only source of truth. */
