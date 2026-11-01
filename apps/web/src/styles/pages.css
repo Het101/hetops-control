@@ -321,6 +321,13 @@ a.row{color:inherit;text-decoration:none}
 @media (max-width:720px){
   .app{grid-template-columns:1fr}
   /* a phone gets a bottom bar under the thumb: four pages and More; the other four sit in More's sheet, never off-screen */
+  /* the bar is fixed to the viewport, whose width drops by a scrollbar while the page is too long for it: on a phone the
+     scrollbar is an overlay, so keep one always, and the bar can never change width while the page fills in (a 15px shift
+     CI caught on Linux, where it came and went during load despite scrollbar-gutter) */
+  html{overflow-y:scroll}
+  /* the top bar fits on one line: live never wraps, and while the Needs-you pill shows, it takes the wordmark's place */
+  .live{white-space:nowrap}
+  .top:has(.q-pill) .brand{display:none}
   /* five equal columns, each icon centred in its own: a slot's place depends on the bar's width alone, never on its neighbours'
      sizes (a flex row with space-around moved every icon when one settled, a layout shift CI caught at 412px) */
   .rail{position:fixed;top:auto;left:0;right:0;bottom:0;height:auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));justify-items:center;gap:4px;
