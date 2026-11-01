@@ -53,3 +53,17 @@ test.describe("while you were away", () => {
     await expect(page.locator(".away")).toHaveCount(0);
   });
 });
+
+test("when the sign-in ends, the page says so, stops aging what it shows, and offers the way back", async ({ page }) => {
+  await mockApi(page); await page.goto("/");
+  await expect(page.locator(".live")).toContainText("live");
+  // Access now answers everything with a redirect to its login page, as it does once the session has expired
+  const login = { status: 302, headers: { location: "https://team.cloudflareaccess.com/cdn-cgi/access/login/control.hetops.dev" } };
+  await page.unroute("**/api/stream"); await page.unroute("**/api/state");
+  await page.route("**/api/stream", r => r.fulfill(login)); await page.route("**/api/state", r => r.fulfill(login));
+  await page.evaluate(() => window.dispatchEvent(new Event("offline")));
+  const alert = page.locator(".signed-out");
+  await expect(alert).toContainText("Your sign-in has ended.", { timeout: 70_000 });
+  await expect(page.locator(".live")).toContainText("signed out · showing");
+  await expect(alert.getByRole("button", { name: "Sign in again" })).toBeVisible();
+});

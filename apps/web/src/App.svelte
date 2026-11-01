@@ -27,6 +27,7 @@
   let now = $state(new Date());
   let lastMsg = $state<number>();
   let downSince = $state<number | undefined>(Date.now());
+  let signedOut = $state(false);
 
   $effect(() => {
     const stop = follow({
@@ -36,6 +37,7 @@
       eventsFailed: err => { console.warn(err); eventsError = true; },
       action: r => track(r),
       link: open => { if (open) downSince = undefined; else downSince ??= Date.now(); },
+      signedOut: () => { signedOut = true; },
     }, KEEP);
     const tick = setInterval(() => (now = new Date()), 1000);
     return () => { stop(); clearInterval(tick); };
@@ -69,6 +71,11 @@
 
   const ago = $derived(lastMsg === undefined ? undefined : Math.max(0, Math.round((now.getTime() - lastMsg) / 1000)));
   // down for 10 s, or open but silent past the watchdog's limit
+  // while the link is down, every page measures ages from the last data it has, not the running clock: frozen data aged by a
+  // live clock invents alarms ("logs stopped 1 h 44 min ago" when the page, not the logs, had stopped)
+  const stale = $derived(signedOut || (lastMsg !== undefined && (downSince !== undefined && now.getTime() - downSince >= DOWN_MS || now.getTime() - lastMsg > SILENCE_MS)));
+  const shown = $derived(stale && lastMsg !== undefined ? new Date(lastMsg) : now);
+  const hhmmUTC = (t: number) => `${new Date(t).toISOString().slice(11, 16)} UTC`;
   const reconnecting = $derived((downSince !== undefined && now.getTime() - downSince >= DOWN_MS) || (ago !== undefined && ago * 1000 > SILENCE_MS));
 </script>
 
@@ -78,26 +85,33 @@
     <div class="top">
       <span class="brand">HETOPS CONTROL</span>
       {#if estate}<NeedsQueue needs={estate.headline.needs} entities={estate.entities} />{/if}
-      <span class="live" class:warm={reconnecting} role="status">
-        {#key lastMsg}<span class="pulse"></span>{/key}{reconnecting ? "reconnecting" : ago === undefined ? "connecting" : `live · ${ago} s ago`}</span>
+      <span class="live" class:warm={reconnecting || signedOut} role="status">
+        {#key lastMsg}<span class="pulse"></span>{/key}{signedOut ? "signed out" : reconnecting ? "reconnecting" : ago === undefined ? "connecting" : `live · ${ago} s ago`}{#if stale && lastMsg !== undefined}<small>{` · showing ${hhmmUTC(lastMsg)}`}</small>{/if}</span>
     </div>
+    {#if signedOut}
+      <!-- the one thing that brings the page back is a fresh sign-in: Access shows its login on reload, then the page resumes -->
+      <div class="signed-out" role="alert">
+        <span><b>Your sign-in has ended.</b> What you see is from {lastMsg !== undefined ? hhmmUTC(lastMsg) : "before"} and is not updating.</span>
+        <button type="button" class="ember-btn wide" onclick={() => location.reload()}>Sign in again</button>
+      </div>
+    {/if}
 
     {#if route.path === "/"}
-      {#if estate}<Home {estate} {events} {eventsError} {now} shown={SHOWN} away={gone} ondismiss={() => (awaySince = undefined)} />{/if}
+      {#if estate}<Home {estate} {events} {eventsError} now={shown} shown={SHOWN} away={gone} ondismiss={() => (awaySince = undefined)} />{/if}
     {:else if route.path === "/timeline"}
-      <TimelinePage {estate} {events} error={eventsError} {now} />
+      <TimelinePage {estate} {events} error={eventsError} now={shown} />
     {:else if route.path === "/alerts"}
-      <Alerts {estate} {events} {now} />
+      <Alerts {estate} {events} now={shown} />
     {:else if route.path === "/apps"}
-      <Apps {estate} {events} {now} />
+      <Apps {estate} {events} now={shown} />
     {:else if route.path === "/backups"}
-      <Backups {estate} {events} {now} />
+      <Backups {estate} {events} now={shown} />
     {:else if route.path === "/security"}
-      <Security {estate} {events} {now} />
+      <Security {estate} {events} now={shown} />
     {:else if route.path === "/topology"}
-      <Topology {estate} {now} />
+      <Topology {estate} now={shown} />
     {:else if route.path === "/settings"}
-      <Settings {estate} {now} />
+      <Settings {estate} now={shown} />
     {:else}
       <NotFound path={route.path} />
     {/if}

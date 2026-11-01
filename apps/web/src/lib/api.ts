@@ -19,7 +19,14 @@ export type Handlers = {
   events: (list: Event[]) => void; eventsFailed: (err: unknown) => void;
   /** an action run moved (started, finished) */
   action: (r: ActionRun) => void;
+  /** the Cloudflare Access sign-in ended: nothing gets through until the page signs in again */
+  signedOut?: () => void;
 };
+
+/** Whether the sign-in has ended: Access answers a request without a session with a redirect to its login page, which a page
+ * cannot follow across origins (the stream just fails). Asked without following redirects; any other answer is not a sign-out. */
+export const signedIn = () => fetch("/api/state", { redirect: "manual", cache: "no-store", headers: { accept: "application/json" } })
+  .then(r => !(r.type === "opaqueredirect" || r.status === 401 || r.status === 403), () => true);
 
 async function get<T>(path: string, schema: z.ZodType<T>): Promise<T> {
   const r = await fetch(path, { headers: { accept: "application/json" } });
@@ -44,6 +51,12 @@ export function mergeEvents(held: Event[], incoming: Event[], keep: number): Eve
  */
 export function follow(on: Handlers, eventLimit: number): () => void {
   let es: EventSource | undefined, retry: ReturnType<typeof setTimeout> | undefined, stopped = false, last: State | undefined, heard = Date.now();
+  // a drop is checked once: signed out stops everything (and says so); signed in re-opens as before
+  const lost = (reopen: () => void) => signedIn().then(ok => {
+    if (stopped) return;
+    if (ok) return reopen();
+    stopped = true; clearTimeout(retry); es?.close(); on.signedOut?.();
+  });
   // fetches and the stream can cross; never step back to an older snapshot
   const take = (s: State) => { if (last && s.generatedAt < last.generatedAt) return; last = s; on.state(s); };
   const reload = () => {
@@ -68,12 +81,12 @@ export function follow(on: Handlers, eventLimit: number): () => void {
     es.onerror = () => {
       on.link(false);
       // the browser retries a dropped stream itself; a refused one (CLOSED) is ours to re-open
-      if (es?.readyState === EventSource.CLOSED && !stopped) { es.close(); clearTimeout(retry); retry = setTimeout(open, 3000); }
+      if (es?.readyState === EventSource.CLOSED && !stopped) { es.close(); clearTimeout(retry); void lost(() => { retry = setTimeout(open, 3000); }); }
     };
   };
   const watchdog = setInterval(() => {
     if (stopped || Date.now() - heard < SILENCE_MS) return;
-    es?.close(); clearTimeout(retry); on.link(false); open();
+    es?.close(); clearTimeout(retry); on.link(false); heard = Date.now(); void lost(open);
   }, 5000);
   reload();
   open();
