@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ServerIdSchema, type Entity, type Event } from "@hetops-control/contracts";
   import { num, type State } from "../lib/api.js";
-  import { ago, facets, matches, needsYou, picked, pips, serverApps, sourceState, str, time } from "../lib/pages.js";
+  import { ago, facets, matches, needsYou, picked, pips, serverApps, sourceState, str, time, workloads } from "../lib/pages.js";
   import Chips from "../components/Chips.svelte";
   import Search from "../components/Search.svelte";
   import Knob from "../components/Knob.svelte";
@@ -28,20 +28,20 @@
   const spaces = $derived(ServerIdSchema.options.map(server => ({ key: server, server,
     apps: work.filter(e => e.server === server).sort((a, b) => nsOf(a).localeCompare(nsOf(b)) || a.name.localeCompare(b.name)) })).filter(g => g.apps.length));
   const sums = $derived(ServerIdSchema.options.map(id => ({ id, view: estate?.servers[id], ...serverApps(ents, id) })));
-  const total = $derived(pool.filter(e => e.kind !== "site").length);
+  const total = $derived(workloads(ents).length);
   const needing = $derived(pool.filter(e => needsYou(e.status)).length);
   const cool = $derived(sourceState(estate, "coolify")), gat = $derived(sourceState(estate, "gatus"));
   // with no Coolify rows to show, Argo takes the full row and Coolify's note sits under it as a slim strip, not a half-empty card
   const coolQuiet = $derived(!!cool.failing.length || !cool.reporting.length || !coolify.length);
   const health = (e: Entity) => str(e, "health") ?? "Unknown", sync = (e: Entity) => str(e, "sync") ?? "Unknown";
   const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
-  const word = (s: (typeof sums)[number]) => s.needs ? `${s.needs} need${s.needs === 1 ? "s" : ""} you` : s.view?.reachable ? "steady" : s.view?.configured ? "unreachable" : "no agent yet";
+  const word = (s: (typeof sums)[number]) => s.needs ? `${s.needs} need${s.needs === 1 ? "s" : ""} you` : s.view?.reachable ? "steady" : s.view?.configured ? "unreachable" : "not connected";
 </script>
 
 <section class="page-intro">
   <span class="kicker">APPS · WORKLOADS · SITES</span>
   <h1 tabindex="-1">{!estate ? "Every app Argo and Coolify run, and the sites they serve."
-    : `${total} apps on ${sums.filter(s => s.apps || s.argo).length} servers${needing ? `; ${needing} need${needing === 1 ? "s" : ""} you.` : ", all steady."}`}</h1>
+    : `${total} workloads on ${sums.filter(s => s.apps || s.argo).length} servers${needing ? `; ${needing} need${needing === 1 ? "s" : ""} you.` : ", all steady."}`}</h1>
 </section>
 
 <div class="grid">
@@ -52,7 +52,7 @@
         <div class="nums">
           <div><b>{s.apps}</b><span>workloads</span></div>
           <div><b class:warm={s.ready < s.desired}>{s.ready}<small>/{s.desired}</small></b><span>pods ready</span></div>
-          <div><b class:warm={s.restarts > 0}>{s.restarts}</b><span>restarts 24 h</span></div>
+          <div><b class:warm={s.restarts > 0}>{s.restarts}</b><span class="nw">restarts · 24 h</span></div>
           <div><b class:warm={s.synced < s.argo}>{s.synced}<small>/{s.argo}</small></b><span>argo healthy</span></div>
         </div>
       {:else}

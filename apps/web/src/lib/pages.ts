@@ -45,7 +45,21 @@ export function sourceState(state: State | undefined, id: string) {
 
 /* ---------- Timeline ---------- */
 export const levelOf = (e: Event) => e.level ?? "none";
-export const hotEvent = (e: Event) => needsYou(e.level);
+/** Which status events still need you. A move to attention or down stays hot until a newer event for the same entity moves
+ * it on; once it is back to ok it is history (silver), with the time it recovered. Events newest first, as the center serves
+ * them: judge them against the full list, not a filtered one, so a filter never hides the recovery. */
+export function heat(events: Event[]) {
+  const newer = new Map<Event, Event>(), seen = new Map<string, Event>();
+  for (const e of events) if (e.level && e.entity) { const k = `${e.server}|${e.entity}`; const n = seen.get(k); if (n) newer.set(e, n); seen.set(k, e); }
+  return {
+    hot: (e: Event) => needsYou(e.level) && !newer.has(e),
+    recovered: (e: Event): string | undefined => {
+      if (!needsYou(e.level)) return undefined;
+      let n = newer.get(e); while (n && needsYou(n.level)) n = newer.get(n);
+      return n?.at;
+    },
+  };
+}
 export type EventFilter = { server: string[]; kind: string[]; source: string[]; level: string[]; q: string; day?: string; hour?: number };
 export const keyOf = (e: Event) => `${e.at}|${e.server}|${e.summary}|${e.entity ?? ""}`;
 export function filterEvents(events: Event[], f: EventFilter): Event[] {
@@ -56,9 +70,9 @@ export function filterEvents(events: Event[], f: EventFilter): Event[] {
 /** the UTC days that have events, newest first */
 export const eventDays = (events: Event[]) => [...new Set(events.map(e => e.at.slice(0, 10)))].sort().reverse();
 /** 24 hourly buckets of one UTC day: all events, and the ones that went to attention or down */
-export function hourly(events: Event[], day: string): { hour: number; n: number; hot: number }[] {
+export function hourly(events: Event[], day: string, hot: (e: Event) => boolean): { hour: number; n: number; hot: number }[] {
   const b = Array.from({ length: 24 }, (_, hour) => ({ hour, n: 0, hot: 0 }));
-  for (const e of events) if (e.at.startsWith(day)) { const x = b[Number(e.at.slice(11, 13))]!; x.n++; if (hotEvent(e)) x.hot++; }
+  for (const e of events) if (e.at.startsWith(day)) { const x = b[Number(e.at.slice(11, 13))]!; x.n++; if (hot(e)) x.hot++; }
   return b;
 }
 /** events (newest first) grouped by their UTC hour, in order */
@@ -99,13 +113,16 @@ export function alarms(entities: Entity[], events: Event[]): Alarm[] {
 }
 
 /* ---------- Apps ---------- */
+/** a server's Kubernetes workloads: the one count every page shows as "workloads" (Coolify's containers are counted apart) */
+export const workloads = (entities: Entity[], server?: ServerId) =>
+  entities.filter(e => e.kind === "app" && e.source !== "coolify" && (!server || e.server === server));
 /** pod pips for a workload: ready ones, then the missing ones; capped, with the rest as +N */
 export function pips(ready: number, desired: number, cap = 10): { pips: ("up" | "missing")[]; more: number } {
   const total = Math.max(ready, desired, 0), shown = Math.min(total, cap);
   return { pips: Array.from({ length: shown }, (_, i) => (i < ready ? "up" : "missing")), more: total - shown };
 }
 export function serverApps(entities: Entity[], server: ServerId) {
-  const apps = entities.filter(e => e.server === server && e.kind === "app" && e.source !== "coolify");
+  const apps = workloads(entities, server);
   const argo = entities.filter(e => e.server === server && e.kind === "argo-app");
   const n = (e: Entity, k: string) => { const v = e.facts[k]?.value; return typeof v === "number" ? v : 0; };
   return { apps: apps.length, ready: apps.reduce((s, e) => s + n(e, "pods"), 0), desired: apps.reduce((s, e) => s + Math.max(n(e, "podsDesired"), n(e, "pods")), 0),

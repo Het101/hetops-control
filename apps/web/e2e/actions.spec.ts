@@ -111,12 +111,12 @@ test("a failed run's toast is ember, reads in plain words, and stays until dismi
   await page.getByRole("dialog").getByRole("button", { name: "Sync", exact: true }).click();
   const toast = page.locator(".toast");
   await expect(toast).toHaveAttribute("data-tone", "failed", { timeout: 10_000 });
-  await expect(toast.locator(".toast-h")).toHaveText("Sync failed");
+  await expect(toast.locator(".toast-h")).toHaveText("No answer from lab");
   await expect(toast.locator(".toast-why")).toHaveText(`No answer in 60 s; the result is unknown, check ${app.name}`);
   expect(await toast.locator(".tg").evaluate(el => getComputedStyle(el).stroke)).toBe("rgb(240, 88, 42)");   // ember, only here
   await page.waitForTimeout(7000);   // longer than a success stays
   await expect(toast).toBeVisible();
-  await toast.getByRole("button", { name: "Dismiss Sync failed" }).click();
+  await toast.getByRole("button", { name: "Dismiss No answer from lab" }).click();
   await expect(toast).toHaveCount(0);
 });
 
@@ -130,6 +130,15 @@ test("Needs you opens the same dialog; a knob without an offer stays dimmed and 
   const knob = page.locator(".knob.act[aria-disabled='true']").first();
   await expect(knob).toHaveAttribute("aria-label", /not offered for this one/);
   await knob.click({ force: true }); await expect(page.getByRole("dialog")).toBeHidden();   // force: Playwright refuses aria-disabled itself
+  // the two never look alike: the one that can run names its verb on a surface; the one that can't has no surface, a dashed ring
+  const can = page.getByRole("button", { name: `Sync ${app.name}`, exact: true });
+  await expect(can).toHaveText("Sync");
+  expect(await can.evaluate(e => getComputedStyle(e).boxShadow)).not.toBe("none");
+  expect(await knob.evaluate(e => [getComputedStyle(e).boxShadow, getComputedStyle(e).borderStyle])).toEqual(["none", "dashed"]);
+  await expect(knob).toHaveText("");
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.locator(".grid").first().scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "e2e/__screens__/knobs-can-and-cant.png", animations: "disabled" });
 });
 
 test("an acknowledged check shows who and until when, in silver", async ({ page }) => {

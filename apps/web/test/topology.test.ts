@@ -12,7 +12,10 @@ describe("topology edge states", () => {
   it("the base morning: every built link carries traffic, staging is planned", () => {
     expect(states(fixtureState)).toEqual({ public: "ok", "tunnel-lab": "ok", "tunnel-ops": "ok", "agent-lab": "ok", gateway: "ok", logs: "ok",
       "agent-staging": "planned", "snap-disk": "ok", "snap-r2": "ok" });
-    expect(topology(fixtureState, now).headline).toBe("Every link is carrying traffic.");
+    // the links are fine, but the fixture's lab needs a look (a restarting app): the sentence says both
+    expect(topology(fixtureState, now).headline).toBe("Every link is carrying traffic; Lab needs a look.");
+    const calm = structuredClone(fixtureState); calm.servers.lab = { ...calm.servers.lab, status: "ok", statusReason: undefined };
+    expect(topology(calm, now).headline).toBe("Every link is carrying traffic.");
     expect(topology(fixtureState, now).nodes.find(n => n.id === "staging")!.state).toBe("planned");
   });
 

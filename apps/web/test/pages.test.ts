@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Entity, Event, Series } from "@hetops-control/contracts";
-import { alarms, areas, backupView, byHour, countdown, eventDays, filterEvents, hourly, knocks, landDots, pips, serverApps, sourceState, span } from "../src/lib/pages.js";
+import { alarms, areas, backupView, byHour, heat, countdown, eventDays, filterEvents, hourly, knocks, landDots, pips, serverApps, sourceState, span } from "../src/lib/pages.js";
 
 const at = "2026-10-30T07:42:00.000Z", now = Date.parse(at);
 const ent = (p: Partial<Entity> & Pick<Entity, "id" | "kind">): Entity => ({ server: "lab", name: p.id.split("/").at(-1)!, status: "ok", facts: {}, links: [], actions: [], observedAt: at, ...p });
@@ -29,11 +29,31 @@ describe("timeline", () => {
   });
   it("days newest first; 24 hourly buckets with the hot ones", () => {
     expect(eventDays(events)).toEqual(["2026-10-30", "2026-10-29"]);
-    const h = hourly(events, "2026-10-30");
+    const h = hourly(events, "2026-10-30", heat(events).hot);
     expect(h).toHaveLength(24); expect(h[3]).toEqual({ hour: 3, n: 2, hot: 1 }); expect(h[7]!.n).toBe(1); expect(h[22]!.n).toBe(0);
   });
   it("groups by hour in order", () => {
     expect(byHour(events).map(g => [g.key, g.events.length])).toEqual([["2026-10-30T07", 1], ["2026-10-30T03", 2], ["2026-10-29T22", 1]]);
+  });
+});
+
+describe("heat", () => {
+  // newest first, as the center serves them
+  const e = (at: string, entity: string, level: Event["level"]) => ev({ at: `2026-10-30T${at}:00.000Z`, entity, level, kind: "status" });
+  const back = e("06:41", "ops/check/a", "ok"), fell = e("06:22", "ops/check/a", "attention");
+  const open = e("06:30", "lab/app/b", "down");
+  const worse = e("05:10", "lab/app/c", "down"), first = e("05:00", "lab/app/c", "attention"), fine = e("05:20", "lab/app/c", "ok");
+  const h = heat([back, open, fine, worse, first, fell].sort((x, y) => y.at.localeCompare(x.at)));
+  it("an incident that recovered is history: silver, with the time it recovered", () => {
+    expect(h.hot(fell)).toBe(false); expect(h.recovered(fell)).toBe("2026-10-30T06:41:00.000Z"); expect(h.hot(back)).toBe(false);
+  });
+  it("one still open stays hot", () => { expect(h.hot(open)).toBe(true); expect(h.recovered(open)).toBeUndefined(); });
+  it("a chain recovers only when it reaches ok, and only its latest step was ever hot", () => {
+    expect(h.recovered(first)).toBe("2026-10-30T05:20:00.000Z"); expect(h.recovered(worse)).toBe("2026-10-30T05:20:00.000Z");
+    expect(h.hot(first)).toBe(false); expect(h.hot(worse)).toBe(false);
+  });
+  it("an event without an entity is judged by its level alone", () => {
+    expect(heat([ev({ at: "2026-10-30T07:00:00.000Z", level: "attention" })]).hot(ev({ at: "2026-10-30T07:00:00.000Z", level: "attention" }))).toBe(true);
   });
 });
 

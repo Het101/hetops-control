@@ -66,7 +66,9 @@ export function toastOf(r: ActionRun): Toast {
   const next = HOME[r.target.split("/")[1] ?? ""];
   return {
     tone, line: `${r.targetName} on ${r.server} · ${hhmm(r.finishedAt ?? r.at)}`, refName: REF[r.action] ?? "reference",
-    title: tone === "running" ? `${r.label}…` : tone === "done" ? r.result?.summary ?? `${r.label} done` : `${r.label} failed`,
+    // "the result is unknown" (the center's words for a timeout or a restart) is not a failure: say only what is known
+    title: tone === "running" ? `${r.label}…` : tone === "done" ? r.result?.summary ?? `${r.label} done`
+      : /result is unknown/.test(why ?? "") ? `No answer from ${r.server}` : `${r.label} failed`,
     ...(tone === "failed" && why ? { detail: sentence(why) } : {}), ...(r.result?.ref ? { ref: r.result.ref } : {}), ...(next ? { next } : {}),
   };
 }

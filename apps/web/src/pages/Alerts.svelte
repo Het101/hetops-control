@@ -22,12 +22,16 @@
   const checks = $derived(estate?.entities.filter(e => e.kind === "check" || e.kind === "site").sort((a, b) => a.name.localeCompare(b.name)) ?? []);
   const passing = $derived(checks.filter(c => c.status === "ok").length);
   const firing = $derived(count("critical") + count("warning"));
+  // what Home's Needs-you holds that is not an alert or a check (a restarting app, drift): said here too, so this page never
+  // calls the estate quiet while Home says something is waiting
+  const elsewhere = $derived((estate?.headline.needs ?? []).filter(n => !all.some(a => a.entity.id === n.entity)));
+  const still = $derived(elsewhere.length ? `${elsewhere.length} thing${elsewhere.length === 1 ? "" : "s"} still need${elsewhere.length === 1 ? "s" : ""} you` : "");
   const COPY: Record<Severity, string> = { critical: "Critical", warning: "Warning", info: "Info and blind spots" };
 </script>
 
 <section class="page-intro">
   <span class="kicker">ALERTS</span>
-  <h1 tabindex="-1">{!estate ? "What is firing, across every server." : firing ? `${firing} thing${firing === 1 ? " is" : "s are"} firing.` : "Nothing is firing."}</h1>
+  <h1 tabindex="-1">{!estate ? "What is firing, across every server." : firing ? `${firing} thing${firing === 1 ? " is" : "s are"} firing.` : still ? `Nothing is firing; ${still}.` : "Nothing is firing."}</h1>
 </section>
 
 <!-- whatever is firing takes the wide column; on a quiet day every check does, and "nothing is firing" moves to the side -->
@@ -65,6 +69,19 @@
     {#if estate && !all.length}
       <Waiting title="Nothing is firing.">{checks.length} check{checks.length === 1 ? "" : "s"} passing{am.reporting.length ? " and no active alert in Alertmanager" : ""}.</Waiting>
     {:else if all.length && !shown.length}<Waiting title="Nothing matches these filters.">Clear a chip or the search.</Waiting>{/if}
+    {#if elsewhere.length}
+      <div class="group mono sev-h warm">ALSO NEEDS YOU · NOT AN ALERT · {elsewhere.length}</div>
+      {#each elsewhere as n (n.entity)}
+        {@const e = estate?.entities.find(x => x.id === n.entity)}
+        <div class="row now" data-needs>
+          <button type="button" class="open" onclick={() => (open = e)} disabled={!e}>
+            <span class="sev warm" aria-hidden="true"><i></i></span>
+            <span class="t">{n.text}<small>{n.detail}</small></span>
+          </button>
+          {#if e}<Knob entity={e} action={n.action?.id} label={`${n.action?.label ?? "Act on"} ${e.name}`} warm />{/if}
+        </div>
+      {/each}
+    {/if}
     {#if !am.reporting.length}
       <p class="note">Alertmanager is not reporting yet: this list holds the Gatus and Elasticsearch checks; Prometheus alerts join it when the lab's alert source lands.</p>
     {/if}

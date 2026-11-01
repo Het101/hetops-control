@@ -12,7 +12,7 @@ const noScroll = async (page: Page, w: number) => expect(await page.evaluate(() 
 
 test("a calm morning: every built link carries traffic, staging is drawn as not built yet", async ({ page }) => {
   await mockApi(page); await page.goto("/topology");
-  await expect(page.locator("main h1")).toHaveText("Every link is carrying traffic.");
+  await expect(page.locator("main h1")).toHaveText("Every link is carrying traffic; Lab needs a look.");
   await expect(page.locator(".link-chip")).toHaveCount(9);
   await expect(page.locator(".link-chip.ok")).toHaveCount(8);
   await expect(page.locator('[data-edge="agent-staging"]')).toHaveClass(/planned/);
@@ -56,7 +56,7 @@ test("logs that stopped: the link is down, still, and the headline says since wh
 
 test("no signal at all: links are unknown, never green", async ({ page }) => {
   await mockApi(page, { ...fixtureState, entities: [], series: [] }, []); await page.goto("/topology");
-  await expect(page.locator("main h1")).toHaveText("Every link that reports is carrying traffic; 7 have no signal yet.");
+  await expect(page.locator("main h1")).toHaveText("Every link that reports is carrying traffic; 7 have no signal yet, and Lab needs a look.");
   await expect(page.locator(".link-chip.unknown")).toHaveCount(7);
 });
 

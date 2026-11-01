@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Event } from "@hetops-control/contracts";
   import type { State } from "../lib/api.js";
-  import { byHour, eventDays, facets, filterEvents, hhmm, hotEvent, hourly, keyOf, levelOf } from "../lib/pages.js";
+  import { byHour, eventDays, facets, filterEvents, heat, hhmm, hourly, keyOf, levelOf } from "../lib/pages.js";
   import Chips from "../components/Chips.svelte";
   import Search from "../components/Search.svelte";
   import Glyph from "../components/Glyph.svelte";
@@ -18,7 +18,8 @@
   const shownDay = $derived(day && days.includes(day) ? day : days[0]);
   // the scrubber shows the chosen day under the chip filters, so its bars always match the list below
   const chipped = $derived(filterEvents(events, { server, kind, source, level, q }));
-  const bars = $derived(shownDay ? hourly(chipped, shownDay) : []);
+  const heated = $derived(heat(events));
+  const bars = $derived(shownDay ? hourly(chipped, shownDay, heated.hot) : []);
   const peak = $derived(Math.max(1, ...bars.map(b => b.n)));
   const list = $derived(filterEvents(chipped, { server: [], kind: [], source: [], level: [], q: "", day: hour === undefined ? undefined : shownDay, hour }));
   const groups = $derived(byHour(list));
@@ -68,12 +69,13 @@
     {#each groups as g (g.key)}
       <div class="hour-h mono"><span>{g.label}</span><span>{dayName(g.day)}</span><span>{g.events.length}</span></div>
       {#each g.events as e (keyOf(e))}
-        {@const warm = hotEvent(e)}
+        {@const warm = heated.hot(e)}
+        {@const back = heated.recovered(e)}
         <button type="button" class="row" class:now={warm} data-kind={e.kind} onclick={() => (open = e)}>
           <Glyph kind={e.kind} {warm} />
           <span class="n" class:warm>{e.at.slice(11, 19)}</span>
           <span class="t">{e.summary}<small>{e.server} · {e.source}{e.actor ? ` · ${e.actor}` : ""}{e.level ? ` · ${LEVEL[e.level] ?? e.level}` : ""}</small></span>
-          <span class="tag pressed" class:warm>{warm ? (e.level ?? "").toUpperCase() : e.server.toUpperCase()}</span>
+          <span class="tag pressed" class:warm>{warm ? (e.level ?? "").toUpperCase() : back ? `RECOVERED ${hhmm(back)}` : e.server.toUpperCase()}</span>
         </button>
       {/each}
     {:else}

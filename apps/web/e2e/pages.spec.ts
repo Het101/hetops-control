@@ -31,7 +31,8 @@ test.describe("Timeline", () => {
     // the status change into attention is ember, and its drawer shows the entity it moved
     await page.getByRole("group", { name: "Server" }).getByRole("button", { name: /ops/ }).click();
     const hot = page.locator(".feed button.row.now");
-    await expect(hot).toHaveCount(2);
+    await expect(hot).toHaveCount(1);   // the chaos site's 06:22 attention recovered at 06:41: history, not ember
+    await expect(page.locator(".feed button.row").filter({ hasText: "chaos.hetops.dev (ops) ok → attention" })).toContainText("RECOVERED 06:41");
     await hot.filter({ hasText: "chaos-api" }).click();
     const drawer = page.getByRole("dialog");
     await expect(drawer).toBeVisible();
@@ -61,7 +62,10 @@ test.describe("Timeline", () => {
 test.describe("Alerts", () => {
   test("a calm morning: nothing firing, every check passing, sources not yet reporting said honestly", async ({ page }) => {
     await mockApi(page); await page.goto("/alerts");
-    await expect(page.locator("main h1")).toHaveText("Nothing is firing.");
+    // Home's one Needs-you item is not an alert; this page still says it, rather than calling the estate quiet
+    await expect(page.locator("main h1")).toHaveText("Nothing is firing; 1 thing still needs you.");
+    await expect(page.locator(".row[data-needs]")).toHaveCount(1);
+    await expect(page.locator(".row[data-needs]")).toContainText("chaos-api is restarting on lab");
     await expect(page.locator(".wait").first()).toContainText("No error budget reporting yet.");
     await expect(page.getByText("Alertmanager is not reporting yet")).toBeVisible();
     await expect(page.locator(".pill")).toHaveCount(19);
@@ -100,7 +104,7 @@ test.describe("Apps", () => {
   test("per-server tallies, Argo cards, workload tiles with pods and restarts, and sites with uptime", async ({ page }) => {
     await page.goto("/apps");
     await expect(page.locator("main h1")).toContainText("1 needs you.");
-    await expect(page.locator('.srv[data-server="lab"]')).toContainText("restarts 24 h");
+    await expect(page.locator('.srv[data-server="lab"]')).toContainText("restarts · 24 h");
     await expect(page.locator('.srv[data-server="staging"]')).toContainText("Not connected yet.");
     await expect(page.locator(".card")).toHaveCount(5);
     await expect(page.locator('.tile[data-app="lab/app/chaos/chaos-api"]')).toHaveClass(/hot/);
