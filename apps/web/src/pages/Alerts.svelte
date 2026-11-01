@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Entity, Event } from "@hetops-control/contracts";
   import type { State } from "../lib/api.js";
-  import { alarms, facets, hhmm, matches, needsYou, picked, SEVERITIES, sourceState, span, type Severity } from "../lib/pages.js";
+  import { alarms, facets, hhmm, matches, needsYou, picked, SEVERITIES, sourceState, span, str, type Severity } from "../lib/pages.js";
   import Chips from "../components/Chips.svelte";
   import Search from "../components/Search.svelte";
   import Knob from "../components/Knob.svelte";
@@ -21,6 +21,12 @@
   const sloSrc = $derived(sourceState(estate, "slo"));
   const checks = $derived(estate?.entities.filter(e => e.kind === "check" || e.kind === "site").sort((a, b) => a.name.localeCompare(b.name)) ?? []);
   const passing = $derived(checks.filter(c => c.status === "ok").length);
+  // the pill cloud, sorted into what each check watches: its Gatus group, else its source (Elasticsearch, Bedrock); failing first
+  const groupOf = (c: Entity) => str(c, "group") || c.source || c.kind;
+  const checkGroups = $derived([...new Set(checks.map(groupOf))].sort().map(g => {
+    const list = checks.filter(c => groupOf(c) === g).sort((a, b) => Number(needsYou(b.status)) - Number(needsYou(a.status)) || a.name.localeCompare(b.name));
+    return { g, list, bad: list.filter(c => c.status !== "ok").length };
+  }));
   const firing = $derived(count("critical") + count("warning"));
   // what Home's Needs-you holds that is not an alert or a check (a restarting app, drift): said here too, so this page never
   // calls the estate quiet while Home says something is waiting
@@ -91,12 +97,15 @@
   <section class="mod raised c4 list" style="--in:.16s" aria-labelledby="a-checks">
     <h2 id="a-checks"><span>EVERY CHECK</span><span>{checks.length}</span></h2>
     {#if checks.length}
-      <div class="pills">
-        {#each checks as c (c.id)}
-          <button type="button" class="pill" class:warm={needsYou(c.status)} class:blind={c.status === "unknown"} onclick={() => (open = c)}
-            title={c.statusReason ?? c.status}><i></i>{c.name}<small>{c.server}</small></button>
-        {/each}
-      </div>
+      {#each checkGroups as k (k.g)}
+        <div class="group mono">{k.g.toUpperCase()} · {k.bad ? `${k.list.length - k.bad} of ${k.list.length} passing` : `${k.list.length} passing`}</div>
+        <div class="pills">
+          {#each k.list as c (c.id)}
+            <button type="button" class="pill" class:warm={needsYou(c.status)} class:blind={c.status === "unknown"} onclick={() => (open = c)}
+              title={`${c.statusReason ?? c.status} · ${c.server}`}><i></i>{c.name}</button>
+          {/each}
+        </div>
+      {/each}
       <p class="note">ember = failing · hollow = can't tell · silver = passing</p>
     {:else}<Waiting title="No checks reporting yet.">Gatus endpoints and Elasticsearch health appear here.</Waiting>{/if}
   </section>
@@ -115,7 +124,7 @@
     {#if all.length}{@render firingMod()}{:else}{@render checksMod()}{/if}
   </div>
   <div class="lane c4">
-    <section class="mod raised c4 budget" style="--in:.08s" aria-labelledby="a-budget">
+    <section class="mod raised c4 budget" class:slim={!slo.length && !sloSrc.failing.length} style="--in:.08s" aria-labelledby="a-budget">
       <h2 id="a-budget"><span>ERROR BUDGET</span><span>{slo[0]?.facts.windowDays ? `${slo[0].facts.windowDays.value} d` : ""}</span></h2>
       {#if sloSrc.failing.length}<Waiting title={`Can't read the error budget on ${sloSrc.failing[0]!.server}.`} warm>{sloSrc.failing[0]!.error}</Waiting>
       {:else if !slo.length}<Waiting title="No error budget reporting yet.">The lab's chaos SLO appears here when its source lands.</Waiting>

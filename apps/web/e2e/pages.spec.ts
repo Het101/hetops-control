@@ -104,7 +104,7 @@ test.describe("Apps", () => {
   test("per-server tallies, Argo cards, workload tiles with pods and restarts, and sites with uptime", async ({ page }) => {
     await page.goto("/apps");
     await expect(page.locator("main h1")).toContainText("1 needs you.");
-    await expect(page.locator('.srv[data-server="lab"]')).toContainText("restarts · 24 h");
+    await expect(page.locator('.srv[data-server="lab"]')).toContainText("restarts 24h");
     await expect(page.locator('.srv[data-server="staging"]')).toContainText("Not connected yet.");
     await expect(page.locator(".card")).toHaveCount(5);
     await expect(page.locator('.tile[data-app="lab/app/chaos/chaos-api"]')).toHaveClass(/hot/);

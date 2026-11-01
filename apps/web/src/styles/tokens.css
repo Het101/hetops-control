@@ -122,7 +122,7 @@ svg.forest{will-change:transform;contain:paint}
 @keyframes enter{from{opacity:0;transform:translateY(14px)}}
 .mod h2{margin:0;font:600 11.5px var(--mono);letter-spacing:.13em;color:var(--ink-3);display:flex;justify-content:space-between}
 .note{font-size:12px;color:var(--ink-3);margin-top:6px}
-.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c7{grid-column:span 7}
+.c4{grid-column:span 4}.c5{grid-column:span 5}.c7{grid-column:span 7}
 .dials{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
 .dial{text-align:center;font:500 11px var(--mono);color:var(--ink-3)}
 .dial .face{width:96px;height:96px;margin:0 auto 8px;border-radius:50%;display:grid;place-items:center;position:relative}
@@ -196,13 +196,11 @@ h1:focus{outline:none}
 .list .group{font-size:11px;letter-spacing:.12em;color:var(--ink-3);margin:14px 0 2px}
 .list .group:first-of-type{margin-top:10px}
 .big{font:600 20px var(--serif),Georgia,serif;margin:12px 0 0;overflow-wrap:anywhere}
-.sub-h{margin-top:22px!important}
+.sub-h,.mod h2.sub-h{margin-top:22px}   /* a second heading inside a module or drawer: specific enough to beat .mod h2{margin:0} */
 .facts{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;margin:12px 0 0;font-size:13px}
 .facts dt{color:var(--ink-3)}
 .facts dd{margin:0;color:var(--ink-2);overflow-wrap:anywhere}
 .facts a{color:var(--ink);text-decoration-color:var(--ink-3);text-underline-offset:3px}
-.stack{display:grid;gap:22px;align-content:start}
-:root[data-density="compact"] .stack{gap:14px}
 .servers .row .n{width:64px}
 .pick{border:0;margin:14px 0 0;padding:0}
 .pick legend{padding:0;font-size:13.5px;color:var(--ink);margin-bottom:8px}

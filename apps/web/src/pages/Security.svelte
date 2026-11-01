@@ -57,7 +57,7 @@
     </section>
   </div>
   <div class="lane c4">
-    <section class="mod raised c4 list" style="--in:.08s" aria-labelledby="s-scen">
+    <section class="mod raised c4 list" class:slim={!scen.length && !bans} style="--in:.08s" aria-labelledby="s-scen">
       <h2 id="s-scen"><span>WHAT THEY TRIED</span><span>{scen.length ? "scenarios" : ""}</span></h2>
       {#each scen as s (s.v)}
         <div class="bar-row"><span class="t mono">{s.v}</span><span class="bar pressed"><i style={`transform:scaleX(${s.n / scen[0]!.n})`}></i></span><b class="mono">{s.n}</b></div>
@@ -70,7 +70,7 @@
       {/if}
     </section>
 
-    <section class="mod raised c4 list" style="--in:.16s" aria-labelledby="s-drift">
+    <section class="mod raised c4 list" class:slim={!drift.length && !br.failing.length} style="--in:.16s" aria-labelledby="s-drift">
       <h2 id="s-drift"><span>BEDROCK · HOST DRIFT</span><span>{drift.length ? `${drift.filter(d => d.facts.drift?.value === true).length} drifted` : ""}</span></h2>
       {#if br.failing.length}<Waiting title={`Can't read Bedrock's state on ${br.failing[0]!.server}.`} warm>{br.failing[0]!.error}</Waiting>{/if}
       {#each drift as d (d.id)}
@@ -83,7 +83,7 @@
       {:else}{#if !br.failing.length}<Waiting title="Bedrock drift is not reporting yet.">Each host (lab, staging, ops) as clean or drifted from its Ansible code, with the last check.</Waiting>{/if}{/each}
     </section>
 
-    <section class="mod raised c4 list" style="--in:.24s" aria-labelledby="s-audit">
+    <section class="mod raised c4 list" class:slim={!audit.length} style="--in:.24s" aria-labelledby="s-audit">
       <h2 id="s-audit"><span>AUDIT HIGHLIGHTS</span><span>{audit.length || ""}</span></h2>
       {#each audit as e (keyOf(e))}
         {@const warm = heated.hot(e)}
@@ -94,7 +94,7 @@
       {:else}<Waiting title="No audit events yet.">Falco highlights, Bedrock drift runs, CrowdSec and every action taken here, from the Change Timeline.</Waiting>{/each}
     </section>
 
-    <section class="mod raised c4 grow" style="--in:.2s" aria-labelledby="s-log">
+    <section class="mod raised c4" class:grow={!!secLog} class:slim={!secLog} style="--in:.2s" aria-labelledby="s-log">
       <h2 id="s-log"><span>SECURITY LOG STREAM · 24 H</span><span>{secLog ? `${sumSeries(secLog, t - DAY).toLocaleString()} docs` : ""}</span></h2>
       {#if secLog}
         <Terrain series={[secLog]} from={t - DAY} to={t} label="Security log documents per 10 minutes over 24 hours" />

@@ -52,7 +52,7 @@
         <div class="nums">
           <div><b>{s.apps}</b><span>workloads</span></div>
           <div><b class:warm={s.ready < s.desired}>{s.ready}<small>/{s.desired}</small></b><span>pods ready</span></div>
-          <div><b class:warm={s.restarts > 0}>{s.restarts}</b><span class="nw">restarts · 24 h</span></div>
+          <div><b class:warm={s.restarts > 0}>{s.restarts}</b><span>restarts 24h</span></div>
           <div><b class:warm={s.synced < s.argo}>{s.synced}<small>/{s.argo}</small></b><span>argo healthy</span></div>
         </div>
       {:else}

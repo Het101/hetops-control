@@ -64,9 +64,9 @@
         <label class="fld-l">Type <b>{o.entity.name}</b> to confirm <input class="pressed" autocomplete="off" spellcheck="false" bind:value={typed} /></label>
       {/if}
       <div class="btns">
-        <button type="button" class="act-back raised" onclick={() => dlg?.close()}>Cancel</button>
+        <button type="button" class="act-back" onclick={() => dlg?.close()}>Cancel</button>
         <!-- silver, not ember: confirming is the owner's choice, not something that needs them -->
-        <button type="submit" class="act-go raised" disabled={!ready}>{busy ? "Asking…" : o.descriptor.label}</button>
+        <button type="submit" class="act-go" class:pressed={!ready} disabled={!ready}>{busy ? "Asking…" : o.descriptor.label}</button>
       </div>
     </form>
   {/if}
