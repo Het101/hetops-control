@@ -349,6 +349,11 @@ a.row{color:inherit;text-decoration:none}
 .act-dlg .fld small{color:var(--ink-3);font:500 11px var(--mono),ui-monospace,monospace}
 .act-dlg input.pressed{border:0;border-radius:10px;padding:8px 10px;color:var(--ink);font:500 13px var(--sans),system-ui,sans-serif;flex:1;min-width:140px}
 .act-dlg input.pressed:focus-visible{outline:2px solid var(--quiet);outline-offset:2px}
+/* a toggle is the app's own surface, not the browser's white box: a pressed well when off, raised with a silver check when on */
+.act-dlg input[type="checkbox"]{appearance:none;margin:0;flex:none;width:20px;height:20px;border-radius:6px;cursor:pointer;background:linear-gradient(145deg,#25262a,#2d2e32);box-shadow:inset -2px -2px 5px var(--hi),inset 3px 3px 7px var(--lo);transition:box-shadow .25s var(--ease),background .25s var(--ease)}
+.act-dlg input[type="checkbox"]:checked{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-7' fill='none' stroke='%23ecebe7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat,linear-gradient(145deg,#36373c,#2b2c30);box-shadow:-3px -3px 7px var(--hi),4px 4px 10px var(--lo)}
+.act-dlg input[type="checkbox"]:focus-visible{outline:2px solid var(--quiet);outline-offset:3px}
+.act-dlg label:has(>input[type="checkbox"]){cursor:pointer;user-select:none}
 .act-dlg .chips input{position:absolute;opacity:0;pointer-events:none}
 .act-dlg .what{font-size:14px;line-height:1.55;color:var(--ink-2);min-height:3.1em}
 /* an error in the dialog is silver: only a failed run (its toast) is ember */
