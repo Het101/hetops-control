@@ -55,6 +55,9 @@ export type Toast = { tone: Tone; title: string; line: string; detail?: string; 
 const HOME: Partial<Record<string, { href: string; label: string }>> = { backup: { href: "/backups", label: "Backups" },
   app: { href: "/apps", label: "Apps" }, "argo-app": { href: "/apps", label: "Apps" }, deploy: { href: "/apps", label: "Apps" },
   alert: { href: "/alerts", label: "Alerts" }, site: { href: "/alerts", label: "Alerts" }, check: { href: "/alerts", label: "Alerts" } };
+/** The page where an entity lives, from its id (server/kind/...): a server, or a source that can't be read, lives in Settings. */
+export const pageOf = (id: string): { href: string; label: string } =>
+  HOME[id.split("/")[1] ?? ""] ?? (!id.includes("/") || id.split("/")[1] === "source" ? { href: "/settings", label: "Settings" } : { href: "/", label: "Home" });
 const REF: Partial<Record<string, string>> = { "snapshot.now": "snapshot name", "coolify.redeploy": "deploy id", "alert.silence": "silence id" };
 const hhmm = (at: string) => `${new Date(at).toISOString().slice(11, 16)} UTC`;
 const sentence = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -63,7 +66,7 @@ const sentence = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export function toastOf(r: ActionRun): Toast {
   const tone: Tone = r.state === "running" ? "running" : r.state === "succeeded" ? "done" : "failed";
   const why = r.error ?? r.result?.summary;
-  const next = HOME[r.target.split("/")[1] ?? ""];
+  const next = HOME[r.target.split("/")[1] ?? ""];   // a toast links on only when the target has a page of its own
   return {
     tone, line: `${r.targetName} on ${r.server} · ${hhmm(r.finishedAt ?? r.at)}`, refName: REF[r.action] ?? "reference",
     // "the result is unknown" (the center's words for a timeout or a restart) is not a failure: say only what is known

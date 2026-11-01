@@ -15,7 +15,9 @@
   import { isPage, PAGES, route } from "./lib/router.svelte.js";
   import ActionDialog from "./components/ActionDialog.svelte";
   import Toasts from "./components/Toasts.svelte";
+  import NeedsQueue from "./components/NeedsQueue.svelte";
   import { catalog, track } from "./lib/action-state.svelte.js";
+  import { away, AWAY_MS, lastSeen, markSeen } from "./lib/away.js";
 
   // Home shows the latest 6; the Timeline page keeps the most the center serves
   const SHOWN = 6, KEEP = 500, DOWN_MS = 10_000;
@@ -48,6 +50,23 @@
     tick().then(() => document.querySelector<HTMLElement>("main h1")?.focus());
   });
 
+  // while you were away: the time you were last here, read once on arrival (and again when the tab comes back after a while);
+  // "last here" is kept fresh every minute while the page is visible and when you leave
+  const seen = lastSeen();
+  let awaySince = $state<number | undefined>(seen !== undefined && Date.now() - seen >= AWAY_MS ? seen : undefined);
+  $effect(() => {
+    markSeen();
+    const keep = setInterval(() => { if (document.visibilityState === "visible") markSeen(); }, 60_000);
+    const vis = () => {
+      if (document.visibilityState === "hidden") { markSeen(); return; }
+      const s = lastSeen(); if (s !== undefined && Date.now() - s >= AWAY_MS) awaySince = s;
+      markSeen();
+    };
+    document.addEventListener("visibilitychange", vis); addEventListener("pagehide", vis);
+    return () => { clearInterval(keep); document.removeEventListener("visibilitychange", vis); removeEventListener("pagehide", vis); };
+  });
+  const gone = $derived(awaySince === undefined ? undefined : away(events, awaySince, now.getTime()));
+
   const ago = $derived(lastMsg === undefined ? undefined : Math.max(0, Math.round((now.getTime() - lastMsg) / 1000)));
   // down for 10 s, or open but silent past the watchdog's limit
   const reconnecting = $derived((downSince !== undefined && now.getTime() - downSince >= DOWN_MS) || (ago !== undefined && ago * 1000 > SILENCE_MS));
@@ -58,12 +77,13 @@
   <main>
     <div class="top">
       <span class="brand">HETOPS CONTROL</span>
+      {#if estate}<NeedsQueue needs={estate.headline.needs} entities={estate.entities} />{/if}
       <span class="live" class:warm={reconnecting} role="status">
         {#key lastMsg}<span class="pulse"></span>{/key}{reconnecting ? "reconnecting" : ago === undefined ? "connecting" : `live · ${ago} s ago`}</span>
     </div>
 
     {#if route.path === "/"}
-      {#if estate}<Home {estate} {events} {eventsError} {now} shown={SHOWN} />{/if}
+      {#if estate}<Home {estate} {events} {eventsError} {now} shown={SHOWN} away={gone} ondismiss={() => (awaySince = undefined)} />{/if}
     {:else if route.path === "/timeline"}
       <TimelinePage {estate} {events} error={eventsError} {now} />
     {:else if route.path === "/alerts"}

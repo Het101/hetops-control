@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Entity, Event } from "@hetops-control/contracts";
   import type { State } from "../lib/api.js";
+  import type { Away } from "../lib/away.js";
   import { backupView, DAY, hhmm, ago, needsYou, str } from "../lib/pages.js";
   import { deployDays, moduleState, perMinute, waitingDeploys } from "../lib/home.js";
   import { siteRows, summary } from "../lib/sites.js";
@@ -18,7 +19,7 @@
   import Later from "../components/Later.svelte";
 
   // Home: the hero, then one module per page, each linking to it; a module whose source never reported is not shown
-  let { estate, events, eventsError, now, shown }: { estate: State; events: Event[]; eventsError: boolean; now: Date; shown: number } = $props();
+  let { estate, events, eventsError, now, shown, away, ondismiss }: { estate: State; events: Event[]; eventsError: boolean; now: Date; shown: number; away?: Away; ondismiss?: () => void } = $props();
   const t = $derived(now.getTime());
   const ents = $derived(estate.entities);
 
@@ -57,7 +58,7 @@
 </script>
 
 <section class="hero raised">
-  <Headline headline={estate.headline} {now} />
+  <Headline headline={estate.headline} {now} {away} {ondismiss} />
   <NeedsYou needs={estate.headline.needs} entities={estate.entities} />
   <Forest state={estate} {events} />
 </section>
