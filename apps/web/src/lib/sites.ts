@@ -5,30 +5,36 @@ import { HOUR, needsYou, str } from "./pages.js";
 /** Data shaping for the Sites status board; pure, so it is unit-tested. */
 
 /** one hour of the heartbeat strip: its uptime %, or undefined when nobody watched it (drawn hollow, never up) */
-export type Tick = { t: number; up?: number };
-export type SiteRow = { e: Entity; host?: string; group: string; ticks: Tick[]; lat: number[]; ms?: number; pct?: number; warm: boolean };
+export type Tick = { t: number; up?: number; ms?: number };
+export type SiteRow = { e: Entity; host?: string; group: string; ticks: Tick[]; ms?: number; pct?: number; warm: boolean };
 
-/** the last 24 clock hours, the current one last, from the agent's <id>/uptime-1h series; hours with no point are unknown */
-export function ticks(s: Series | undefined, now: number, hours = 24): Tick[] {
-  const by = new Map((s?.points ?? []).map(([t, v]) => [t, v]));
+/** the last 24 clock hours, the current one last: uptime from <id>/uptime-1h (no point = unknown, drawn hollow, never up) and
+ * that hour's mean response time from <id>/latency-1h when it has one */
+export function ticks(s: Series | undefined, now: number, hours = 24, lat?: Series): Tick[] {
+  const by = new Map((s?.points ?? []).map(([t, v]) => [t, v])), ms = new Map((lat?.points ?? []).map(([t, v]) => [t, v]));
   const end = Math.floor(now / HOUR) * HOUR;
-  return Array.from({ length: hours }, (_, i) => { const t = end - (hours - 1 - i) * HOUR, up = by.get(t); return up === undefined ? { t } : { t, up }; });
+  return Array.from({ length: hours }, (_, i) => {
+    const t = end - (hours - 1 - i) * HOUR, up = by.get(t), m = ms.get(t);
+    return { t, ...(up === undefined ? {} : { up }), ...(m === undefined ? {} : { ms: m }) };
+  });
 }
 
 /**
- * A tick's height, 0.3 to 1: a full hour is full, and an hour with down time shrinks with it, so that a 4 s blip (99.9 %) still
- * reads as a notch and a lost half hour is plainly short. Linear over the last 10 %, then held at the floor.
+ * Bar heights, 0.35 to 1: an hour's response time against the site's own range, so its slow hours stand tall and its fast ones
+ * low; all alike, or an hour with no reading, sits at 0.62. Colour (lib's caller) says whether the hour was up.
  */
-export const tickHeight = (up: number) => (up >= 100 ? 1 : Math.max(0.3, 0.9 - (100 - up) / 10 * 0.6));
+export function barHeights(t: Tick[]): number[] {
+  const v = t.map(k => k.ms).filter((m): m is number => m !== undefined), lo = Math.min(...v), hi = Math.max(...v);
+  return t.map(k => (k.ms === undefined || !(hi > lo) ? .62 : Math.round((.35 + .65 * (k.ms - lo) / (hi - lo)) * 1000) / 1000));
+}
 
 const rank = (g: string) => (g === "sites" ? 0 : 1);
 /** sites as board rows: the ones that need the owner first, then by name; grouped Sites, then Products, as Gatus groups them */
 export function siteRows(sites: Entity[], series: Series[], now: number): SiteRow[] {
   const s = new Map(series.map(x => [x.id, x]));
   return sites.map((e): SiteRow => {
-    const lat = (s.get(`${e.id}/latency-1h`)?.points ?? []).filter(p => p[0] > now - 24 * HOUR).map(p => p[1]);
-    return { e, host: str(e, "host"), group: str(e, "group") === "products" ? "products" : "sites", ticks: ticks(s.get(`${e.id}/uptime-1h`), now),
-      lat, ms: num(e, "latencyMs"), pct: num(e, "uptime24h"), warm: needsYou(e.status) };
+    return { e, host: str(e, "host"), group: str(e, "group") === "products" ? "products" : "sites",
+      ticks: ticks(s.get(`${e.id}/uptime-1h`), now, 24, s.get(`${e.id}/latency-1h`)), ms: num(e, "latencyMs"), pct: num(e, "uptime24h"), warm: needsYou(e.status) };
   }).sort((a, b) => rank(a.group) - rank(b.group) || Number(b.warm) - Number(a.warm) || a.e.name.localeCompare(b.e.name));
 }
 
@@ -44,12 +50,6 @@ export function summary(rows: SiteRow[]): string {
     known ? (n ? `${n} incident${n === 1 ? "" : "s"} in 24 h` : "no incidents in 24 h") : undefined].filter(Boolean).join(" · ");
 }
 
-/** a sparkline path through the hourly means, in a w by h box; flat when they are all equal */
-export function spark(v: number[], w: number, h: number): string {
-  if (v.length < 2) return "";
-  const lo = Math.min(...v), hi = Math.max(...v), r = hi - lo || 1;
-  return v.map((y, i) => `${i ? "L" : "M"}${(i / (v.length - 1) * w).toFixed(1)},${(hi === lo ? h / 2 : h - 1 - (y - lo) / r * (h - 2)).toFixed(1)}`).join("");
-}
 
 export type BoardItem = { key: string; label?: string; cont?: boolean; row?: SiteRow };
 const GROUPS: [string, string][] = [["sites", "SITES"], ["products", "PRODUCTS"]];

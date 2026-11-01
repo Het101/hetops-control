@@ -3,8 +3,8 @@
   import type { Entity, Event } from "@hetops-control/contracts";
   import type { State } from "../lib/api.js";
   import type { Away } from "../lib/away.js";
-  import { backupView, DAY, hhmm, ago, needsYou, str } from "../lib/pages.js";
-  import { deployDays, moduleState, perMinute, waitingDeploys } from "../lib/home.js";
+  import { backupView, DAY, hhmm, ago, needsYou, span, str } from "../lib/pages.js";
+  import { deployRiver, moduleState, perMinute, waitingDeploys } from "../lib/home.js";
   import { siteRows, summary } from "../lib/sites.js";
   import Headline from "../components/Headline.svelte";
   import NeedsYou from "../components/NeedsYou.svelte";
@@ -24,9 +24,8 @@
   const t = $derived(now.getTime());
   const ents = $derived(estate.entities);
 
-  const days = $derived(deployDays(events, t));
-  const deploys = $derived(days.reduce((n, d) => n + d.n, 0));
-  const peak = $derived(Math.max(1, ...days.map(d => d.n)));
+  const river = $derived(deployRiver(events, t));
+  const deploys = $derived(river.total);
   const waiting = $derived(waitingDeploys(ents));
 
   const slo = $derived(ents.filter(e => e.kind === "slo"));
@@ -55,7 +54,13 @@
   // full-width row, so deploys and the log flow end level with the shorter side
   const wideTimeline = $derived(!(on(budget) && on(cs)));
   const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
-  const fmtDay = (d: string) => new Date(`${d}T00:00:00Z`).toUTCString().slice(5, 11).toUpperCase();
+  const fmtWhen = (ms: number) => new Date(ms).toUTCString().slice(0, 11).replace(",", "").toUpperCase();
+  // the river's geometry: a lane per server that deployed (or has one waiting), x along the span held, midnights as faint lines
+  const RX0 = 64, RW = $derived(CW - RX0 - 14);
+  const rx = (ms: number) => RX0 + (river.end > river.start ? (ms - river.start) / (river.end - river.start) : 1) * RW;
+  const latest = $derived(river.lanes.flatMap(l => l.deps).sort((a, b) => a.at.localeCompare(b.at)).at(-1));
+  const laneOf = $derived([...new Set([...river.lanes.map(l => l.server), ...waiting.map(w => w.e.server)])]);
+  const midnights = $derived(Array.from({ length: 15 }, (_, i) => Math.ceil(river.start / DAY) * DAY + i * DAY).filter(m => m < river.end));
 </script>
 
 <section class="hero raised">
@@ -66,24 +71,30 @@
 
 {#snippet deploysMod()}
   <section class="mod raised c8" style="--in:.16s" aria-labelledby="h-deploys" data-module="deploys">
-      <h2 id="h-deploys"><span>DEPLOYS · 14 DAYS</span><span>{!eventsError && deploys ? `${deploys} in 14 d` : ""}<a class="to" href="/timeline" aria-label="Open the Timeline">open →</a></span></h2>
+      <h2 id="h-deploys"><span>DEPLOYS</span><span>{!eventsError && river.short && deploys ? `since ${fmtWhen(river.start)}` : !eventsError && deploys ? "14 days" : ""}<a class="to" href="/timeline" aria-label="Open the Timeline">open →</a></span></h2>
       {#if eventsError}<Waiting title="Can't read the event log." warm>Deploys come from the Change Timeline; they are not shown until it answers again.</Waiting>
       {:else}
-        <svg class="capsules" use:width={w => (capW = w)} viewBox={`0 0 ${CW} 150`} role="img" aria-label={`Deploys per day over 14 days: ${days.map(d => d.known ? d.n : "unknown").join(", ")}${waiting.length ? `; ${plural(waiting.length, "deploy")} waiting on you` : ""}`}>
-          <defs><linearGradient id="cap-hot" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#c2391a"/><stop offset="1" stop-color="#ff9a3c"/></linearGradient></defs>
-          {#each days as d, i (d.day)}
-            {@const x = 10 + i * (CW - 36) / 13} {@const h = d.n ? 14 + (d.n / peak) * 104 : 0} {@const hot = i === days.length - 1 ? waiting.length : 0}
-            <rect x={x - 1} y="2" width="18" height="132" rx="9" class="cap-track" class:unknown={!d.known}><title>{d.day}: {d.known ? plural(d.n, "deploy") : "before the oldest event held"}</title></rect>
-            {#if h}<rect {x} y={133 - h} width="16" height={h} rx="8" class="cap" style={`--dl:${.35 + i * .055}s`}/>{/if}
-            {#if hot}<rect {x} y={133 - h - Math.min(14 + hot * 11, 128 - h)} width="16" height={Math.min(14 + hot * 11, 128 - h)} rx="8" fill="url(#cap-hot)" class="cap hot" style={`--dl:${.35 + i * .055}s`}/>{/if}
+        <div class="focal"><b>{deploys}</b> <span>{deploys === 1 ? "deploy" : "deploys"} in the last {river.short ? span(river.end - river.start) : "14 days"}</span></div>
+        <svg class="river" use:width={w => (capW = w)} viewBox={`0 0 ${CW} ${Math.max(1, laneOf.length) * 30 + 20}`} role="img"
+          aria-label={`${deploys} deploys since ${fmtWhen(river.start)}: ${river.lanes.map(l => `${l.server} ${l.deps.length}`).join(", ")}${waiting.length ? `; ${plural(waiting.length, "deploy")} waiting on you` : ""}`}>
+          {#each midnights as m (m)}<line class="mid" x1={rx(m)} x2={rx(m)} y1="0" y2={laneOf.length * 30}/>{/each}
+          {#each laneOf as server, li (server)}
+            {@const y = li * 30 + 15} {@const lane = river.lanes.find(l => l.server === server)}
+            <text x="0" y={y + 4} class="cap-l">{server.toUpperCase()}</text>
+            <line class="lane" x1={RX0} x2={RX0 + RW} y1={y} y2={y}/>
+            {#each lane?.deps ?? [] as d, di (d.at + d.summary)}
+              {@const last = d === latest}
+              <circle class="dep" class:last cx={rx(Date.parse(d.at))} cy={y} r={last ? 6 : 4.5} style={`--dl:${.3 + di * .04}s`}><title>{fmtWhen(Date.parse(d.at))} {d.at.slice(11, 16)} UTC · {d.summary}</title></circle>
+            {/each}
+            {#each waiting.filter(w => w.e.server === server) as w (w.e.id)}<circle class="dep hot" cx={RX0 + RW} cy={y} r="6"><title>{w.e.name}: {w.commit} waiting for a deploy</title></circle>{/each}
           {/each}
-          <text x="10" y="148" class="cap-l">{fmtDay(days[0]!.day)}</text><text x={CW - 17} y="148" text-anchor="end" class="cap-l">TODAY</text>
+          <text x={RX0} y={laneOf.length * 30 + 16} class="cap-l">{fmtWhen(river.start)}</text><text x={RX0 + RW} y={laneOf.length * 30 + 16} text-anchor="end" class="cap-l">NOW</text>
         </svg>
         {#each waiting.slice(0, 2) as w (w.e.id)}
           <div class="wait-row warm"><span class="sev warm" aria-hidden="true"><i></i></span><span>{w.e.name} has {w.commit} waiting for a deploy<small>{w.e.server}{w.e.source ? ` · ${w.e.source}` : ""}</small></span></div>
         {/each}
-        {#if !deploys && !waiting.length}<p class="note">No deploys in the events held. Rollouts and Argo syncs appear as capsules.</p>
-        {:else}<p class="note">capsule = rollouts and Argo syncs that day · hollow = before the oldest event held{waiting.length ? " · ember = waiting on you" : ""}</p>{/if}
+        {#if !deploys && !waiting.length}<p class="note">No deploys in the events held. Rollouts and Argo syncs appear here, one dot each.</p>
+        {:else}<p class="note">a dot per rollout or Argo sync · a lane per server · faint lines are midnights (UTC){waiting.length ? " · ember = waiting on you" : ""}</p>{/if}
       {/if}
     </section>
 {/snippet}

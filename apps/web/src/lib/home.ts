@@ -1,4 +1,4 @@
-import type { Entity, Event, Series } from "@hetops-control/contracts";
+import { ServerIdSchema, type Entity, type Event, type Series } from "@hetops-control/contracts";
 import type { State } from "./api.js";
 import { DAY, sourceState, str } from "./pages.js";
 
@@ -19,15 +19,16 @@ export function moduleState(state: State | undefined, source: string, has: boole
 export const isDeploy = (e: Event) => e.kind === "deploy" || e.kind === "sync";
 
 /**
- * Deploys per UTC day for the last `days` days, oldest first. A day before the oldest event held is not known (the log may have
- * been cut there), so it is drawn hollow rather than as a quiet day.
+ * The deploy river: every rollout and Argo sync on one time axis, a lane per server. The axis runs from the oldest event held
+ * (the log may start there) or 14 days back, whichever is later, to now, so a short history is drawn at its true length instead
+ * of as hollow days; `short` says so.
  */
-export function deployDays(events: Event[], now: number, days = 14): { day: string; n: number; known: boolean }[] {
-  const oldest = events.reduce<string | undefined>((m, e) => (m === undefined || e.at < m ? e.at : m), undefined)?.slice(0, 10);
-  return Array.from({ length: days }, (_, i) => {
-    const day = new Date(now - (days - 1 - i) * DAY).toISOString().slice(0, 10);
-    return { day, n: events.filter(e => isDeploy(e) && e.at.startsWith(day)).length, known: oldest !== undefined && day >= oldest };
-  });
+export function deployRiver(events: Event[], now: number, days = 14) {
+  const oldest = events.reduce<number | undefined>((m, e) => { const t = Date.parse(e.at); return m === undefined || t < m ? t : m; }, undefined);
+  const start = oldest === undefined ? now : Math.max(oldest, now - days * DAY);
+  const deps = events.filter(e => isDeploy(e) && Date.parse(e.at) >= start).sort((a, b) => a.at.localeCompare(b.at));
+  const lanes = ServerIdSchema.options.map(server => ({ server, deps: deps.filter(e => e.server === server) })).filter(l => l.deps.length);
+  return { start, end: now, short: start > now - days * DAY, lanes, total: deps.length };
 }
 
 /** apps with a newer commit than the deployed one: the deploys that wait on the owner (the center raises them to attention) */

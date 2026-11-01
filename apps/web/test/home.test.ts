@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Entity, Event, Series } from "@hetops-control/contracts";
-import { deployDays, moduleState, perMinute, waitingDeploys } from "../src/lib/home.js";
+import { deployRiver, moduleState, perMinute, waitingDeploys } from "../src/lib/home.js";
 import type { State } from "../src/lib/api.js";
 
 const at = "2026-10-30T07:42:00.000Z", now = Date.parse(at);
@@ -28,20 +28,23 @@ describe("moduleState", () => {
   });
 });
 
-describe("deployDays", () => {
-  const events = [ev({ at: "2026-10-30T07:31:00.000Z", kind: "sync" }), ev({ at: "2026-10-30T03:40:00.000Z", kind: "deploy" }),
+describe("deployRiver", () => {
+  const events = [ev({ at: "2026-10-30T07:31:00.000Z", kind: "sync", server: "ops" }), ev({ at: "2026-10-30T03:40:00.000Z", kind: "deploy" }),
     ev({ at: "2026-10-30T03:11:58.000Z", kind: "restart" }), ev({ at: "2026-10-28T12:00:00.000Z", kind: "deploy" }), ev({ at: "2026-10-27T22:10:00.000Z" })];
-  it("14 UTC days oldest first, counting rollouts and syncs only", () => {
-    const d = deployDays(events, now);
-    expect(d).toHaveLength(14);
-    expect(d[0]!.day).toBe("2026-10-17"); expect(d.at(-1)).toEqual({ day: "2026-10-30", n: 2, known: true });
-    expect(d.find(x => x.day === "2026-10-28")!.n).toBe(1);
+  it("spans only what is known: from the oldest event held (at most 14 days back) to now", () => {
+    const r = deployRiver(events, now);
+    expect(r.start).toBe(Date.parse("2026-10-27T22:10:00.000Z")); expect(r.end).toBe(now); expect(r.short).toBe(true);
+    const full = deployRiver([...events, ev({ at: "2026-09-01T00:00:00.000Z" })], now);
+    expect(full.start).toBe(now - 14 * 86_400_000); expect(full.short).toBe(false);
   });
-  it("days before the oldest event held are unknown, not quiet", () => {
-    const d = deployDays(events, now);
-    expect(d.find(x => x.day === "2026-10-26")!.known).toBe(false);
-    expect(d.find(x => x.day === "2026-10-27")).toEqual({ day: "2026-10-27", n: 0, known: true });
-    expect(deployDays([], now).every(x => !x.known)).toBe(true);
+  it("one lane per server that deployed, in server order; one dot per rollout or sync, oldest first", () => {
+    const r = deployRiver(events, now);
+    expect(r.total).toBe(3);
+    expect(r.lanes.map(l => [l.server, l.deps.map(d => d.at.slice(0, 16))])).toEqual([
+      ["lab", ["2026-10-28T12:00", "2026-10-30T03:40"]], ["ops", ["2026-10-30T07:31"]]]);
+  });
+  it("nothing held: no span, no lanes", () => {
+    expect(deployRiver([], now)).toEqual({ start: now, end: now, short: true, lanes: [], total: 0 });
   });
 });
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Entity, Series } from "@hetops-control/contracts";
-import { columns, incidents, siteRows, spark, summary, tickHeight, ticks } from "../src/lib/sites.js";
+import { barHeights, columns, incidents, siteRows, summary, ticks } from "../src/lib/sites.js";
 
 const H = 3_600_000, now = Date.parse("2026-10-30T07:42:00.000Z"), end = Date.parse("2026-10-30T07:00:00.000Z");
 const site = (key: string, name: string, group: string, p: Partial<Entity> = {}, ms = 100, up = 100): Entity => ({ id: `ops/site/${key}`, kind: "site", server: "ops", name,
@@ -15,11 +15,15 @@ describe("ticks", () => {
     expect(t.slice(1, 22).every(k => k.up === undefined)).toBe(true);           // the restart gap: hollow
     expect(ticks(undefined, now).every(k => k.up === undefined)).toBe(true);
   });
-  it("tick heights: full at 100 %, a visible notch for any down time, a floor at 0.3", () => {
-    expect(tickHeight(100)).toBe(1);
-    expect(tickHeight(99.99)).toBeLessThan(.91);
-    expect(tickHeight(95)).toBeCloseTo(.6);
-    expect(tickHeight(0)).toBe(.3);
+  it("each hour carries its mean response time when the latency series has it", () => {
+    const t = ticks(series("x", [[end - H, 100], [end, 100]]), now, 24, series("y", [[end - H, 140], [end, 90]]));
+    expect([t[22], t[23]]).toEqual([{ t: end - H, up: 100, ms: 140 }, { t: end, up: 100, ms: 90 }]);
+  });
+  it("bar heights are response time against the site's own range: slowest full, fastest at the floor, flat in the middle", () => {
+    const k = (ms: (number | undefined)[]) => ms.map((m, i) => (m === undefined ? { t: i } : { t: i, ms: m }));
+    expect(barHeights(k([100, 200, 150]))).toEqual([.35, 1, .675]);
+    expect(barHeights(k([80, 80]))).toEqual([.62, .62]);
+    expect(barHeights(k([undefined, 50, 100]))).toEqual([.62, .35, 1]);   // an hour without a reading sits mid-height
   });
   it("counts consecutive hours with down time as one incident", () => {
     const k = (ups: (number | undefined)[]) => ups.map((up, i) => ({ t: i, up }));
@@ -37,7 +41,8 @@ describe("siteRows and summary", () => {
     const rows = siteRows(ents, ser, now);
     expect(rows.map(r => r.e.name)).toEqual(["Blog", "Hub", "ThreadVault", "Radar Cloud"]);
     expect(rows[2]!.warm).toBe(true);
-    expect(rows[3]!.lat).toEqual([200, 210]);      // older than 24 h is dropped
+    expect(rows[3]!.ticks.slice(-2).map(k => k.ms)).toEqual([200, 210]);   // the latency rides on its hour; older than 24 h is not one
+    expect(rows[3]!.ticks.filter(k => k.ms !== undefined)).toHaveLength(2);
     expect(rows[0]!.ticks.every(k => k.up === undefined)).toBe(true);
     expect(rows[0]!.host).toBe("blog.dev");
   });
@@ -45,11 +50,6 @@ describe("siteRows and summary", () => {
     expect(summary(siteRows(ents, ser, now))).toBe("3/4 up · slowest Radar Cloud 212 ms · 2 incidents in 24 h");
     expect(summary(siteRows([site("hub", "Hub", "sites")], [], now))).toBe("1/1 up · slowest Hub 100 ms");
     expect(summary(siteRows([site("hub", "Hub", "sites")], [series("ops/site/hub/uptime-1h", [[end, 100]])], now))).toBe("1/1 up · slowest Hub 100 ms · no incidents in 24 h");
-  });
-  it("draws a sparkline in its box, flat when every hour is the same, nothing for one point", () => {
-    expect(spark([1, 3], 56, 14)).toBe("M0.0,13.0L56.0,1.0");
-    expect(spark([5, 5, 5], 56, 14)).toBe("M0.0,7.0L28.0,7.0L56.0,7.0");
-    expect(spark([5], 56, 14)).toBe("");
   });
 });
 
