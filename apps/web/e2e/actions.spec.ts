@@ -260,6 +260,23 @@ test.describe("toast screenshots", () => {
   }
 });
 
+test("a toggle is the app's own control, not the browser's white box, and its label flips it", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 900 });
+  const { s, app } = withSync(); s.actions![0]!.params = { type: "object", additionalProperties: false,
+    properties: { hard: { type: "boolean", default: false, description: "Also drop Argo CD's cached manifests (a hard refresh)" } } };
+  await mockApi(page, s); const sent = await wire(page, app);
+  await page.goto("/apps");
+  await page.getByRole("button", { name: `Sync ${app.name}` }).click();
+  const box = page.getByRole("dialog").getByRole("checkbox", { name: "Hard" });
+  expect(await box.evaluate(e => getComputedStyle(e).appearance)).toBe("none");
+  await page.screenshot({ path: "e2e/__screens__/action-toggle-off.png", animations: "disabled" });
+  await page.getByRole("dialog").getByText("Hard", { exact: true }).click();
+  await expect(box).toBeChecked();
+  await page.screenshot({ path: "e2e/__screens__/action-toggle-on.png", animations: "disabled" });
+  await page.getByRole("dialog").getByRole("button", { name: "Sync", exact: true }).click();
+  await expect.poll(() => sent.find(x => x.kind === "run")?.body.params).toEqual({ hard: true });
+});
+
 test.describe("screenshots", () => {
   const silence = { type: "object" as const, additionalProperties: false as const, properties: {
     hours: { type: "string" as const, enum: ["1", "4", "24"], default: "4", description: "For how long, in hours" },
