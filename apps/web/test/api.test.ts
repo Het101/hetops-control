@@ -18,16 +18,41 @@ describe("stream", () => {
   });
   afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
-  it("re-opens a stream that has gone silent, and says so", () => {
+  it("re-opens a stream that has gone silent, and says so", async () => {
     const link = vi.fn();
     const stop = follow({ state: () => {}, event: () => {}, link, events: () => {}, eventsFailed: () => {}, action: () => {} }, 6);
     FakeSource.all[0]!.onopen?.();
     vi.advanceTimersByTime(SILENCE_MS - 5000);
     expect(FakeSource.all).toHaveLength(1);
-    vi.advanceTimersByTime(10_000);
+    await vi.advanceTimersByTimeAsync(10_000);   // the watchdog checks the sign-in, then re-opens
     expect(FakeSource.all[0]!.closed).toBe(true);
     expect(FakeSource.all).toHaveLength(2);
     expect(link).toHaveBeenLastCalledWith(false);
+    stop();
+  });
+
+  it("a sign-in that ended is said once, and the stream stops knocking", async () => {
+    // Cloudflare Access answers a request without a session with a redirect to its login page; the stream cannot follow it
+    const fetchMock = vi.fn(async (_: string, init?: RequestInit) => init?.redirect === "manual" ? { type: "opaqueredirect", status: 0 } : { ok: false, status: 503, json: async () => ({}) });
+    vi.stubGlobal("fetch", fetchMock);
+    const signedOut = vi.fn();
+    const stop = follow({ state: () => {}, event: () => {}, link: () => {}, events: () => {}, eventsFailed: () => {}, action: () => {}, signedOut }, 6);
+    const es = FakeSource.all[0]!; es.readyState = FakeSource.CLOSED; es.onerror?.();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(signedOut).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(SILENCE_MS * 3);
+    expect(FakeSource.all).toHaveLength(1);   // no re-opens, no watchdog: only a sign-in brings it back
+    stop();
+  });
+
+  it("a stream that drops while still signed in is re-opened", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (_: string, init?: RequestInit) => init?.redirect === "manual" ? { type: "basic", status: 200 } : { ok: false, status: 503, json: async () => ({}) }));
+    const signedOut = vi.fn();
+    const stop = follow({ state: () => {}, event: () => {}, link: () => {}, events: () => {}, eventsFailed: () => {}, action: () => {}, signedOut }, 6);
+    const es = FakeSource.all[0]!; es.readyState = FakeSource.CLOSED; es.onerror?.();
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(signedOut).not.toHaveBeenCalled();
+    expect(FakeSource.all).toHaveLength(2);
     stop();
   });
 
