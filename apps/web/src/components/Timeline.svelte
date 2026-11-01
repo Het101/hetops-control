@@ -11,7 +11,7 @@
 </script>
 
 <section class={`mod raised ${wide ? "c12" : "c7"} list`} style="--in:.4s" aria-labelledby="h-timeline" data-module="timeline">
-  <h4 id="h-timeline"><span>TIMELINE · ALL SERVERS</span><span>latest {events.length}<a class="to" href="/timeline" aria-label="Open the Timeline">open →</a></span></h4>
+  <h2 id="h-timeline"><span>TIMELINE · ALL SERVERS</span><span>latest {events.length}<a class="to" href="/timeline" aria-label="Open the Timeline">open →</a></span></h2>
   {#if error}<div class="empty warm">Could not load the event log; showing what the stream has sent.</div>{/if}
   {#each events as e, i (`${e.at}|${e.server}|${e.summary}|${e.entity ?? ""}`)}
     {@const warm = heated.hot(e)}

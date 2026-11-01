@@ -16,7 +16,7 @@
 </script>
 
 <section class="mod raised c4" style="--in:.1s" data-module="hostload">
-  <h4><span>HOST LOAD</span><span>now</span></h4>
+  <h2><span>HOST LOAD</span><span>now</span></h2>
   <div class="dials">
     {#each loads as l (l.id)}
       <Dial id={l.id} label={l.id.toUpperCase()} value={l.cpu} hot={l.hot}>

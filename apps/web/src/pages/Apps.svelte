@@ -47,7 +47,7 @@
 <div class="grid">
   {#each sums as s, i (s.id)}
     <section class="mod raised c4 srv" data-server={s.id} style={`--in:${.04 + i * .04}s`} aria-label={`${s.id} apps`}>
-      <h4><span>{s.id.toUpperCase()}</span><span class:warm={s.needs > 0 || (!!s.view?.configured && !s.view?.reachable)}>{word(s)}</span></h4>
+      <h2><span>{s.id.toUpperCase()}</span><span class:warm={s.needs > 0 || (!!s.view?.configured && !s.view?.reachable)}>{word(s)}</span></h2>
       {#if s.apps || s.argo}
         <div class="nums">
           <div><b>{s.apps}</b><span>workloads</span></div>
@@ -70,7 +70,7 @@
   </section>
 
   <section class={`mod raised ${coolQuiet ? "c12" : "c7"} list`} style="--in:.18s" aria-labelledby="ap-argo">
-    <h4 id="ap-argo"><span>ARGO CD · SYNC AND HEALTH</span><span>{argo.length}</span></h4>
+    <h2 id="ap-argo"><span>ARGO CD · SYNC AND HEALTH</span><span>{argo.length}</span></h2>
     <div class="cards">
       {#each argo as e (e.id)}
         {@const warm = needsYou(e.status)}
@@ -89,7 +89,7 @@
   </section>
 
   <section class={`mod raised ${coolQuiet ? "c12 slim" : "c5"} list`} style="--in:.22s" aria-labelledby="ap-cool">
-    <h4 id="ap-cool"><span>COOLIFY · DEPLOYS</span><span>{coolify.length || ""}</span></h4>
+    <h2 id="ap-cool"><span>COOLIFY · DEPLOYS</span><span>{coolify.length || ""}</span></h2>
     {#if cool.failing.length}
       <Waiting title={`Can't read Coolify on ${cool.failing[0]!.server}.`} warm>{cool.failing[0]!.error}</Waiting>
     {:else if !cool.reporting.length}
@@ -111,7 +111,7 @@
   </section>
 
   <section class="mod raised c12 list" style="--in:.26s" aria-labelledby="ap-work">
-    <h4 id="ap-work"><span>WORKLOADS · PODS AND RESTARTS</span><span>{work.length}</span></h4>
+    <h2 id="ap-work"><span>WORKLOADS · PODS AND RESTARTS</span><span>{work.length}</span></h2>
     <div class="tiles">
     {#each spaces as g (g.key)}
       <div class="tile-h">{g.server.toUpperCase()}<small>{g.apps.length} workloads</small></div>
@@ -131,7 +131,7 @@
   </section>
 
   <section class="mod raised c12" style="--in:.3s" aria-labelledby="ap-sites" data-module="sites">
-    <h4 id="ap-sites" class="board-h"><span>SITES · 24 H</span><span>{rows.length ? summary(rows) : ""}</span></h4>
+    <h2 id="ap-sites" class="board-h"><span>SITES · 24 H</span><span>{rows.length ? summary(rows) : ""}</span></h2>
     {#if gat.failing.length}<Waiting title={`Can't read Gatus on ${gat.failing[0]!.server}.`} warm>{gat.failing[0]!.error}</Waiting>{/if}
     {#if rows.length}<SiteBoard {rows} onopen={e => (open = e)} />
     {:else if !gat.failing.length}<Waiting title={gat.reporting.length ? "No sites match." : "Gatus is not reporting yet."}>Public sites and products with their last 24 hours.</Waiting>{/if}

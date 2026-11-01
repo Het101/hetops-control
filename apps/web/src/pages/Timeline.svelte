@@ -28,6 +28,13 @@
   const span = $derived(events.length ? `since ${events.at(-1)!.at.slice(0, 10) === events[0]!.at.slice(0, 10) ? hhmm(events.at(-1)!.at) : dayName(events.at(-1)!.at.slice(0, 10))}` : "");
   const servers = $derived(new Set(events.map(e => e.server)).size);
   const pickHour = (h: number) => { hour = hour === h ? undefined : h; };
+  const picks = $derived(server.length + kind.length + source.length + level.length + (q ? 1 : 0));
+  const clear = () => { server = []; kind = []; source = []; level = []; q = ""; };
+  let more = $state(false);
+  const tails = $derived(more || kind.length + source.length > 0);
+  // on a phone the 24 hours scroll sideways at a size a thumb can hit; start at the latest one
+  let strip = $state<HTMLElement>();
+  $effect(() => { void shownDay; if (strip) strip.scrollLeft = strip.scrollWidth; });
 </script>
 
 <section class="page-intro">
@@ -37,12 +44,12 @@
 
 <div class="grid">
   <section class="mod raised c12 scrub" style="--in:.04s" aria-labelledby="t-day">
-    <h4 id="t-day"><span>DAY · EVENTS PER HOUR (UTC)</span><span>{hour === undefined ? "pick an hour to narrow the list" : `${String(hour).padStart(2, "0")}:00 to ${String(hour).padStart(2, "0")}:59 · `}{#if hour !== undefined}<button type="button" class="linkish" onclick={() => (hour = undefined)}>clear</button>{/if}</span></h4>
+    <h2 id="t-day"><span>DAY · EVENTS PER HOUR (UTC)</span><span>{hour === undefined ? "pick an hour to narrow the list" : `${String(hour).padStart(2, "0")}:00 to ${String(hour).padStart(2, "0")}:59 · `}{#if hour !== undefined}<button type="button" class="linkish" onclick={() => (hour = undefined)}>clear</button>{/if}</span></h2>
     {#if days.length}
       <div class="days" role="group" aria-label="Day">
         {#each days.slice(0, 7) as d (d)}<button type="button" class="chip" class:on={d === shownDay} aria-pressed={d === shownDay} onclick={() => { day = d; hour = undefined; }}>{dayName(d)}</button>{/each}
       </div>
-      <div class="hours" role="group" aria-label="Hour">
+      <div class="hours" role="group" aria-label="Hour" bind:this={strip}>
         {#each bars as b (b.hour)}
           <button type="button" class="hr" onclick={() => pickHour(b.hour)} class:on={hour === b.hour} class:dim={hour !== undefined && hour !== b.hour} disabled={!b.n}
             aria-pressed={hour === b.hour} aria-label={`${String(b.hour).padStart(2, "0")}:00, ${b.n} event${b.n === 1 ? "" : "s"}${b.hot ? `, ${b.hot} needing a look` : ""}`}
@@ -57,13 +64,18 @@
   </section>
 
   <section class="mod raised c12 list feed" style="--in:.1s" aria-labelledby="t-feed">
-    <h4 id="t-feed"><span>FEED</span><span>{list.length} of {events.length}</span></h4>
+    <h2 id="t-feed"><span>FEED</span><span>{list.length} of {events.length}</span></h2>
     <div class="filters">
       <Search bind:q placeholder="Search events, apps, people" />
       <Chips label="Server" bind:selected={server} options={facets(events, e => e.server)} />
-      <Chips label="Kind" bind:selected={kind} options={facets(events, e => e.kind)} />
-      <Chips label="Source" bind:selected={source} options={facets(events, e => e.source)} />
       <Chips label="Level" bind:selected={level} options={facets(events, levelOf)} name={v => LEVEL[v] ?? v} />
+      <!-- kind and source are the long tails (a dozen chips): folded until asked for, and never hiding a choice already made -->
+      {#if !tails}<button type="button" class="chip" aria-expanded="false" onclick={() => (more = true)}>More filters</button>
+      {:else}
+        <Chips label="Kind" bind:selected={kind} options={facets(events, e => e.kind)} />
+        <Chips label="Source" bind:selected={source} options={facets(events, e => e.source)} />
+      {/if}
+      {#if picks}<button type="button" class="chip clear" onclick={clear}>Clear {picks} filter{picks === 1 ? "" : "s"}</button>{/if}
     </div>
     {#if error && events.length}<Waiting title="Could not load the event log." warm>Showing what the live stream has sent since this page opened.</Waiting>{/if}
     {#each groups as g (g.key)}
@@ -74,8 +86,8 @@
         <button type="button" class="row" class:now={warm} data-kind={e.kind} onclick={() => (open = e)}>
           <Glyph kind={e.kind} {warm} />
           <span class="n" class:warm>{e.at.slice(11, 19)}</span>
-          <span class="t">{e.summary}<small>{e.server} · {e.source}{e.actor ? ` · ${e.actor}` : ""}{e.level ? ` · ${LEVEL[e.level] ?? e.level}` : ""}</small></span>
-          <span class="tag pressed" class:warm>{warm ? (e.level ?? "").toUpperCase() : back ? `RECOVERED ${hhmm(back)}` : e.server.toUpperCase()}</span>
+          <span class="t">{e.summary}<small><span class="m-at" class:warm>{e.at.slice(11, 16)} · </span>{e.server} · {e.source}{e.actor ? ` · ${e.actor}` : ""}{e.level ? ` · ${LEVEL[e.level] ?? e.level}` : ""}</small></span>
+          <span class="tag pressed" class:warm class:srv={!warm && !back}>{warm ? (e.level ?? "").toUpperCase() : back ? `RECOVERED ${hhmm(back)}` : e.server.toUpperCase()}</span>
         </button>
       {/each}
     {:else}

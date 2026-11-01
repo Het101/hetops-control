@@ -214,3 +214,30 @@ test("every page is still with reduce motion on", async ({ page }) => {
     expect(await page.evaluate(() => document.getAnimations().filter(a => a.playState === "running").length)).toBe(0);
   }
 });
+
+test.describe("on a phone", () => {
+  test.beforeEach(async ({ page }) => { await page.setViewportSize({ width: 390, height: 844 }); await mockApi(page); });
+
+  test("Timeline: hours a thumb can hit, two filter groups up front, a clear, the time on the meta line", async ({ page }) => {
+    await page.goto("/timeline");
+    const bar = page.locator(".hr:not([disabled])").first();
+    expect((await bar.boundingBox())!.width).toBeGreaterThanOrEqual(24);
+    await expect(page.getByRole("group", { name: "Kind" })).toHaveCount(0);   // folded
+    await page.getByRole("button", { name: "More filters" }).click();
+    await expect(page.getByRole("group", { name: "Kind" })).toBeVisible();
+    await page.getByRole("group", { name: "Server" }).getByRole("button", { name: /ops/ }).click();
+    await page.getByRole("button", { name: "Clear 1 filter" }).click();
+    await expect(page.locator(".feed button.row")).toHaveCount(12);
+    const row = page.locator(".feed button.row").first();
+    await expect(row.locator(".n")).toBeHidden();
+    await expect(row.locator(".m-at")).toBeVisible();
+    await page.screenshot({ path: "e2e/__screens__/timeline-mobile.png", fullPage: true, animations: "disabled" });
+  });
+
+  test("Backups: last ok, next run and history stay on the row", async ({ page }) => {
+    await page.goto("/backups");
+    const row = page.locator(".player .row").first();
+    for (const w of ["last ok", "next run", "history"]) await expect(row.getByText(w, { exact: true })).toBeVisible();
+    await page.screenshot({ path: "e2e/__screens__/backups-mobile.png", fullPage: true, animations: "disabled" });
+  });
+});

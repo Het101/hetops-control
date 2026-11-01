@@ -38,7 +38,7 @@
   </section>
 
   <section class="mod raised c12 list player" style="--in:.1s" aria-labelledby="b-list">
-    <h4 id="b-list"><span>EVERY POLICY · LAST RESULT</span><span>age against {BACKUP_WINDOW_H} h</span></h4>
+    <h2 id="b-list"><span>EVERY POLICY · LAST RESULT</span><span>age against {BACKUP_WINDOW_H} h</span></h2>
     {#if src.failing.length}<Waiting title={`Can't read snapshots on ${src.failing.map(f => f.server).join(", ")}.`} warm>{src.failing[0]!.error}. The rows below are not current.</Waiting>{/if}
     {#each list as { e, v }, i (e.id)}
       {@const warm = needsYou(e.status)}
