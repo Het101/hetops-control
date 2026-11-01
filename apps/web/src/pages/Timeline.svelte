@@ -87,7 +87,7 @@
           <Glyph kind={e.kind} {warm} />
           <span class="n" class:warm>{e.at.slice(11, 19)}</span>
           <span class="t">{e.summary}<small><span class="m-at" class:warm>{e.at.slice(11, 16)} · </span>{e.server} · {e.source}{e.actor ? ` · ${e.actor}` : ""}{e.level ? ` · ${LEVEL[e.level] ?? e.level}` : ""}</small></span>
-          <span class="tag pressed" class:warm class:srv={!warm && !back}>{warm ? (e.level ?? "").toUpperCase() : back ? `RECOVERED ${hhmm(back)}` : e.server.toUpperCase()}</span>
+          <span class="tag pressed" class:warm class:ok={!warm && !!back} class:srv={!warm && !back}>{warm ? (e.level ?? "").toUpperCase() : back ? `RECOVERED ${hhmm(back)}` : e.server.toUpperCase()}</span>
         </button>
       {/each}
     {:else}

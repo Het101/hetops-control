@@ -42,7 +42,7 @@
             <span class="t">{#if v.configured}{v.agentVersion ? `agent ${v.agentVersion}` : "agent version unknown"}
               · {v.reachable ? "reachable" : "unreachable"} since {hhmm(v.since)}{:else}no agent configured{/if}
               {#if v.lastError}<small class="warm">last error: {v.lastError}</small>{/if}</span>
-            <span class="tag pressed" class:warm={l.warm}>{l.word}</span>
+            <span class="tag pressed" class:warm={l.warm} class:ok={l.word === "CONNECTED"}>{l.word}</span>
           </div>
         {/each}
       {/if}

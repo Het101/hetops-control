@@ -21,7 +21,7 @@
       <span class="n" style={warm ? "color:var(--ember)" : undefined}>{time(e.at)}</span>
       <span class="t">{e.summary}<small>{e.server} · {e.source}{e.actor ? ` · ${e.actor}` : ""}</small></span>
       {#if warm}<div class="knob ember" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
-      {:else}<span class="tag pressed">{back ? `RECOVERED ${hhmm(back)}` : e.server.toUpperCase()}</span>{/if}
+      {:else}<span class="tag pressed" class:ok={!!back}>{back ? `RECOVERED ${hhmm(back)}` : e.server.toUpperCase()}</span>{/if}
     </div>
   {:else}
     {#if !error}<div class="empty">No events yet.</div>{/if}
