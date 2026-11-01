@@ -358,19 +358,38 @@ a.row{color:inherit;text-decoration:none}
 .act-dlg .act-back{color:var(--ink-2)}
 .act-dlg .act-go:disabled{opacity:.45;cursor:not-allowed}
 .act-dlg .act-go:focus-visible,.act-dlg .act-back:focus-visible,.act-dlg .chip:focus-within{outline:2px solid var(--quiet);outline-offset:2px}
-/* toasts: bottom right, newest on top; a failure is ember (it needs you), the rest silver */
-.toasts{position:fixed;right:16px;bottom:16px;display:grid;gap:10px;z-index:30;width:min(360px,calc(100vw - 32px))}
+/* toasts: bottom right, newest on top, at most three (older ones fold into "N earlier"). Silver while running or done; ember
+   only on a failure, because a failure is the one result that needs you. Sans for what happened, mono only for the ref. */
+.toasts{position:fixed;right:20px;bottom:20px;display:grid;gap:12px;z-index:30;width:min(380px,calc(100vw - 32px));justify-items:stretch}
 .toasts:empty{display:none}
-.toast{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;animation:toast-in .35s var(--ease) both}
-.toast-t{flex:1;font-size:13px;display:grid;gap:2px;overflow-wrap:anywhere}
-.toast-t small{color:var(--ink-3);font:500 11px var(--mono),ui-monospace,monospace}
-.toast-dot{width:9px;height:9px;border-radius:50%;background:var(--quiet);flex:none}
-.toast[data-state="running"] .toast-dot{animation:toast-pulse 1.2s ease-in-out infinite}
-.toast.warm .toast-dot{background:var(--ember-2);box-shadow:0 0 10px rgba(242,88,42,.6)}
-.toast.warm small{color:var(--ember-1)}
-.toast-x{border:0;background:none;color:var(--ink-3);font-size:18px;cursor:pointer;border-radius:50%;width:28px;height:28px}
-.toast-x:focus-visible{outline:2px solid var(--quiet);outline-offset:2px}
+.toast{position:relative;overflow:hidden;display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:2px 14px;align-items:start;padding:16px 12px 16px 18px;border-radius:18px}
+.toast .tg{width:22px;height:22px;margin-top:1px;fill:none;stroke:var(--quiet);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.toast .tg-ring{stroke:var(--ink-3);opacity:.35}
+.toast .tg-arc{stroke-width:2.2;transform-origin:12px 12px;transform-box:view-box;animation:spin 1.4s linear infinite}
+.toast[data-tone="failed"] .tg{stroke:var(--ember-2);filter:drop-shadow(0 0 6px rgba(242,88,42,.45))}
+.toast-b{min-width:0;display:grid;gap:3px}
+.toast-h{margin:0;font:600 14.5px/1.3 var(--sans),system-ui,sans-serif;color:var(--ink);overflow-wrap:anywhere}
+.toast-l{margin:0;font:500 12.5px/1.4 var(--sans),system-ui,sans-serif;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.toast-why{margin:8px 0 0;font:500 13px/1.5 var(--sans),system-ui,sans-serif;color:var(--ink);overflow-wrap:anywhere}
+.toast-ref{display:flex;align-items:center;gap:6px;margin-top:10px;padding:3px 3px 3px 10px;border-radius:10px;max-width:100%;justify-self:start}
+.toast-ref .mono{font-size:11.5px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.toast-copy,.toast-x{flex:none;display:grid;place-items:center;border:0;background:none;color:var(--ink-3);cursor:pointer;border-radius:8px;transition:color .2s,background .2s}
+.toast-copy{width:26px;height:26px}
+.toast-x{width:30px;height:30px;margin:-6px -2px 0 0;border-radius:50%}
+.toast-copy svg,.toast-x svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.toast-copy:hover,.toast-x:hover{color:var(--ink);background:rgba(0,0,0,.18)}
+.toast-copy:focus-visible,.toast-x:focus-visible,.toast-next:focus-visible,.toast-more:focus-visible{outline:2px solid var(--quiet);outline-offset:2px}
+.toast-next{justify-self:start;margin-top:10px;font:600 12.5px var(--sans),system-ui,sans-serif;color:var(--ink);text-decoration:underline;text-decoration-color:var(--ink-3);text-underline-offset:4px;border-radius:4px}
+.toast-next:hover{text-decoration-color:var(--ink)}
+.toast-next span{display:inline-block;transition:transform .3s var(--ease)}
+.toast-next:hover span{transform:translateX(3px)}
+/* the time left before a success leaves: a hairline that shrinks, and holds while the toast is pointed at or focused */
+.toast-life{position:absolute;left:18px;right:18px;bottom:0;height:2px;border-radius:2px;background:var(--quiet);opacity:.45;transform-origin:left;animation:toast-life 6s linear forwards}
+.toast[data-held] .toast-life{animation-play-state:paused}
+.toast-more{justify-self:end;border:0;background:none;padding:4px 8px;border-radius:999px;font:500 12px var(--sans),system-ui,sans-serif;color:var(--ink-2);cursor:pointer}
+.toast-more:hover{color:var(--ink)}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+@media (max-width:720px){.toasts{left:16px;right:16px;bottom:16px;width:auto}}
 .ack-note{color:var(--ink-3)}
 @keyframes act-in{from{opacity:0;transform:translateY(10px) scale(.98)}}
-@keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-@keyframes toast-pulse{50%{opacity:.35}}
+@keyframes toast-life{to{transform:scaleX(0)}}

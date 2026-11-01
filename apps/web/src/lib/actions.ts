@@ -32,3 +32,50 @@ export async function start(e: Entity, action: string, params: Params, key: stri
   const j = await post("/api/actions", { action, target: e.id, params, ...(confirm ? { confirm } : {}) }, key) as { run?: unknown };
   return ActionRunSchema.parse(j.run);
 }
+
+/** The runs behind the toasts: a new run goes on top, a streamed update replaces its run where it stands (so a toast changes
+ *  in place), and a late POST answer (still "running") never undoes a result the stream already brought. */
+export function merge(list: ActionRun[], r: ActionRun, keep = 8): ActionRun[] {
+  const i = list.findIndex(x => x.id === r.id);
+  if (i < 0) return [r, ...list].slice(0, keep);
+  if (list[i]!.state !== "running" && r.state === "running") return list;
+  return list.map((x, j) => (j === i ? r : x));
+}
+
+/** Keeps the head (a snapshot name reads from its start) and the last 6, so `max` characters never wrap. */
+export function middle(s: string, max = 34): string {
+  if (s.length <= max) return s;
+  const tail = Math.min(6, Math.floor((max - 1) / 2));
+  return `${s.slice(0, max - 1 - tail)}…${s.slice(-tail)}`;
+}
+
+export type Tone = "running" | "done" | "failed";
+export type Toast = { tone: Tone; title: string; line: string; detail?: string; ref?: string; refName: string; next?: { href: string; label: string } };
+// where a target's kind lives (its id is server/kind/...), and what each action's ref is called
+const HOME: Partial<Record<string, { href: string; label: string }>> = { backup: { href: "/backups", label: "Backups" },
+  app: { href: "/apps", label: "Apps" }, "argo-app": { href: "/apps", label: "Apps" }, deploy: { href: "/apps", label: "Apps" },
+  alert: { href: "/alerts", label: "Alerts" }, site: { href: "/alerts", label: "Alerts" }, check: { href: "/alerts", label: "Alerts" } };
+const REF: Partial<Record<string, string>> = { "snapshot.now": "snapshot name", "coolify.redeploy": "deploy id", "alert.silence": "silence id" };
+const hhmm = (at: string) => `${new Date(at).toISOString().slice(11, 16)} UTC`;
+const sentence = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** What a run's toast says: the outcome as its title, where and when in one plain line, the id apart. */
+export function toastOf(r: ActionRun): Toast {
+  const tone: Tone = r.state === "running" ? "running" : r.state === "succeeded" ? "done" : "failed";
+  const why = r.error ?? r.result?.summary;
+  const next = HOME[r.target.split("/")[1] ?? ""];
+  return {
+    tone, line: `${r.targetName} on ${r.server} · ${hhmm(r.finishedAt ?? r.at)}`, refName: REF[r.action] ?? "reference",
+    title: tone === "running" ? `${r.label}…` : tone === "done" ? r.result?.summary ?? `${r.label} done` : `${r.label} failed`,
+    ...(tone === "failed" && why ? { detail: sentence(why) } : {}), ...(r.result?.ref ? { ref: r.result.ref } : {}), ...(next ? { next } : {}),
+  };
+}
+
+/** A pausable countdown (a success toast's time on screen): pause holds the time left, resume carries on from it. */
+export function countdown(ms: number, done: () => void) {
+  let left = ms, since = 0, t: ReturnType<typeof setTimeout> | undefined;
+  const resume = () => { if (t !== undefined || left <= 0) return; since = Date.now(); t = setTimeout(() => { left = 0; t = undefined; done(); }, left); };
+  const pause = () => { if (t === undefined) return; clearTimeout(t); t = undefined; left -= Date.now() - since; };
+  resume();
+  return { pause, resume, stop: () => { clearTimeout(t); t = undefined; left = 0; } };
+}

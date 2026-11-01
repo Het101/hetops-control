@@ -25,7 +25,7 @@ function setup(o: { call?: AgentCall; timeoutMs?: number; actors?: string[]; lim
   store.apply("ops", state("ops", [ent("ops/site/blog", "site", "blog", [], "gatus", "down")], []));
   const calls: { server: string; path: string; body: any }[] = [];
   const call: AgentCall = o.call ?? (async (server, path, body) => { calls.push({ server, path, body });
-    return path.endsWith("/preview") ? { status: 200, body: { text: "will sync clinic" } } : { status: 200, body: { ok: true, summary: "sync of clinic started" } }; });
+    return path.endsWith("/preview") ? { status: 200, body: { text: "will sync clinic" } } : { status: 200, body: { ok: true, summary: "Sync started" } }; });
   const published: { run?: ActionRun; event?: Event }[] = [];
   const local = [gatusAck(db)];
   const actions = new Actions({ state: () => centerState(store, db, local, now.getTime()), db, local, call, actors: o.actors ?? [OWNER],
@@ -49,10 +49,10 @@ describe("center actions", () => {
     expect(replay).toBe(false); expect(run).toMatchObject({ id: k, state: "running", actor: OWNER, targetName: "clinic", server: "lab" });
     await settle();
     expect(calls).toEqual([{ server: "lab", path: "/v1/actions/argo.sync", body: { target: "lab/argo-app/clinic", params: {}, actor: OWNER, requestId: k } }]);
-    expect(db.run(k)).toMatchObject({ state: "succeeded", result: { ok: true, summary: "sync of clinic started" } });
+    expect(db.run(k)).toMatchObject({ state: "succeeded", result: { ok: true, summary: "Sync started" } });
     const evs = published.flatMap(p => (p.event ? [p.event] : []));
     expect(evs.map(e => [e.kind, e.actor, e.entity, e.source])).toEqual([["action", OWNER, "lab/argo-app/clinic", "control"], ["action", OWNER, "lab/argo-app/clinic", "control"]]);
-    expect(evs[0]!.summary).toBe(`${OWNER} asked: sync clinic (lab)`); expect(evs[1]!.summary).toBe("sync clinic (lab): sync of clinic started");
+    expect(evs[0]!.summary).toBe(`${OWNER} asked: sync clinic (lab)`); expect(evs[1]!.summary).toBe("clinic (lab): Sync started");
     expect(published.flatMap(p => (p.run ? [p.run.state] : []))).toEqual(["running", "succeeded"]);
     expect(db.recent(5).filter(e => e.kind === "action")).toHaveLength(2);
   });
@@ -122,6 +122,7 @@ describe("center actions", () => {
     const { actions, db } = setup({ call: async () => ({ status: 409, body: { error: "an action on clinic is still running" } }) });
     const k = key(); actions.start(sync, OWNER, k); await settle();
     expect(db.run(k)).toMatchObject({ state: "failed", error: "an action on clinic is still running" });
+    expect(db.recent(5).find(e => e.level === "attention")?.summary).toBe("sync clinic (lab) failed: an action on clinic is still running");
   });
   it("previews through the agent, rate limited", async () => {
     const { actions, calls } = setup({ limits: { target: { max: 3, ms: 1 }, action: { max: 12, ms: 1 }, preview: { max: 1, ms: 60_000 } } });

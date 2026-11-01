@@ -29,7 +29,7 @@ describe("coolify.redeploy (recorded)", () => {
   });
   it("queues one deploy and returns its id", async () => {
     const { a, asked } = setup({ deployment_uuid: "old", status: "finished" });
-    expect(await a.run(app(), {}, ctx)).toEqual({ ok: true, ref: deployed.deployments[0]!.deployment_uuid, summary: "deploy of hetops-dns queued; the Apps page shows it when it finishes" });
+    expect(await a.run(app(), {}, ctx)).toEqual({ ok: true, ref: deployed.deployments[0]!.deployment_uuid, summary: "Redeploy queued" });
     expect(asked).toEqual([DNS]);
   });
   it("returns the queued or running deploy instead of a second one", async () => {

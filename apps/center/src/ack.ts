@@ -22,7 +22,7 @@ export function gatusAck(db: Pick<EventsDb, "addAck">): LocalAction {
       const until = new Date(now.getTime() + Number(p.hours) * HOUR);
       db.addAck({ entity: t.id, server: t.server, status: t.status, actor, at: now.toISOString(), until: until.toISOString(),
         ...(typeof p.note === "string" && p.note.trim() ? { note: p.note.trim() } : {}) });
-      return { ok: true, summary: `${t.name} acknowledged until ${hhmm(until)}` };
+      return { ok: true, summary: `Acknowledged until ${hhmm(until)}` };
     },
   };
 }

@@ -42,9 +42,9 @@ export function argoSync(api: ArgoApps): Action<z.infer<typeof Sync>> {
     },
     async run(t, _p, ctx) {
       const name = nameOf(t);
-      if (running(await api.get(name, ctx.signal))) return { ok: true, already: true, summary: `a sync of ${name} is already running` };
+      if (running(await api.get(name, ctx.signal))) return { ok: true, already: true, summary: "Sync already running" };
       await api.patch(name, { operation: { initiatedBy: { username: `${ctx.actor} (hetops-control)` }, sync: { syncStrategy: { hook: {} } } } }, ctx.signal);
-      return { ok: true, summary: `sync of ${name} started` };
+      return { ok: true, summary: "Sync started" };
     },
   };
 }
@@ -60,7 +60,7 @@ export function argoRefresh(api: ArgoApps): Action<z.infer<typeof Refresh>> {
     async run(t, p, ctx) {
       const name = nameOf(t);
       await api.patch(name, { metadata: { annotations: { "argocd.argoproj.io/refresh": p.hard ? "hard" : "normal" } } }, ctx.signal);
-      return { ok: true, summary: `${p.hard ? "hard " : ""}refresh of ${name} requested` };
+      return { ok: true, summary: p.hard ? "Hard refresh requested" : "Refresh requested" };
     },
   };
 }
