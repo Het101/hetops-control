@@ -103,8 +103,8 @@ button.row,.open{border:0;background:none;color:inherit;font:inherit;text-align:
 /* ---------- Alerts ---------- */
 .budget-num{font:600 34px var(--serif),serif;margin-top:8px}
 .budget-num span{font-size:18px;color:var(--ink-3)}
-.slider{height:8px;border-radius:99px;margin:18px 0 6px;position:relative}
-.slider .fill{position:absolute;inset:0;border-radius:99px;background:#c4c2bd;transform-origin:0 50%;transition:transform 1.8s var(--ease)}
+.slider{height:8px;border-radius:999px;margin:18px 0 6px;position:relative}
+.slider .fill{position:absolute;inset:0;border-radius:999px;background:#c4c2bd;transform-origin:0 50%;transition:transform 1.8s var(--ease)}
 .budget-num.warm~.slider .fill{background:linear-gradient(90deg,var(--ember-3),var(--ember-2),var(--ember-1))}
 .slider .thumb{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%}
 .ends{display:flex;justify-content:space-between;gap:10px}
@@ -124,7 +124,9 @@ button.row,.open{border:0;background:none;color:inherit;font:inherit;text-align:
 .pill.warm i{background:var(--ember)}
 
 /* ---------- Apps ---------- */
-.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+/* four stats sized to their labels, never wrapping one ("restarts 24h", "argo healthy") */
+.nums{display:grid;grid-template-columns:repeat(4,auto);justify-content:space-between;gap:8px 12px;margin-top:14px}
+.nums span{white-space:nowrap}
 .nums b{display:block;font:600 26px/1.1 var(--serif),Georgia,serif}
 .nums b small{font-size:15px;color:var(--ink-3)}
 .nums span{font:500 11px var(--mono);color:var(--ink-3)}
@@ -220,8 +222,8 @@ button.row,.open{border:0;background:none;color:inherit;font:inherit;text-align:
 .bar-row{display:grid;grid-template-columns:minmax(0,1.3fr) 1fr 32px;gap:10px;align-items:center;padding:7px 0}
 .bar-row .t{font-size:11.5px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar-row b{font-size:12px;text-align:right}
-.bar-row .bar{height:7px;border-radius:99px;position:relative;overflow:hidden}
-.bar-row .bar i{position:absolute;inset:0;border-radius:99px;background:#c4c2bd;transform-origin:0 50%;animation:grow-x 1.2s var(--ease) backwards}
+.bar-row .bar{height:7px;border-radius:999px;position:relative;overflow:hidden}
+.bar-row .bar i{position:absolute;inset:0;border-radius:999px;background:#c4c2bd;transform-origin:0 50%;animation:grow-x 1.2s var(--ease) backwards}
 .spark{width:100%;height:60px;margin-top:10px}
 .terrain{width:100%;height:150px;margin-top:12px;display:block}
 .a1{fill:rgba(185,183,177,.22)}
@@ -274,12 +276,15 @@ a.row{color:inherit;text-decoration:none}
 /* a short side lane on Home (no budget, no CrowdSec): the host-load dials take the slack, centred in their card */
 .home .lane.short>[data-module="hostload"]{flex:1 1 auto;display:flex;flex-direction:column}
 .home .lane.short>[data-module="hostload"] .dials{margin-block:auto}
+/* a module with nothing to show yet is a strip, not a full card: populated modules take the room */
 .mod.slim{display:flex;flex-wrap:wrap;align-items:center;gap:6px 26px;padding-block:12px}
 .mod.slim h2{flex:none;gap:14px}
 .mod.slim .wait{padding:4px}
 /* Apps workloads: one continuous grid, each server's label a cell of its own, so a short last row never strands a gap */
-.tile-h{display:flex;flex-direction:column;justify-content:center;gap:4px;padding:12px 14px;border-radius:16px;box-shadow:inset 0 0 0 1px #313237;
+/* each server's tiles start a row of their own under a header line, so the header never reads as one more app */
+.tile-h{grid-column:1/-1;display:flex;align-items:baseline;gap:12px;padding:14px 4px 2px;border-top:1px solid #313237;
   font:600 11px var(--mono);letter-spacing:.12em;color:var(--ink-2)}
+.tile-h:first-child{border-top:0;padding-top:4px}
 .tile-h small{font:500 11px var(--sans);letter-spacing:0;color:var(--ink-3)}
 
 /* the hero stacks once the headline and Needs-you would meet: copy, then Needs-you, then the forest in the flow */
@@ -293,7 +298,7 @@ a.row{color:inherit;text-decoration:none}
 
 /* ---------- narrow screens ---------- */
 @media (max-width:1100px){
-  .c3,.c4,.c5,.c7,.c8{grid-column:span 6}
+  .c4,.c5,.c7,.c8{grid-column:span 6}
   .srv{grid-column:span 4}
   /* Home: the columns dissolve into one grid; instruments pair up, flows run full width, dense packing fills any hole */
   .grid:has(>.lane){grid-auto-flow:row dense}
@@ -401,8 +406,13 @@ a.row{color:inherit;text-decoration:none}
 .act-dlg .err{color:var(--ink);font-size:13px;border-left:2px solid var(--quiet);padding-left:10px}
 .act-dlg .btns{display:flex;justify-content:flex-end;gap:10px;margin-top:8px}
 .act-dlg .act-go,.act-dlg .act-back{border:0;border-radius:999px;padding:9px 18px;color:var(--ink);font:600 13px var(--sans),system-ui,sans-serif;cursor:pointer}
-.act-dlg .act-back{color:var(--ink-2)}
-.act-dlg .act-go:disabled{opacity:.45;cursor:not-allowed}
+/* Cancel is a quiet text button; the confirm is the one solid thing in the dialog: a silver pill once it can go, a pressed dim
+   well while it waits (for the preview, or the typed name). Silver, not ember: confirming is the owner's choice. */
+.act-dlg .act-back{color:var(--ink-2);background:none}
+.act-dlg .act-back:hover{color:var(--ink)}
+.act-dlg .act-go:not(:disabled){background:linear-gradient(145deg,#ecebe7,#c9c7c1);color:#1d1e21;box-shadow:-4px -4px 10px var(--hi),5px 6px 14px var(--lo)}
+.act-dlg .act-go:not(:disabled):hover{background:linear-gradient(145deg,#f4f3ef,#d4d2cc)}
+.act-dlg .act-go:disabled{color:var(--ink-3);cursor:not-allowed}
 .act-dlg .act-go:focus-visible,.act-dlg .act-back:focus-visible,.act-dlg .chip:focus-within{outline:2px solid var(--quiet);outline-offset:2px}
 /* toasts: bottom right, newest on top, at most three (older ones fold into "N earlier"). Silver while running or done; ember
    only on a failure, because a failure is the one result that needs you. Sans for what happened, mono only for the ref. */
@@ -439,4 +449,3 @@ a.row{color:inherit;text-decoration:none}
 .ack-note{color:var(--ink-3)}
 @keyframes act-in{from{opacity:0;transform:translateY(10px) scale(.98)}}
 @keyframes toast-life{to{transform:scaleX(0)}}
-.nums .nw{white-space:nowrap}
