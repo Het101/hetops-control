@@ -15,19 +15,22 @@ function withSync(risk: "safe" | "disruptive" = "safe") {
   s.headline = { ...s.headline, needs: [{ entity: app.id, server: "lab", text: `${app.name} on lab`, detail: "OutOfSync for 14 min", action: app.actions[0] }] };
   return { s, app };
 }
-async function wire(page: Page, app: Entity, end: Partial<ActionRun> = { state: "succeeded", finishedAt: at, result: { ok: true, summary: `sync of ${app.name} started` } }) {
+type Verb = { action: string; label: string; server: "lab" | "ops" };
+const SYNC: Verb = { action: "argo.sync", label: "Sync", server: "lab" };
+// end: what the stream brings next (null: nothing, the run stays running)
+async function wire(page: Page, app: Entity, end: Partial<ActionRun> | null = { state: "succeeded", finishedAt: at, result: { ok: true, summary: "Sync started" } }, verb = SYNC) {
   const sent: { kind: string; headers: Record<string, string>; body: any }[] = [];
   await page.route("**/api/actions/preview", r => { sent.push({ kind: "preview", headers: r.request().headers(), body: r.request().postDataJSON() });
     return r.fulfill({ json: { text: `Syncs ${app.name} on lab to main. Nothing is pruned.` } }); });
   await page.route("**/api/actions", async r => {
     const headers = r.request().headers(); sent.push({ kind: "run", headers, body: r.request().postDataJSON() });
-    const run: ActionRun = { id: headers["idempotency-key"]!, action: "argo.sync", label: "Sync", server: "lab", target: app.id, targetName: app.name,
+    const run: ActionRun = { id: headers["idempotency-key"]!, ...verb, target: app.id, targetName: app.name,
       actor: "het@hetops.dev", params: {}, state: "running", at };
     // the stream's next connection (retry 100 ms) carries the result, as the center would
     await page.unroute("**/api/stream");
     let told = false;   // like the center, the result goes out once; later connections carry nothing new
     await page.route("**/api/stream", rr => { const first = !told; told = true;
-      return rr.fulfill({ contentType: "text/event-stream", body: `retry: 100\n${first ? `data: ${JSON.stringify({ type: "action", run: { ...run, ...end } })}\n` : ""}\n` }); });
+      return rr.fulfill({ contentType: "text/event-stream", body: `retry: 100\n${first && end ? `data: ${JSON.stringify({ type: "action", run: { ...run, ...end } })}\n` : ""}\n` }); });
     return r.fulfill({ status: 202, json: { run } });
   });
   return sent;
@@ -41,8 +44,8 @@ test("a safe action: the exact preview, one confirming click, live progress and 
   await expect(dlg).toContainText(`Syncs ${app.name} on lab to main. Nothing is pruned.`);
   await dlg.getByRole("button", { name: "Sync", exact: true }).click();
   await expect(dlg).toBeHidden();
-  await expect(page.locator(".toast")).toContainText(app.name);
-  await expect(page.locator(".toast")).toContainText(`sync of ${app.name} started`, { timeout: 10_000 });
+  await expect(page.locator(".toast")).toContainText(`${app.name} on lab`);
+  await expect(page.locator(".toast")).toContainText("Sync started", { timeout: 10_000 });
   const run = sent.find(x => x.kind === "run")!;
   expect(run.headers["x-hetops-action"]).toBe("1");
   expect(run.headers["idempotency-key"]).toMatch(/^[0-9a-f-]{36}$/);
@@ -100,16 +103,20 @@ test("a refused start stays in the dialog with the center's reason", async ({ pa
   await expect(dlg).toBeVisible();
 });
 
-test("a failed run's toast is ember and stays until dismissed", async ({ page }) => {
+test("a failed run's toast is ember, reads in plain words, and stays until dismissed", async ({ page }) => {
   const { s, app } = withSync(); await mockApi(page, s);
   await wire(page, app, { state: "failed", finishedAt: at, error: "no answer in 60 s; the result is unknown, check " + app.name });
   await page.goto("/apps");
   await page.getByRole("button", { name: `Sync ${app.name}` }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Sync", exact: true }).click();
   const toast = page.locator(".toast");
-  await expect(toast).toHaveClass(/warm/, { timeout: 10_000 });
-  await expect(toast).toContainText("the result is unknown");
-  await toast.getByRole("button", { name: "Dismiss" }).click();
+  await expect(toast).toHaveAttribute("data-tone", "failed", { timeout: 10_000 });
+  await expect(toast.locator(".toast-h")).toHaveText("Sync failed");
+  await expect(toast.locator(".toast-why")).toHaveText(`No answer in 60 s; the result is unknown, check ${app.name}`);
+  expect(await toast.locator(".tg").evaluate(el => getComputedStyle(el).stroke)).toBe("rgb(240, 88, 42)");   // ember, only here
+  await page.waitForTimeout(7000);   // longer than a success stays
+  await expect(toast).toBeVisible();
+  await toast.getByRole("button", { name: "Dismiss Sync failed" }).click();
   await expect(toast).toHaveCount(0);
 });
 
@@ -137,21 +144,127 @@ test("an acknowledged check shows who and until when, in silver", async ({ page 
   await expect(row).not.toHaveClass(/\bnow\b/);
 });
 
-test("reduced motion: toasts appear without animation", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  const { s, app } = withSync(); await mockApi(page, s); await wire(page, app);
+// the owner's first live run: Backups → nightly-all → Snapshot now, answered with the snapshot's name
+const SNAP: Verb = { action: "snapshot.now", label: "Snapshot now", server: "ops" };
+const SNAPSHOT = "nightly-all-2026.10.31-sj23udz2tsmlglae5shriw";
+const started: Partial<ActionRun> = { state: "succeeded", finishedAt: at, result: { ok: true, summary: "Snapshot started", ref: SNAPSHOT } };
+function withSnapshot() {
+  const s = structuredClone(fixtureState);
+  const b = s.entities.find(e => e.kind === "backup" && e.name === "nightly-all") as Entity;
+  b.actions = [{ id: "snapshot.now", label: "Snapshot now", risk: "safe" }];
+  s.actions = [{ server: "ops", id: "snapshot.now", label: "Snapshot now", description: "Runs the snapshot policy once, now.", targets: ["backup"], risk: "safe", preview: true, params }];
+  return { s, b };
+}
+async function snapshot(page: Page, end: Partial<ActionRun> | null) {
+  const { s, b } = withSnapshot(); await mockApi(page, s); await wire(page, b, end, SNAP);
+  await page.goto("/backups");
+  await page.getByRole("button", { name: "Snapshot nightly-all now" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Snapshot now", exact: true }).click();
+  return page.locator(".toast");
+}
+
+test("a run's toast goes from running to done in place, then leaves by itself", async ({ page }) => {
+  const toast = await snapshot(page, started);
+  await expect(toast).toHaveCount(1);
+  await expect(toast.locator(".toast-h")).toHaveText("Snapshot started", { timeout: 10_000 });
+  await expect(toast).toHaveCount(1);   // the same card, changed in place
+  await expect(toast).toHaveAttribute("data-tone", "done");
+  await expect(toast.locator(".toast-l")).toHaveText("nightly-all on ops · 07:42 UTC");
+  await expect(toast.locator(".toast-life")).toBeAttached();
+  await expect(toast).toHaveCount(0, { timeout: 9000 });
+});
+
+test("a running toast is quiet silver, has no dismiss, and no link to the page it is on", async ({ page }) => {
+  const toast = await snapshot(page, null);
+  await expect(toast.locator(".toast-h")).toHaveText("Snapshot now…");
+  await expect(toast).toHaveAttribute("data-tone", "running");
+  await expect(toast.getByRole("button", { name: /Dismiss/ })).toHaveCount(0);
+  await expect(toast.getByRole("link")).toHaveCount(0);   // already on Backups
+  expect(await toast.locator(".tg").evaluate(el => getComputedStyle(el).stroke)).toBe("rgb(201, 199, 193)");
+});
+
+test("hovering holds a success; leaving lets it go", async ({ page }) => {
+  const toast = await snapshot(page, started);
+  await expect(toast.locator(".toast-h")).toHaveText("Snapshot started", { timeout: 10_000 });
+  await toast.hover();
+  await expect(toast).toHaveAttribute("data-held", "");
+  await page.waitForTimeout(7000);
+  await expect(toast).toBeVisible();
+  await page.mouse.move(10, 10);
+  await expect(toast).toHaveCount(0, { timeout: 9000 });
+});
+
+test("the ref is truncated in the middle, whole in its tooltip, copies, and the next step leads to Backups", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  const toast = await snapshot(page, started);
+  await expect(toast.locator(".toast-h")).toHaveText("Snapshot started", { timeout: 10_000 });
+  await toast.hover();   // hold it while we look
+  const ref = toast.locator(".toast-ref .mono");
+  await expect(ref).toHaveText("nightly-all-2026.10.31-sj23…5shriw");
+  await expect(ref).toHaveAttribute("title", SNAPSHOT);
+  expect(await ref.evaluate(el => el.getBoundingClientRect().height)).toBeLessThan(20);   // one line, never wrapped
+  await toast.getByRole("button", { name: "Copy the snapshot name" }).click();
+  await expect(toast.getByRole("button", { name: "Copied the snapshot name" })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(SNAPSHOT);
+  await page.getByRole("link", { name: "Apps", exact: true }).click();   // the rail
+  await toast.getByRole("link", { name: "View in Backups" }).click();
+  await expect(page).toHaveURL(/\/backups$/);
+});
+
+test("a failure is announced assertively", async ({ page }) => {
+  await snapshot(page, { state: "failed", finishedAt: at, error: "Elasticsearch did not name the snapshot" });
+  await expect(page.getByRole("alert")).toHaveText("Snapshot now failed. Elasticsearch did not name the snapshot. nightly-all on ops · 07:42 UTC", { timeout: 10_000 });
+});
+
+test("at most three toasts; older ones fold into one line", async ({ page }) => {
+  const { s, app } = withSync(); await mockApi(page, s);
+  // four failed runs through the stream, as four runs on four targets would arrive
+  const four = [0, 1, 2, 3].map(i => ({ id: `0000000${i}-1111-4111-8111-111111111111`, ...SYNC, target: app.id, targetName: `app-${i}`, actor: "het@hetops.dev",
+    params: {}, state: "failed", at, finishedAt: at, error: "refused" }));
+  await page.unroute("**/api/stream");
+  await page.route("**/api/stream", r => r.fulfill({ contentType: "text/event-stream",
+    body: `retry: 100000\n\n${four.map(x => `data: ${JSON.stringify({ type: "action", run: x })}\n\n`).join("")}` }));
   await page.goto("/apps");
-  await page.getByRole("button", { name: `Sync ${app.name}` }).click();
-  await page.getByRole("dialog").getByRole("button", { name: "Sync", exact: true }).click();
-  await expect(page.locator(".toast")).toBeVisible();
-  expect(await page.locator(".toast").evaluate(el => getComputedStyle(el).animationName)).toBe("none");
+  await expect(page.locator(".toast")).toHaveCount(3, { timeout: 10_000 });
+  await expect(page.locator(".toast").first()).toContainText("app-3");
+  await page.getByRole("button", { name: "1 earlier" }).click();
+  await expect(page.locator(".toast")).toHaveCount(4);
+});
+
+test("reduced motion: toasts arrive and leave without animating", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const toast = await snapshot(page, started);
+  await expect(toast.locator(".toast-h")).toHaveText("Snapshot started", { timeout: 10_000 });
+  expect(await toast.evaluate(el => el.getAnimations({ subtree: true }).length)).toBe(0);
+  await expect(toast.locator(".toast-life")).toHaveCount(0);   // the countdown line is motion too; the timer still runs
+  await toast.getByRole("button", { name: "Dismiss Snapshot started" }).click();
+  await expect(toast).toHaveCount(0);
+});
+
+test.describe("toast screenshots", () => {
+  for (const [w, h] of [[1366, 900], [390, 844]] as const) {
+    test(`running, done and failed at ${w}`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: h });
+      let toast = await snapshot(page, null);
+      await expect(toast).toHaveAttribute("data-tone", "running"); await page.waitForTimeout(500);
+      await page.screenshot({ path: `e2e/__screens__/toast-running-${w}.png` });
+
+      await page.unrouteAll(); toast = await snapshot(page, started);
+      await expect(toast).toHaveAttribute("data-tone", "done", { timeout: 10_000 }); await page.waitForTimeout(1200);
+      await page.screenshot({ path: `e2e/__screens__/toast-done-${w}.png` });
+
+      await page.unrouteAll(); toast = await snapshot(page, { state: "failed", finishedAt: at, error: "no answer in 60 s; the result is unknown, check nightly-all" });
+      await expect(toast).toHaveAttribute("data-tone", "failed", { timeout: 10_000 }); await page.waitForTimeout(500);
+      await page.screenshot({ path: `e2e/__screens__/toast-failed-${w}.png` });
+    });
+  }
 });
 
 test.describe("screenshots", () => {
   const silence = { type: "object" as const, additionalProperties: false as const, properties: {
     hours: { type: "string" as const, enum: ["1", "4", "24"], default: "4", description: "For how long, in hours" },
     note: { type: "string" as const, maxLength: 200, description: "Why (shown beside it)" } } };
-  test("the dialog: base, disruptive, and a failed toast", async ({ page }) => {
+  test("the dialog: base and disruptive", async ({ page }) => {
     await page.setViewportSize({ width: 1366, height: 900 });
     const { s, app } = withSync(); s.actions![0]!.params = silence; await mockApi(page, s); await wire(page, app);
     await page.goto("/apps");
@@ -166,12 +279,5 @@ test.describe("screenshots", () => {
     await page.getByRole("dialog").getByRole("textbox").fill(d.app.name.slice(0, 3));
     await page.screenshot({ path: "e2e/__screens__/action-dialog-disruptive.png", animations: "disabled" });
 
-    const f = withSync(); await page.unrouteAll(); await mockApi(page, f.s);
-    await wire(page, f.app, { state: "failed", finishedAt: at, error: `no answer in 60 s; the result is unknown, check ${f.app.name}` });
-    await page.goto("/apps");
-    await page.getByRole("button", { name: `Sync ${f.app.name}` }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Sync", exact: true }).click();
-    await expect(page.locator(".toast.warm")).toBeVisible({ timeout: 10_000 });
-    await page.screenshot({ path: "e2e/__screens__/action-failed.png", animations: "disabled" });
   });
 });

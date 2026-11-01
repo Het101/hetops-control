@@ -33,10 +33,10 @@ export function coolifyRedeploy(reader: CoolifyReader, deployer: CoolifyDeployer
     },
     async run(t, _p, ctx) {
       const uuid = uuidOf(t), busy = await active(uuid, ctx.signal);
-      if (busy) return { ok: true, already: true, ref: String(busy.deployment_uuid), summary: `a deploy of ${t.name} is already ${busy.status === "queued" ? "queued" : "running"}` };
+      if (busy) return { ok: true, already: true, ref: String(busy.deployment_uuid), summary: busy.status === "queued" ? "Redeploy already queued" : "Redeploy already running" };
       const r = await deployer.deploy(uuid, ctx.signal), d = r?.deployments?.[0];
       if (typeof d?.deployment_uuid !== "string") throw new Error(`Coolify did not queue a deployment: ${String(d?.message ?? r?.message ?? "no answer").slice(0, 160)}`);
-      return { ok: true, ref: d.deployment_uuid, summary: `deploy of ${t.name} queued; the Apps page shows it when it finishes` };
+      return { ok: true, ref: d.deployment_uuid, summary: "Redeploy queued" };
     },
   };
 }

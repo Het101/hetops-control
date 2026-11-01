@@ -139,7 +139,9 @@ export class Actions {
     const done: ActionRun = { ...run, state: ok ? "succeeded" : "failed", finishedAt: this.now().toISOString(),
       ...(result ? { result } : {}), ...(error ? { error } : !ok && result ? { error: result.summary } : {}) };
     try { this.o.db.finishRun(done); } catch (e) { console.error(`audit: ${e instanceof Error ? e.message : String(e)}`); }
-    this.say(done, `${run.label.toLowerCase()} ${run.targetName} (${run.server}): ${result?.summary ?? error}`, ok ? undefined : "attention");
+    // the result reads after the "asked" line: "clinic (lab): Sync started", or "sync clinic (lab) failed: <why>"
+    this.say(done, ok ? `${run.targetName} (${run.server}): ${result!.summary}`
+      : `${run.label.toLowerCase()} ${run.targetName} (${run.server}) failed: ${error ?? result?.summary}`, ok ? undefined : "attention");
   }
 
   private say(run: ActionRun, summary: string, level?: "attention") {

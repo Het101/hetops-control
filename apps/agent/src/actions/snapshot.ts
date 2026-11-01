@@ -33,10 +33,10 @@ export function snapshotNow(reader: EsReader, op: EsOperator): Action<z.infer<ty
     },
     async run(t, _p, ctx) {
       const p = await policy(t.name, ctx.signal);
-      if (p.in_progress?.name) return { ok: true, already: true, ref: String(p.in_progress.name), summary: `${p.in_progress.name} is already running` };
+      if (p.in_progress?.name) return { ok: true, already: true, ref: String(p.in_progress.name), summary: "Snapshot already running" };
       const r = await op.execute(t.name, ctx.signal);
       if (typeof r?.snapshot_name !== "string") throw new Error("Elasticsearch did not name the snapshot");
-      return { ok: true, ref: r.snapshot_name, summary: `${r.snapshot_name} started; the Backups page shows it once it finishes` };
+      return { ok: true, ref: r.snapshot_name, summary: "Snapshot started" };
     },
   };
 }

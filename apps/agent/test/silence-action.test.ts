@@ -27,7 +27,7 @@ describe("alert.silence (recorded)", () => {
   it("silences exactly this alert: every label, equal, never a regex, with the actor and the request key", async () => {
     const { api, made } = fake();
     const r = await alertSilence(api).run(alert(), { hours: "4", note: "known, fixing" }, ctx);
-    expect(r).toEqual({ ok: true, ref: created.silenceID, summary: `${first.labels.alertname} silenced for 4 h, until 14:00 UTC` });
+    expect(r).toEqual({ ok: true, ref: created.silenceID, summary: "Silenced for 4 h, until 14:00 UTC" });
     const labels = Object.keys(first.labels).sort();
     expect(made[0].matchers.map((m: any) => m.name)).toEqual(labels);
     expect(made[0].matchers.every((m: any) => m.isEqual === true && m.isRegex === false && m.value === String(first.labels[m.name]))).toBe(true);
@@ -37,7 +37,7 @@ describe("alert.silence (recorded)", () => {
   it("returns the silence it already made under the same request key", async () => {
     const mine = { id: "a1", status: { state: "active" }, comment: `x [hetops-control ${KEY}]`, createdBy: "het@hetops.dev", startsAt: "2026-10-31T10:00:00Z", endsAt: "2026-10-31T14:00:00Z", matchers: [], updatedAt: "2026-10-31T10:00:00Z" };
     const { api, made } = fake([...(listed as any[]), mine]);
-    expect(await alertSilence(api).run(alert(), { hours: "4" }, ctx)).toEqual({ ok: true, already: true, ref: "a1", summary: "already silenced until 14:00 UTC" });
+    expect(await alertSilence(api).run(alert(), { hours: "4" }, ctx)).toEqual({ ok: true, already: true, ref: "a1", summary: "Already silenced until 14:00 UTC" });
     expect(made).toEqual([]);
   });
   it("refuses an alert that stopped firing; the preview lists the exact matchers", async () => {

@@ -39,12 +39,12 @@ export function alertSilence(api: Silences): Action<z.infer<typeof Params>> {
     },
     async run(t, p, ctx) {
       const mine = (await api.list(ctx.signal)).find(s => s?.status?.state === "active" && String(s.comment ?? "").includes(tag(ctx.requestId)));
-      if (mine) return { ok: true, already: true, ref: String(mine.id), summary: `already silenced until ${hhmm(mine.endsAt)}` };
+      if (mine) return { ok: true, already: true, ref: String(mine.id), summary: `Already silenced until ${hhmm(mine.endsAt)}` };
       const labels = await firing(t, ctx.signal), start = ctx.now(), end = new Date(start.getTime() + Number(p.hours) * HOUR);
       const r = await api.create({ matchers: matchers(labels), startsAt: start.toISOString(), endsAt: end.toISOString(), createdBy: ctx.actor,
         comment: `${p.note?.trim() || "Silenced from HetOps Control"} ${tag(ctx.requestId)}` }, ctx.signal);
       if (typeof r?.silenceID !== "string") throw new Error("Alertmanager did not return a silence id");
-      return { ok: true, ref: r.silenceID, summary: `${t.name} silenced for ${p.hours} h, until ${hhmm(end)}` };
+      return { ok: true, ref: r.silenceID, summary: `Silenced for ${p.hours} h, until ${hhmm(end)}` };
     },
   };
 }

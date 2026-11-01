@@ -27,13 +27,13 @@ describe("argo.sync (recorded)", () => {
   });
   it("starts a sync with exactly the patch the admission policy allows", async () => {
     const { api, patches } = fake();
-    expect(await argoSync(api).run(app(), {}, ctx)).toEqual({ ok: true, summary: "sync of cert-manager started" });
+    expect(await argoSync(api).run(app(), {}, ctx)).toEqual({ ok: true, summary: "Sync started" });
     expect(patches).toEqual([["cert-manager", { operation: { initiatedBy: { username: "het@hetops.dev (hetops-control)" }, sync: { syncStrategy: { hook: {} } } } }]]);
   });
   it("does not start a second sync while one runs", async () => {
     const running = structuredClone(rec) as any; running.status.operationState = { ...(running.status.operationState ?? {}), phase: "Running" };
     const { api, patches } = fake(running);
-    expect(await argoSync(api).run(app(), {}, ctx)).toEqual({ ok: true, already: true, summary: "a sync of cert-manager is already running" });
+    expect(await argoSync(api).run(app(), {}, ctx)).toEqual({ ok: true, already: true, summary: "Sync already running" });
     expect(patches).toEqual([]);
   });
   it("hands the run's abort signal to every Kubernetes call, so the 55 s limit cancels them", async () => {
@@ -50,8 +50,8 @@ describe("argo.refresh", () => {
   it("annotates normal or hard, nothing else", async () => {
     const { api, patches } = fake(); const a = argoRefresh(api);
     expect(describeAction(a).params.properties.hard).toMatchObject({ type: "boolean", default: false });
-    expect(await a.run(app(), { hard: false }, ctx)).toEqual({ ok: true, summary: "refresh of cert-manager requested" });
-    expect(await a.run(app(), { hard: true }, ctx)).toEqual({ ok: true, summary: "hard refresh of cert-manager requested" });
+    expect(await a.run(app(), { hard: false }, ctx)).toEqual({ ok: true, summary: "Refresh requested" });
+    expect(await a.run(app(), { hard: true }, ctx)).toEqual({ ok: true, summary: "Hard refresh requested" });
     expect(patches.map(p => p[1])).toEqual([{ metadata: { annotations: { "argocd.argoproj.io/refresh": "normal" } } }, { metadata: { annotations: { "argocd.argoproj.io/refresh": "hard" } } }]);
     expect(await a.preview!(app(), { hard: false }, ctx)).toContain("Nothing in the cluster changes");
   });
