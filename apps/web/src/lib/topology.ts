@@ -1,6 +1,6 @@
 import type { Entity, ServerId, Status } from "@hetops-control/contracts";
 import { num, type State } from "./api.js";
-import { ago, hhmm, sourceState, span, str, time } from "./pages.js";
+import { ago, hhmm, sourceState, span, str, time, workloads } from "./pages.js";
 
 /**
  * The estate's wiring as a static model (from the infra: tunnels, tailnet, log shipping, snapshots), with the live state laid
@@ -31,7 +31,7 @@ export const NODES: NodeModel[] = [
   { id: "lab", name: "Lab", sub: "my-workspace · 100.93.151.22", x: 230, y: 300, server: "lab",
     facts: [["host", "my-workspace"], ["tailnet", "100.93.151.22 · tag:lab"], ["serves", "the public hetops.dev sites through Traefik and Coolify"]],
     links: [{ label: "Apps", href: "/apps" }, TS] },
-  { id: "staging", name: "Staging", sub: "tag:staging · joining next", x: 600, y: 290, server: "staging",
+  { id: "staging", name: "Staging", sub: "vm2 · 100.105.52.69", x: 600, y: 290, server: "staging",
     facts: [["tailnet", "tag:staging, not joined yet"]], links: [TS] },
   { id: "ops", name: "Ops", sub: "hetops-3 · 100.89.67.82", x: 970, y: 300, server: "ops",
     facts: [["host", "hetops-3"], ["tailnet", "100.89.67.82 · tag:ops"], ["runs", "this center, Gatus, Elasticsearch and Kibana"]],
@@ -186,17 +186,20 @@ export function topology(state: State, now: number): { nodes: NodeView[]; edges:
     }
     const v = state.servers[m.server];
     const cluster = state.entities.find(e => e.kind === "cluster" && e.server === m.server);
-    const apps = state.entities.filter(e => e.kind === "app" && e.server === m.server).length;
+    const apps = workloads(state.entities, m.server).length;
     const run = num(cluster, "podsRunning"), tot = num(cluster, "podsTotal");
-    const stats = cluster ? [`${apps} apps`, run !== undefined && tot !== undefined ? `${run}/${tot} pods` : undefined].filter(Boolean).join(" · ") : undefined;
+    const stats = cluster ? [`${apps} workloads`, run !== undefined && tot !== undefined ? `${run}/${tot} pods` : undefined].filter(Boolean).join(" · ") : undefined;
     const st: LinkState = !v.configured ? "planned" : !v.reachable ? "down" : v.status;
     return { ...m, state: st, reason: v.statusReason ?? (st === "ok" ? "healthy" : st), signals, stats };
   });
-  return { nodes, edges, headline: headlineOf(edges) };
+  return { nodes, edges, headline: headlineOf(edges, nodes) };
 }
 
-/** one sentence about the links: what needs the owner first, then what is blind, else all carrying traffic */
-export function headlineOf(edges: EdgeView[]): string {
+/** one sentence: a link that needs the owner first; else the links' state, plus any server that needs a look, so the page
+ * never calls everything fine while a station on it is ember */
+export function headlineOf(edges: EdgeView[], nodes: NodeView[] = []): string {
+  const sick = nodes.filter(n => n.server && hot(n.state)).map(n => n.name);
+  const also = sick.length ? `; ${sick.join(" and ")} ${sick.length === 1 ? "needs" : "need"} a look.` : ".";
   const live = edges.filter(e => e.state !== "planned");
   const bad = live.filter(e => hot(e.state)).sort((a, b) => RANK[a.state] - RANK[b.state]);
   if (bad.length) {
@@ -206,6 +209,6 @@ export function headlineOf(edges: EdgeView[]): string {
   }
   const blindN = live.filter(e => e.state === "unknown").length;
   if (blindN === live.length) return "No link reports a signal yet.";
-  if (blindN) return `Every link that reports is carrying traffic; ${blindN} ${blindN === 1 ? "has" : "have"} no signal yet.`;
-  return "Every link is carrying traffic.";
+  if (blindN) return `Every link that reports is carrying traffic; ${blindN} ${blindN === 1 ? "has" : "have"} no signal yet${sick.length ? `, and ${sick.join(" and ")} ${sick.length === 1 ? "needs" : "need"} a look.` : "."}`;
+  return `Every link is carrying traffic${also}`;
 }

@@ -2,6 +2,7 @@
   import { ServerIdSchema, type Entity, type Event, type ServerId } from "@hetops-control/contracts";
   import { growTree, hash, rng, struggling, type Branch, type ForestApp } from "../lib/forest.js";
   import { num, type State } from "../lib/api.js";
+  import { workloads } from "../lib/pages.js";
   import { reduced } from "../lib/motion.js";
   import { windy } from "../lib/wind.js";
 
@@ -25,7 +26,7 @@
   // roots breathe on their own 8 to 14 s cycles, offset so they never grow together
   const rootTime = (server: ServerId, i: number) => { const R = rng(hash(`${server}|root|${i}`)); return { "data-f": (8 + R() * 6).toFixed(1), "data-ph": (R() * 6.28).toFixed(2) }; };
 
-  const apps = (s: ServerId, all: Entity[]) => all.filter(e => e.kind === "app" && e.server === s);
+  const apps = (s: ServerId, all: Entity[]) => all.filter(e => e.kind === "app" && e.server === s);   // every tree: workloads and Coolify
 
   // a server that has never connected gets a dormant outline: bare branches, no leaves
   const DORMANT: ForestApp[] = Array.from({ length: 7 }, (_, i) => ({ id: `dormant/${i}`, name: "", pods: 0, restarts: 0, status: "unknown" }));
@@ -42,8 +43,8 @@
     const cluster = estate.entities.find(e => e.kind === "cluster" && e.server === id);
     const restarts = list.reduce((n, e) => n + (num(e, "restarts24h") ?? 0), 0);
     const running = num(cluster, "podsRunning"), total = num(cluster, "podsTotal"), version = cluster?.facts.version?.value;
-    const line = cluster ? [version, `${list.length} apps`, running !== undefined && total !== undefined ? `${running}/${total} pods` : undefined].filter(Boolean).join(" · ")
-      : view.statusReason ?? "no agent yet";
+    const line = cluster ? [version, `${workloads(estate.entities, id).length} workloads`, running !== undefined && total !== undefined ? `${running}/${total} pods` : undefined].filter(Boolean).join(" · ")
+      : view.statusReason ?? "not connected";
     const base = { id, name: NAME[id], line, bare: !view.reachable };
     const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
     // never connected: an alarm only if the center has an agent configured for it; lost after a connection always is

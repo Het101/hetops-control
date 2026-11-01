@@ -53,6 +53,11 @@ describe("toasts", () => {
     expect(toastOf(done)).toEqual({ tone: "done", title: "Snapshot started", line: "nightly-all on ops · 19:13 UTC", ref: name, refName: "snapshot name", next: { href: "/backups", label: "Backups" } });
     expect(toastOf(run({ state: "failed", finishedAt: "2026-10-31T19:14:00.000Z", error: "no SLM policy nightly-all" }))).toMatchObject(
       { tone: "failed", title: "Snapshot now failed", detail: "No SLM policy nightly-all", line: "nightly-all on ops · 19:14 UTC" });
+    // no answer is not a failure: the title says what is known, the detail what to check
+    expect(toastOf(run({ state: "failed", finishedAt: "2026-10-31T19:14:00.000Z", error: "no answer in 60 s; the result is unknown, check nightly-all" }))).toMatchObject(
+      { tone: "failed", title: "No answer from ops", detail: "No answer in 60 s; the result is unknown, check nightly-all" });
+    expect(toastOf(run({ state: "failed", finishedAt: "2026-10-31T19:14:00.000Z", error: "the center restarted before the agent answered; the result is unknown" })).title)
+      .toBe("No answer from ops");
     expect(toastOf(run({ target: "ops/cluster", targetName: "cluster" })).next).toBeUndefined();
   });
   it("counts down, holds while paused, and resumes with the time left", () => {

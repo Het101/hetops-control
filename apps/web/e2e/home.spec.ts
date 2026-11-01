@@ -39,9 +39,11 @@ test("rail: every page is a named link, tips show on keyboard focus", async ({ p
   await expect(topology).not.toHaveAttribute("aria-current");
 });
 
-test("timeline ember rows come from the event level", async ({ page }) => {
-  // two status events moved into attention (chaos-api and the chaos site); the restart and the recovery stay quiet
-  await expect(page.locator(".list[aria-labelledby=\"h-timeline\"] .row.now")).toHaveCount(2);
+test("timeline ember rows are the incidents still open; a recovered one is silver and says when", async ({ page }) => {
+  // chaos-api moved into attention and is still there; the chaos site did too, then recovered at 06:41, so it is history
+  const tl = page.locator(".list[aria-labelledby=\"h-timeline\"]");
+  await expect(tl.locator(".row.now")).toHaveCount(1);
+  await expect(tl.locator(".row:not(.now)").filter({ hasText: "chaos.hetops.dev (ops) ok → attention" })).toContainText("RECOVERED 06:41");
   await expect(page.locator(".list[aria-labelledby=\"h-timeline\"] .row.now").filter({ hasText: "chaos-api (lab) ok → attention" })).toHaveCount(1);
   await expect(page.locator(".list[aria-labelledby=\"h-timeline\"] .row:not(.now)").filter({ hasText: "attention → ok" })).toHaveCount(1);
 });

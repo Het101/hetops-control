@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Entity, Event, Series } from "@hetops-control/contracts";
   import { num, type State } from "../lib/api.js";
-  import { ago, areas, DAY, facets, hhmm, hotEvent, keyOf, knocks, needsYou, sourceState, span, str, sumSeries, time } from "../lib/pages.js";
+  import { ago, areas, DAY, facets, heat, hhmm, keyOf, knocks, needsYou, sourceState, span, str, sumSeries, time } from "../lib/pages.js";
   import Glyph from "../components/Glyph.svelte";
   import Drawer from "../components/Drawer.svelte";
   import Waiting from "../components/Waiting.svelte";
@@ -22,6 +22,7 @@
   const br = $derived(sourceState(estate, "bedrock"));
   const secLog = $derived(estate?.series.find(s => s.id === "ops/logs/security"));
   const AUDIT = /falco|audit|bedrock|crowdsec|timeline|chaos/;
+  const heated = $derived(heat(events));
   const audit = $derived(events.filter(e => e.kind === "action" || AUDIT.test(e.source)).slice(0, 10));
   const chart = (s: Series, w: number, h: number) => areas(s, w, h, t - DAY, t);
   const expires = (d: Entity) => { const s = num(d, "expiresIn"); return s === undefined ? "" : s <= 0 ? "expired" : `${span(s * 1000)} left`; };
@@ -85,7 +86,7 @@
     <section class="mod raised c4 list" style="--in:.24s" aria-labelledby="s-audit">
       <h4 id="s-audit"><span>AUDIT HIGHLIGHTS</span><span>{audit.length || ""}</span></h4>
       {#each audit as e (keyOf(e))}
-        {@const warm = hotEvent(e)}
+        {@const warm = heated.hot(e)}
         <button type="button" class="row" class:now={warm} onclick={() => { openEv = e; open = estate?.entities.find(x => x.id === e.entity); }}>
           <Glyph kind={e.kind} {warm} /><span class="n">{hhmm(e.at)}</span>
           <span class="t">{e.summary}<small>{e.server} · {e.source}{e.actor ? ` · ${e.actor}` : ""}</small></span>

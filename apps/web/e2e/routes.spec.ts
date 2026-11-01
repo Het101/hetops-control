@@ -28,7 +28,7 @@ test("Settings opens and shows agents, sources, identity and about", async ({ pa
   await expect(page).toHaveURL("/settings");
   await expect(page.locator('[data-server="lab"]')).toContainText("agent 0.1.0");
   await expect(page.locator('[data-server="lab"] .tag')).toHaveText("CONNECTED");
-  await expect(page.locator('[data-server="staging"] .tag')).toHaveText("NOT CONFIGURED");
+  await expect(page.locator('[data-server="staging"] .tag')).toHaveText("NOT CONNECTED");
   await expect(page.locator('[data-source="ops/argo"]')).toContainText("every 1 min");
   await expect(page.locator('[data-source="lab/kubernetes"] .tag')).toHaveText("OK");
   await expect(page.getByText("het@hetops.dev")).toBeVisible();

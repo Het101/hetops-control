@@ -15,7 +15,7 @@
   };
   const every = (ms: number) => ms < 60_000 ? `every ${Math.round(ms / 1000)} s` : `every ${Math.round(ms / 60_000)} min`;
   // a configured server that cannot be reached is a need (ember); one never configured is just quiet
-  const link = (v: ServerView) => !v.configured ? { word: "NOT CONFIGURED", warm: false } : v.reachable ? { word: "CONNECTED", warm: false } : { word: "UNREACHABLE", warm: true };
+  const link = (v: ServerView) => !v.configured ? { word: "NOT CONNECTED", warm: false } : v.reachable ? { word: "CONNECTED", warm: false } : { word: "UNREACHABLE", warm: true };
   const run = (x: SourceReport) => x.ok ? { word: "OK", warm: false } : x.error || x.lastRunAt ? { word: "FAILING", warm: true } : { word: "PENDING", warm: false };
 
   const MOTION: { v: Prefs["motion"]; label: string }[] = [{ v: "system", label: "System" }, { v: "on", label: "On" }, { v: "off", label: "Off" }];
@@ -96,7 +96,7 @@
               <span class="tag pressed" class:warm={r.warm}>{r.word}</span>
             </div>
           {:else}
-            <div class="empty">{!v.configured ? "No agent configured." : !v.reachable ? "Unreachable: its sources cannot be read." : "The agent reports no sources."}</div>
+            <div class="empty">{!v.configured ? "Not connected: no agent is configured for it." : !v.reachable ? "Unreachable: its sources cannot be read." : "The agent reports no sources."}</div>
           {/each}
         {/each}
       {/if}

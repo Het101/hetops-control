@@ -28,9 +28,15 @@ button.row,.open{border:0;background:none;color:inherit;font:inherit;text-align:
 .open{display:flex;align-items:center;gap:14px;flex:1;min-width:0;padding:0}
 .list .row .t{min-width:0;overflow-wrap:anywhere}
 .knob.act{border:0;flex:none}
-.knob.act[aria-disabled="true"]{cursor:not-allowed;opacity:.55}
-.knob.act[aria-disabled="true"]:hover{transform:none}
+/* can run: raised, and with room, a pill that names its verb in ink. Can't: no surface at all, a dashed hollow ring, so the two
+   never look alike at a glance (the owner could not tell them apart when they were both raised and only one was dimmer) */
 .knob.raised{color:var(--ink-2)}
+.knob.act.named{width:auto;min-width:34px;border-radius:999px;padding:0 14px 0 11px;gap:7px;display:inline-flex;align-items:center;color:var(--ink);font:600 12px/1 var(--sans),system-ui,sans-serif;letter-spacing:.01em}
+.knob.act.named svg{width:10px;height:10px}
+.knob.act.ember.named{color:#2a1408}
+.knob.act.off{background:none;box-shadow:none;border:1.5px dashed #4a4b50;color:var(--ink-3);cursor:not-allowed}
+.knob.act.off svg{opacity:.5}
+.knob.act.off:hover{transform:none;color:var(--ink-3)}
 .out{color:var(--ink-2);text-decoration:none;font-size:15px;padding:6px}
 .glyph{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--ink-3)}
 .glyph svg{width:14px;height:14px}
@@ -398,3 +404,4 @@ a.row{color:inherit;text-decoration:none}
 .ack-note{color:var(--ink-3)}
 @keyframes act-in{from{opacity:0;transform:translateY(10px) scale(.98)}}
 @keyframes toast-life{to{transform:scaleX(0)}}
+.nums .nw{white-space:nowrap}
