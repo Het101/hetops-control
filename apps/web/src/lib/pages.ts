@@ -8,6 +8,8 @@ export const str = (e: Facts, key: string): string | undefined => { const v = e?
 export const time = (e: Facts, key: string): number | undefined => { const v = str(e, key); const t = v ? Date.parse(v) : NaN; return Number.isNaN(t) ? undefined : t; };
 /** attention and down are the only states that need the owner (ember) */
 export const needsYou = (s: Status | undefined) => s === "attention" || s === "down";
+/** a status as one of the four tones the Status badge draws */
+export const toneOf = (s: Status | undefined): "ok" | "warn" | "blind" | "quiet" => needsYou(s) ? "warn" : s === "ok" ? "ok" : s === "unknown" ? "blind" : "quiet";
 
 const MIN = 60_000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 /** "45 s", "12 min", "3 h 12 min", "2 d 4 h" */

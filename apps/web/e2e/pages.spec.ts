@@ -109,7 +109,14 @@ test.describe("Apps", () => {
     await expect(page.locator(".card")).toHaveCount(5);
     await expect(page.locator('.tile[data-app="lab/app/chaos/chaos-api"]')).toHaveClass(/hot/);
     await expect(page.locator('.tile[data-app="lab/app/chaos/chaos-api"]')).toContainText("2 restarts");
+    // quiet by default: the healthy fold into a chip per namespace; opening one shows its tiles
+    await expect(page.locator('.tile[data-app="lab/app/clinic/api"]')).toHaveCount(0);
+    await expect(page.locator(".tile-h").first()).toContainText("1 to look at");
+    await page.getByRole("button", { name: /healthy in clinic$/ }).first().click();
     await expect(page.locator('.tile[data-app="lab/app/clinic/api"] .pips i.up')).toHaveCount(3);
+    await page.getByRole("button", { name: "show all" }).click();
+    await expect(page.locator(".tile")).toHaveCount(28);
+    await expect(page.locator(".ns-fold")).toHaveCount(0);
     await expect(page.locator(".site")).toHaveCount(10);
     await expect(page.locator('.site[data-site="ops/site/sites_chaos"]')).toContainText("98.61%");
     await expect(page.locator('.site[data-site="ops/site/sites_chaos"] .beats i')).toHaveCount(24);
@@ -133,6 +140,8 @@ test.describe("Apps", () => {
 
   test("screenshots, wide and phone", async ({ page }) => {
     await still(page); await page.goto("/apps"); await expect(page.locator(".tile").first()).toBeVisible(); await shot(page, "apps");
+    await page.locator(".tile").first().click(); await expect(page.getByRole("dialog")).toBeVisible(); await shot(page, "drawer");
+    await page.keyboard.press("Escape");
     await page.setViewportSize({ width: 390, height: 900 }); await shot(page, "apps-mobile");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   });

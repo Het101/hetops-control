@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Status from "../components/Status.svelte";
   import { ServerIdSchema, type Me, type ServerView, type SourceReport } from "@hetops-control/contracts";
   import { loadMe, type State } from "../lib/api.js";
   import { prefs, type Prefs } from "../lib/prefs.js";
@@ -42,7 +43,7 @@
             <span class="t">{#if v.configured}{v.agentVersion ? `agent ${v.agentVersion}` : "agent version unknown"}
               · {v.reachable ? "reachable" : "unreachable"} since {hhmm(v.since)}{:else}no agent configured{/if}
               {#if v.lastError}<small class="warm">last error: {v.lastError}</small>{/if}</span>
-            <span class="tag pressed" class:warm={l.warm} class:ok={l.word === "CONNECTED"}>{l.word}</span>
+            <Status tone={l.warm ? "warn" : l.word === "CONNECTED" ? "ok" : "blind"} label={l.word} />
           </div>
         {/each}
       {/if}
@@ -93,7 +94,7 @@
             <div class="row" data-source={`${id}/${x.id}`}>
               <span class="t">{x.id}<small>{every(x.periodMs)} · {x.lastRunAt ? `last run ${ago(x.lastRunAt)}` : "not run yet"}</small>
                 {#if x.error}<small class="warm">{x.error}</small>{/if}</span>
-              <span class="tag pressed" class:warm={r.warm}>{r.word}</span>
+              <Status tone={r.warm ? "warn" : r.word === "OK" ? "ok" : "blind"} label={r.word} />
             </div>
           {:else}
             <div class="empty">{!v.configured ? "Not connected: no agent is configured for it." : !v.reachable ? "Unreachable: its sources cannot be read." : "The agent reports no sources."}</div>

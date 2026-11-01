@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Status from "../components/Status.svelte";
   import { ServerIdSchema, type Entity, type Event } from "@hetops-control/contracts";
   import { num, type State } from "../lib/api.js";
   import { ago, facets, matches, needsYou, picked, pips, serverApps, sourceState, str, time, workloads } from "../lib/pages.js";
@@ -27,6 +28,17 @@
   // one dense grid per server, ordered by namespace; the namespace rides on each tile
   const spaces = $derived(ServerIdSchema.options.map(server => ({ key: server, server,
     apps: work.filter(e => e.server === server).sort((a, b) => nsOf(a).localeCompare(nsOf(b)) || a.name.localeCompare(b.name)) })).filter(g => g.apps.length));
+  // quiet by default: a server shows the workloads that need a look (ill, restarting, short of pods); the healthy rest fold
+  // into one chip per namespace that opens it. A search or a filter shows every match, folded or not.
+  const odd = (e: Entity) => needsYou(e.status) || (num(e, "restarts24h") ?? 0) > 0 || (num(e, "pods") ?? 0) < (num(e, "podsDesired") ?? 0);
+  let unfolded = $state<string[]>([]), everything = $state(false);
+  const filtering = $derived(!!q || server.length > 0 || mood.length > 0);
+  const shelves = $derived(spaces.map(g => {
+    const calm = g.apps.filter(e => !odd(e)), open = (e: Entity) => everything || filtering || unfolded.includes(`${g.server}|${nsOf(e)}`);
+    const folded = [...new Set(calm.filter(e => !open(e)).map(nsOf))].map(ns => ({ ns, n: calm.filter(e => nsOf(e) === ns).length }));
+    return { ...g, tiles: g.apps.filter(e => odd(e) || open(e)), folded, look: g.apps.length - calm.length };
+  }));
+  const unfold = (server: string, ns: string) => { unfolded = [...unfolded, `${server}|${ns}`]; };
   const sums = $derived(ServerIdSchema.options.map(id => ({ id, view: estate?.servers[id], ...serverApps(ents, id) })));
   const total = $derived(workloads(ents).length);
   const needing = $derived(pool.filter(e => needsYou(e.status)).length);
@@ -77,7 +89,7 @@
         <div class="card pressed" class:hot={warm} data-app={e.id}>
           <button type="button" class="open" onclick={() => (open = e)}>
             <b>{e.name}</b><small class="mono">{e.server}{str(e, "revision") ? ` · ${str(e, "revision")}` : ""}</small>
-            <span class="duo"><i class:ok={sync(e) === "Synced"} class:warm={warm && sync(e) !== "Synced"}>{sync(e)}</i><i class:ok={health(e) === "Healthy"} class:warm={warm && health(e) !== "Healthy"}>{health(e)}</i></span>
+            <span class="duo"><Status tone={sync(e) === "Synced" ? "ok" : warm ? "warn" : "blind"} label={sync(e)} /><Status tone={health(e) === "Healthy" ? "ok" : warm ? "warn" : "blind"} label={health(e)} /></span>
             {#if e.statusReason}<small class:warm>{e.statusReason}</small>{/if}
           </button>
           <Knob entity={e} action="argo.sync" label={`Sync ${e.name}`} {warm} />
@@ -111,11 +123,11 @@
   </section>
 
   <section class="mod raised c12 list" style="--in:.26s" aria-labelledby="ap-work">
-    <h2 id="ap-work"><span>WORKLOADS · PODS AND RESTARTS</span><span>{work.length}</span></h2>
+    <h2 id="ap-work"><span>WORKLOADS · PODS AND RESTARTS</span><span>{work.length}{#if !filtering}<button type="button" class="linkish" onclick={() => { everything = !everything; unfolded = []; }}>{everything ? "fold the healthy" : "show all"}</button>{/if}</span></h2>
     <div class="tiles">
-    {#each spaces as g (g.key)}
-      <div class="tile-h">{g.server.toUpperCase()}<small>{g.apps.length} workloads</small></div>
-        {#each g.apps as e (e.id)}
+    {#each shelves as g (g.key)}
+      <div class="tile-h">{g.server.toUpperCase()}<small>{g.apps.length} workloads · {#if g.look}<span class="warm">{g.look} to look at</span>{:else}<span class="moss">all healthy</span>{/if}</small></div>
+        {#each g.tiles as e (e.id)}
           {@const ready = num(e, "pods") ?? 0} {@const want = num(e, "podsDesired") ?? 0} {@const p = pips(ready, want)}
           {@const r = num(e, "restarts24h") ?? 0} {@const warm = needsYou(e.status)}
           <button type="button" class="tile" class:hot={warm} data-app={e.id} onclick={() => (open = e)}>
@@ -124,6 +136,11 @@
             <small class:warm={r > 0 || ready < want}>{ready < want ? `${ready}/${want} ready` : r ? `${plural(r, "restart")} · last ${ago(str(e, "lastRestartAt") ?? e.observedAt, t)}` : "no restarts"}</small>
           </button>
         {/each}
+        {#if g.folded.length}
+          <div class="ns-fold" role="group" aria-label={`${g.server}: healthy workloads by namespace`}>
+            {#each g.folded as f (f.ns)}<button type="button" class="chip ns" onclick={() => unfold(g.server, f.ns)} aria-label={`Show ${f.n} healthy in ${f.ns}`}><i aria-hidden="true"></i>{f.ns}<b>{f.n}</b></button>{/each}
+          </div>
+        {/if}
     {:else}
       <Waiting title={estate ? "No workloads match." : "Waiting for the first state."} />
     {/each}
