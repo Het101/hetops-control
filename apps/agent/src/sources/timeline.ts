@@ -8,7 +8,9 @@ export interface TimelineReader { list(): Promise<any[]> }
 export const realTimeline = (base: string): TimelineReader => ({ list: () => json(`${base}/owner/timeline?since=1h`) });
 
 const KIND: Record<string, Event["kind"]> = { rollout: "deploy", sync: "sync", restart: "restart" };
-const LEVEL: Record<string, Event["level"]> = { warn: "attention", crit: "down" };
+// info is "ok" so a recovery cools the warning before it on the same subject (the center's heat). A kubernetes Warning event is
+// a one-off (a failed probe, a missing metric): evidence, not a need; what is still unwell shows in the state sources instead.
+const LEVEL: Record<string, Event["level"]> = { info: "ok", warn: "attention", crit: "down" };
 const PERIOD = 30_000;
 
 /**
@@ -29,8 +31,9 @@ export function timelineSource(api: TimelineReader): Source {
         if (!id || Number.isNaN(at) || typeof r.summary !== "string") continue;
         seen.add(id);
         if (sent?.has(id) || at < floor) continue;
-        const level = LEVEL[r.severity];
+        const level = r.kind === "warning" ? undefined : LEVEL[r.severity];
         events.push({ at: new Date(at).toISOString(), server, source: "timeline", kind: KIND[r.kind] ?? "info", summary: r.summary.slice(0, 300),
+          ...(typeof r.subject === "string" && r.subject ? { entity: `${server}/timeline/${r.subject}` } : {}),
           ...(typeof r.actor === "string" ? { actor: r.actor } : {}), ...(level ? { level } : {}) });
       }
       sent = seen;

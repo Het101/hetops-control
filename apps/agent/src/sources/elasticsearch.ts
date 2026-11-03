@@ -59,7 +59,8 @@ export function elasticsearchSource(api: EsReader): Source {
         const m = stream ? sums.get(stream) : undefined;
         for (const x of b.h?.buckets ?? []) { grid.add(x.key); if (m) m.set(x.key, (m.get(x.key) ?? 0) + x.doc_count); }
       }
-      const keys = [...grid].sort((a, b) => a - b);
+      // the bucket still filling would draw a cliff at now
+      const t = now().getTime(), keys = [...grid].filter(k => k + STEP <= t).sort((a, b) => a - b);
       const series: Series[] = STREAMS.map(s => ({ id: `${server}/logs/${s}`, server, label: `Lab logs: ${s}`, unit: "docs", stepMs: STEP,
         points: keys.map((k): [number, number] => [k, sums.get(s)!.get(k) ?? 0]), observedAt }));
       return { entities: [check], series };

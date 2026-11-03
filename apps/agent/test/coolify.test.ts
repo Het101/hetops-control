@@ -49,7 +49,7 @@ describe("coolify source (recorded)", () => {
     const src = coolifySource(reader(deps, takes));
     const first = (await src.collect(at("2026-10-29T17:53:00Z"))).events!.map(e => EventSchema.parse(e));
     expect(first).toEqual([{ at: "2026-10-29T17:51:02.000Z", server: "lab", source: "coolify", kind: "deploy", entity: DRILL,
-      durationMs: 23_000, summary: "restore-drill deployed e1855f6 in 23 s" }]);
+      durationMs: 23_000, summary: "restore-drill deployed e1855f6 in 23 s", level: "ok" }]);   // a good deploy cools a failed one before it
     expect(takes.every(n => n === 20)).toBe(true);
     expect((await src.collect(at("2026-10-29T17:55:00Z"))).events).toEqual([]);
     deps.b141eiztobjhg20vt960lzax = [row({ deployment_uuid: "new", status: "failed", commit: "b".repeat(40),

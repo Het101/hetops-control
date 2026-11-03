@@ -52,8 +52,9 @@ describe("heat", () => {
     expect(h.recovered(first)).toBe("2026-10-30T05:20:00.000Z"); expect(h.recovered(worse)).toBe("2026-10-30T05:20:00.000Z");
     expect(h.hot(first)).toBe(false); expect(h.hot(worse)).toBe(false);
   });
-  it("an event without an entity is judged by its level alone", () => {
-    expect(heat([ev({ at: "2026-10-30T07:00:00.000Z", level: "attention" })]).hot(ev({ at: "2026-10-30T07:00:00.000Z", level: "attention" }))).toBe(true);
+  it("an event without an entity is never hot: nothing could ever say it recovered", () => {
+    const bare = ev({ at: "2026-10-30T07:00:00.000Z", level: "attention" });
+    expect(heat([bare]).hot(bare)).toBe(false); expect(heat([bare]).recovered(bare)).toBeUndefined();
   });
 });
 
