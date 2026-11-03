@@ -54,7 +54,8 @@ export function heat(events: Event[]) {
   const newer = new Map<Event, Event>(), seen = new Map<string, Event>();
   for (const e of events) if (e.level && e.entity) { const k = `${e.server}|${e.entity}`; const n = seen.get(k); if (n) newer.set(e, n); seen.set(k, e); }
   return {
-    hot: (e: Event) => needsYou(e.level) && !newer.has(e),
+    // without an entity nothing could ever say it recovered, so it is history, never a need
+    hot: (e: Event) => !!e.entity && needsYou(e.level) && !newer.has(e),
     recovered: (e: Event): string | undefined => {
       if (!needsYou(e.level)) return undefined;
       let n = newer.get(e); while (n && needsYou(n.level)) n = newer.get(n);

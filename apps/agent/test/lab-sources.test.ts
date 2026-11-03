@@ -63,6 +63,21 @@ describe("timeline source (recorded)", () => {
     expect(all.events).toHaveLength(timeline.length); for (const e of all.events!) EventSchema.parse(e);
     expect(all.events!.filter(e => e.kind === "deploy")).toHaveLength(timeline.filter(e => e.kind === "rollout").length);
   });
+  it("names what each event is about, so a warning and its recovery pair up; a kubernetes warning is evidence, not a need", async () => {
+    const row = (id: string, over: Record<string, unknown>) => ({ id, at: "2026-10-30T12:59:50Z", source: "chaos", kind: "experiment", subject: "clinic/namespace", summary: id, severity: "info", ...over });
+    const { events } = await timelineSource({ list: async () => [
+      row("ran", { severity: "warn" }), row("recovered", {}),
+      row("probe", { source: "k8s", kind: "warning", subject: "clinic/web", severity: "warn" }),
+      row("falco", { source: "falco", kind: "detection", subject: "host/my-workspace", severity: "crit" }),
+      row("bare", { subject: undefined, severity: "warn" }),
+    ] }).collect(at("2026-10-30T13:00:00Z"));
+    const by = Object.fromEntries(events!.map(e => [e.summary, e]));
+    expect([by.ran!.entity, by.ran!.level]).toEqual(["lab/timeline/clinic/namespace", "attention"]);
+    expect([by.recovered!.entity, by.recovered!.level]).toEqual(["lab/timeline/clinic/namespace", "ok"]);
+    expect([by.probe!.entity, by.probe!.level]).toEqual(["lab/timeline/clinic/web", undefined]);
+    expect([by.falco!.entity, by.falco!.level]).toEqual(["lab/timeline/host/my-workspace", "down"]);
+    expect([by.bare!.entity, by.bare!.level]).toEqual([undefined, "attention"]);
+  });
 });
 
 describe("crowdsec source (recorded)", () => {

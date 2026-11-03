@@ -110,7 +110,7 @@ export function coolifySource(api: CoolifyReader): Source {
         const durationMs = Math.max(0, d.finished - d.created), failed = d.status === "failed";
         events.push({ at: new Date(d.finished).toISOString(), server, source: "coolify", kind: "deploy", entity: idOf(d.app), durationMs,
           summary: `${nameOf.get(d.app)} ${failed ? "failed to deploy" : "deployed"}${SHA.test(d.commit) ? ` ${d.commit.slice(0, 7)}` : ""} in ${secs(durationMs)} s`,
-          ...(failed ? { level: "attention" as const } : {}) });
+          level: failed ? "attention" as const : "ok" as const });
       }
       sent = done;
 

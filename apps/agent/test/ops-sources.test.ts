@@ -102,6 +102,14 @@ describe("elasticsearch source (recorded)", () => {
     expect(def!.points[100]).toEqual([a!.h.buckets[100]!.key, a!.h.buckets[100]!.doc_count + b!.h.buckets[100]!.doc_count]);
     expect(sec!.points.every(p => p[1] === 0)).toBe(true);
   });
+  it("leaves out the 10 minutes still filling, which would draw a cliff at now", async () => {
+    const last = flow.aggregations.idx.buckets[0]!.h.buckets.at(-1)!.key;   // 19:10, the bucket NOW (19:20) has just closed
+    const closed = await elasticsearchSource(es()).collect(at(NOW));
+    expect(closed.series![0]!.points.at(-1)![0]).toBe(last);
+    const filling = await elasticsearchSource(es()).collect(at("2026-10-30T19:15:00Z"));
+    expect(filling.series![0]!.points).toHaveLength(144);
+    expect(filling.series![0]!.points.at(-1)![0]).toBe(last - 600_000);
+  });
   it("fails rather than draw a partial flow, and maps red to down", async () => {
     await expect(elasticsearchSource(es({ flow: async () => flow })).collect(at(NOW))).rejects.toThrow(/more backing indices/);
     const { entities } = await elasticsearchSource(es({ health: async () => ({ ...health, status: "red" }) })).collect(at(NOW));
