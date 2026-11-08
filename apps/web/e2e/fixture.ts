@@ -8,7 +8,7 @@ type Srv = "lab" | "ops";
 const base = { observedAt: at, links: [], actions: [] };
 const app = (server: Srv, ns: string, name: string, pods: number, restarts = 0, last?: string): Entity => ({
   ...base, id: `${server}/app/${ns}/${name}`, kind: "app", server, name, parent: `${server}/cluster`, source: "kubernetes",
-  status: restarts ? "attention" : "ok", ...(restarts ? { statusReason: `${restarts} restarts in 24h` } : {}),
+  status: restarts ? "attention" : "ok", ...(restarts ? { statusReason: `${restarts} restarts in the last 30 min` } : {}),
   facts: { namespace: { value: ns }, pods: { value: pods, max: pods }, podsDesired: { value: pods }, restarts24h: { value: restarts },
     ...(last ? { lastRestartAt: { value: last } } : {}) } });
 const cluster = (server: Srv, version: string, nodes: number, running: number, total: number): Entity => ({

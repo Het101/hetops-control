@@ -16,7 +16,7 @@ describe("forest", () => {
     deg.slice(1).forEach((d, i) => expect(Math.abs(d - deg[i]! - 140 / 9)).toBeLessThan(9)); // ±4.3° jitter per branch
   });
   it("always shows struggling apps, even past the cap", () => {
-    const many = Array.from({ length: 30 }, (_, i) => ({ id: `lab/app/n/a${i}`, name: `a${i}`, pods: 1, restarts: i === 7 || i === 23 ? 1 : 0, status: "ok" as const }));
+    const many = Array.from({ length: 30 }, (_, i) => ({ id: `lab/app/n/a${i}`, name: `a${i}`, pods: 1, restarts: i === 7 || i === 23 ? 1 : 0, status: (i === 7 || i === 23 ? "attention" : "ok") as "attention" | "ok" }));
     const names = growTree("lab", 200, many).branches.map(b => b.app);
     expect(names).toEqual(expect.arrayContaining(["a7", "a23", "+17 more"]));
   });
@@ -24,6 +24,10 @@ describe("forest", () => {
     const t = growTree("lab", 200, apps);
     expect(t.branches.find(b => b.app === "api")!.leaves.some(l => l.ember)).toBe(false);
     expect(t.branches.find(b => b.app === "chaos-api")!.leaves.filter(l => l.ember).length).toBeGreaterThan(0);
+  });
+  it("an app that restarted and healed is calm: no ember, ember is only for what needs you", () => {
+    const healed = growTree("lab", 200, [{ id: "lab/app/clinic/api", name: "api", pods: 3, restarts: 3, status: "ok" }]);
+    expect(healed.branches.find(b => b.app === "api")!.leaves.some(l => l.ember)).toBe(false);
   });
   it("caps branches at 14", () => {
     const many = Array.from({ length: 30 }, (_, i) => ({ id: `lab/app/n/a${i}`, name: `a${i}`, pods: 1, restarts: 0, status: "ok" as const }));

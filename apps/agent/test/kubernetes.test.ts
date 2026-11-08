@@ -22,13 +22,23 @@ describe("kubernetes source", () => {
     expect(app.facts.restarts24h?.value).toBe(0);                              // fixture restarts are all > 24h old
     expect(app.facts.lastRestartAt?.value).toBe("2026-10-25T09:52:59Z");
   });
-  it("marks a workload with no ready pods down and one with restarts attention", async () => {
+  it("marks a workload with no ready pods down and one restarting now attention", async () => {
     const w = structuredClone(workloads.items); (w[0] as any).status.readyReplicas = 0;
     const p = structuredClone(pods.items); (p[0] as any).status.containerStatuses[0].restartCount = 3;
-    (p[0] as any).status.containerStatuses[0].lastState = { terminated: { finishedAt: "2026-10-30T03:12:00Z", reason: "OOMKilled" } };
+    (p[0] as any).status.containerStatuses[0].lastState = { terminated: { finishedAt: "2026-10-30T11:52:00Z", reason: "OOMKilled" } };   // 8 min ago
     const { entities } = await kubernetesSource(kube({ listWorkloads: async () => w, listPods: async () => p }) as any).collect(ctx);
     expect(entities.some(e => e.status === "down")).toBe(true);
     expect(entities.some(e => e.status === "attention" && Number(e.facts.restarts24h?.value) > 0)).toBe(true);
+  });
+  it("restarts need you only while they are recent; a healed app keeps them as history", async () => {
+    const at = (finishedAt: string) => { const p = structuredClone(pods.items); const c = (p[0] as any).status.containerStatuses[0];
+      c.restartCount = 3; c.lastState = { terminated: { finishedAt, reason: "Error" } }; return p; };
+    const app = async (finishedAt: string) => (await kubernetesSource(kube({ listPods: async () => at(finishedAt) }) as any).collect(ctx))
+      .entities.find(e => e.kind === "app" && Number(e.facts.restarts24h?.value) > 0)!;
+    const healed = await app("2026-10-29T21:39:00Z");   // last night's self-test, 14 h ago
+    expect([healed.status, healed.statusReason, healed.facts.restarts24h?.value]).toEqual(["ok", undefined, 1]);
+    const now = await app("2026-10-30T11:50:00Z");      // 10 min ago: still restarting, or just did
+    expect([now.status, now.statusReason]).toEqual(["attention", "1 restart in the last 30 min"]);
   });
   it("emits a restart event only for restarts new since the last run", async () => {
     let current: unknown[] = pods.items;

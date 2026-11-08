@@ -24,7 +24,8 @@ export function rng(seed: number): () => number {
 }
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
-export const struggling = (a: Pick<ForestApp, "restarts" | "status">) => a.restarts > 0 || a.status === "attention" || a.status === "down";
+// ember is only for what needs you: an app that restarted and healed keeps its count as history (the agent says when restarts are recent)
+export const struggling = (a: Pick<ForestApp, "restarts" | "status">) => a.status === "attention" || a.status === "down";
 
 /**
  * One tree per server. Branches sit evenly across the fan in a stable order (rank = hash of the app id), so a new app
