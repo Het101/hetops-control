@@ -47,6 +47,7 @@
     const view = estate.servers[id], list = apps(id, estate.entities);
     const cluster = estate.entities.find(e => e.kind === "cluster" && e.server === id);
     const restarts = list.reduce((n, e) => n + (num(e, "restarts24h") ?? 0), 0);
+    const restarting = list.filter(e => e.status === "attention" || e.status === "down").reduce((n, e) => n + (num(e, "restarts24h") ?? 0), 0);
     const running = num(cluster, "podsRunning"), total = num(cluster, "podsTotal"), version = cluster?.facts.version?.value;
     const line = cluster ? [version, `${workloads(estate.entities, id).length} workloads`, running !== undefined && total !== undefined ? `${running}/${total} pods` : undefined].filter(Boolean).join(" · ")
       : view.statusReason ?? "not connected";
@@ -55,12 +56,13 @@
     // never connected: an alarm only if the center has an agent configured for it; lost after a connection always is
     if (!view.reachable) return view.agentVersion ? { ...base, word: "UNREACHABLE", warm: true } : { ...base, word: view.configured ? "UNREACHABLE" : "NOT CONNECTED", warm: view.configured };
     if (view.status === "down" || list.some(e => e.status === "down")) return { ...base, word: "DOWN", warm: true };
-    if (restarts > 0) return { ...base, word: `SMOULDERING · ${plural(restarts, "restart")}`, warm: true };
+    if (restarting > 0) return { ...base, word: `SMOULDERING · ${plural(restarting, "restart")}`, warm: true };
     const failing = view.failingSources?.length ?? 0, stale = Number(/(\d+) readings? stale/.exec(view.statusReason ?? "")?.[1] ?? 0);
     if (failing || stale) return { ...base, word: `BLIND · ${[failing && `${plural(failing, "source")} failing`, stale && `${plural(stale, "reading")} stale`].filter(Boolean).join(" · ")}`, warm: true };
     if (view.status === "attention" || list.some(e => e.status === "attention")) return { ...base, word: "SMOULDERING", warm: true };
     if (view.status === "unknown") return { ...base, word: (view.statusReason ?? "unknown").toUpperCase(), warm: false };
-    return { ...base, word: "HEALTHY", warm: false };
+    // restarts that healed are history: said, in moss
+    return { ...base, word: restarts ? `HEALTHY · ${plural(restarts, "restart")} in 24 h` : "HEALTHY", warm: false };
   }));
 
   let svg = $state<SVGSVGElement>();

@@ -106,6 +106,9 @@ export function realKube(): KubeReader {
 }
 
 const DAY = 24 * 3600_000;
+// a restart needs you while it is recent: a crash loop restarts at least every 5 min (its back-off cap), so it stays here;
+// an app that healed (a chaos experiment, a one-off OOM) keeps its restarts as history in restarts24h, not as a need
+const RECENT = 30 * 60_000;
 
 // client-node deserialises timestamps to Date, kubectl JSON has strings; a fact value must be a primitive, so normalise to an ISO string (undefined when unreadable)
 const ts = (v: unknown): string | undefined =>
@@ -172,11 +175,12 @@ export function kubernetesSource(api: KubeReader, opts: { namespaces?: string[] 
         const ds = w.kind === "DaemonSet";
         const ready: number = (ds ? w.status?.numberReady : w.status?.readyReplicas) ?? 0;
         const desired: number = (ds ? w.status?.desiredNumberScheduled : w.spec?.replicas) ?? (ds ? 0 : 1);
-        const id = appId(ns, name), restarts = recent.filter(r => r.app === id).length;
+        const id = appId(ns, name), mine = recent.filter(r => r.app === id), restarts = mine.length;
+        const fresh = mine.filter(r => t.getTime() - r.at < RECENT).length;
         const [status, statusReason]: [Status, string?] =
           desired > 0 && ready === 0 ? ["down", "no pods ready"]
           : ready < desired ? ["attention", `${ready}/${desired} pods ready`]
-          : restarts > 0 ? ["attention", `${restarts} restart${restarts > 1 ? "s" : ""} in 24h`]
+          : fresh > 0 ? ["attention", `${fresh} restart${fresh > 1 ? "s" : ""} in the last 30 min`]
           : ["ok"];
         const lastRestartAt = last.get(id);
         entities.push(entity({ id, kind: "app", name, parent: clusterId, status, ...(statusReason ? { statusReason } : {}), facts: {
