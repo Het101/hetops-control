@@ -26,7 +26,7 @@
   const spaces = $derived(new Set(work.map(e => str(e, "namespace") ?? "—")).size);
   const argo = $derived(ents.filter(e => e.kind === "argo-app"));
   const drift = $derived(estate?.entities.find(e => e.kind === "check" && e.source === "bedrock" && e.name === id));
-  const own = $derived(events.filter(e => e.server === id).slice(0, 8));
+  const own = $derived(events.filter(e => e.server === id));
   const cpu = $derived(estate?.series.find(s => s.id === `${id}/host/cpu`));
   const mem = $derived(estate?.series.find(s => s.id === `${id}/host/memory`));
   // the load chart spans the day, or what the agent has kept since it started (it holds its history in memory)
@@ -116,7 +116,7 @@
       {#if drift}<Status tone={drift.facts.drift?.value === true ? "warn" : toneOf(drift.status)} label={drift.facts.drift?.value === true ? "Drifted" : "Clean"} />{:else}<Status tone="blind" label="Not run" />{/if}</div>
   </section>
 
-  <Timeline events={own} wide title={`Timeline · ${id}`} />
+  <Timeline events={own} limit={8} wide title={`Timeline · ${id}`} />
 </div>
 {/if}
 

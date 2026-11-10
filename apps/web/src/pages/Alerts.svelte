@@ -1,4 +1,7 @@
 <script lang="ts">
+  import NeedRow from "../components/NeedRow.svelte";
+  import { ranked } from "../lib/needs.js";
+  import { catalog } from "../lib/action-state.svelte.js";
   import type { Entity, Event } from "@hetops-control/contracts";
   import type { State } from "../lib/api.js";
   import { heading, sentence, alarms, facets, hhmm, matches, needsYou, picked, SEVERITIES, sourceState, span, str, type Severity } from "../lib/pages.js";
@@ -77,15 +80,8 @@
     {:else if all.length && !shown.length}<Waiting title="Nothing matches these filters.">Clear a chip or the search.</Waiting>{/if}
     {#if elsewhere.length}
       <div class="group mono sev-h warm">Also needs you · not an alert · {elsewhere.length}</div>
-      {#each elsewhere as n (n.entity)}
-        {@const e = estate?.entities.find(x => x.id === n.entity)}
-        <div class="row now" data-needs>
-          <button type="button" class="open" onclick={() => (open = e)} disabled={!e}>
-            <span class="sev warm" aria-hidden="true"><i></i></span>
-            <span class="t">{n.text}<small>{n.detail}</small></span>
-          </button>
-          {#if e}<Knob entity={e} action={n.action?.id} label={`${n.action?.label ?? "Act on"} ${e.name}`} warm />{/if}
-        </div>
+      {#each ranked(elsewhere, estate?.entities ?? [], estate?.servers ?? {}, catalog.list) as r (r.n.entity)}
+        <div data-needs><NeedRow row={r} /></div>
       {/each}
     {/if}
     {#if !am.reporting.length}

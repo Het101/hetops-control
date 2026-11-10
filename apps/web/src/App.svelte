@@ -17,6 +17,7 @@
   import ActionDialog from "./components/ActionDialog.svelte";
   import Toasts from "./components/Toasts.svelte";
   import NeedsQueue from "./components/NeedsQueue.svelte";
+  import CommandPalette from "./components/CommandPalette.svelte";
   import { catalog, track } from "./lib/action-state.svelte.js";
   import { away, AWAY_MS, lastSeen, markSeen } from "./lib/away.js";
   import { pinned, place, sky } from "./lib/sky.js";
@@ -92,7 +93,8 @@
   <main>
     <div class="top">
       <span class="brand">HetOps Control</span>
-      {#if estate}<NeedsQueue needs={estate.headline.needs} entities={estate.entities} />{/if}
+      {#if estate}<NeedsQueue needs={estate.headline.needs} entities={estate.entities} servers={estate.servers} />
+        <CommandPalette entities={estate.entities} />{/if}
       <span class="live" class:warm={reconnecting || signedOut} role="status">
         {#key lastMsg}<span class="pulse"></span>{/key}{signedOut ? "signed out" : reconnecting ? "reconnecting" : ago === undefined ? "connecting" : `live · ${ago} s ago`}{#if stale && lastMsg !== undefined}<small>{` · showing ${hhmmUTC(lastMsg)}`}</small>{/if}</span>
     </div>

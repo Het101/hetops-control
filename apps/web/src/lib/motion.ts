@@ -23,7 +23,8 @@ export function countUp(node: HTMLElement, to: number) {
     if (get(reduced)) { node.textContent = target.toLocaleString(); from = target; return; }
     const start = from, t0 = performance.now(), dur = 1500;
     const tick = (t: number) => {
-      const p = Math.min(1, (t - t0) / dur); from = Math.round(start + (target - start) * easeOut(p));
+      // a frame stamp can predate t0 (it is the frame start), so p is clamped at 0 too: a negative p overshoots below zero
+      const p = Math.min(1, Math.max(0, (t - t0) / dur)); from = Math.round(start + (target - start) * easeOut(p));
       node.textContent = from.toLocaleString();
       if (p < 1) raf = requestAnimationFrame(tick);
     };

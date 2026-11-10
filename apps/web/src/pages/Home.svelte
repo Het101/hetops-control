@@ -18,6 +18,7 @@
   import SiteBoard from "../components/SiteBoard.svelte";
   import Drawer from "../components/Drawer.svelte";
   import Later from "../components/Later.svelte";
+  import { prefs, type Prefs } from "../lib/prefs.js";
 
   // Home: the hero, then one module per page, each linking to it; a module whose source never reported is not shown
   let { estate, events, eventsError, now, shown, away, ondismiss }: { estate: State; events: Event[]; eventsError: boolean; now: Date; shown: number; away?: Away; ondismiss?: () => void } = $props();
@@ -60,14 +61,53 @@
   const rx = (ms: number) => RX0 + (river.end > river.start ? (ms - river.start) / (river.end - river.start) : 1) * RW;
   const latest = $derived(river.lanes.flatMap(l => l.deps).sort((a, b) => a.at.localeCompare(b.at)).at(-1));
   const laneOf = $derived([...new Set([...river.lanes.map(l => l.server), ...waiting.map(w => w.e.server)])]);
+  // two Homes to choose from: lookout leads with the forest, watch with the ranked work; ?home= pins one for a comparison
+  const pinnedHome = typeof location === "undefined" ? null : new URLSearchParams(location.search).get("home");
+  const layout = $derived<Prefs["home"]>(pinnedHome === "watch" || pinnedHome === "lookout" ? pinnedHome : $prefs.home);
+  const pick = (v: Prefs["home"]) => { prefs.update(p => ({ ...p, home: v })); if (pinnedHome) { const u = new URL(location.href); u.searchParams.delete("home"); history.replaceState(null, "", u); location.reload(); } };
+  // the instruments, as figures: each reads on its own and opens its page
+  const budgetLeft = $derived(slo[0]?.facts.budgetLeft?.value as number | undefined);
+  const upSites = $derived(rows.filter(r => !needsYou(r.e.status)).length);
+  const badBackups = $derived(backups.filter(b => needsYou(b.status)).length);
+  const tiles = $derived([
+    on(budget) && budgetLeft !== undefined ? { k: "budget", label: "Error budget", v: `${Math.round(budgetLeft)}%`, sub: `left of ${slo[0]?.facts.windowDays?.value ?? 7} days`, href: "/alerts", warm: budgetLeft <= 0 } : undefined,
+    on(logs) && perMinute(flows[0]) ? { k: "logs", label: "Lab logs", v: `${perMinute(flows[0])}`, sub: "documents a minute, into ops", href: "/security", warm: false } : undefined,
+    on(cs) ? { k: "bans", label: "Banned", v: `${decisions.length}`, sub: decisions.length ? "sources, by CrowdSec" : "nothing banned now", href: "/security", warm: false } : undefined,
+    on(snaps) ? { k: "backups", label: "Backups", v: badBackups ? `${badBackups} of ${backups.length}` : `${backups.length}/${backups.length}`, sub: badBackups ? "need you" : "last run good", href: "/backups", warm: badBackups > 0 } : undefined,
+    on(gatus) ? { k: "sites", label: "Sites up", v: `${upSites}/${rows.length}`, sub: upSites < rows.length ? `${rows.length - upSites} down now` : "all answering", href: "/apps", warm: upSites < rows.length } : undefined,
+  ].filter(x => x !== undefined));
   const midnights = $derived(Array.from({ length: 15 }, (_, i) => Math.ceil(river.start / DAY) * DAY + i * DAY).filter(m => m < river.end));
 </script>
 
+<div class="layout-pick" role="radiogroup" aria-label="Home layout">
+  {#each [["lookout", "Lookout"], ["watch", "Watch"]] as [v, l] (v)}
+    <button type="button" role="radio" aria-checked={layout === v} class:on={layout === v} onclick={() => pick(v as Prefs["home"])}>{l}</button>
+  {/each}
+</div>
+
+{#if layout === "lookout"}
 <section class="hero raised">
   <Headline headline={estate.headline} {now} {away} {ondismiss} />
-  <NeedsYou needs={estate.headline.needs} entities={estate.entities} />
+  <NeedsYou needs={estate.headline.needs} entities={estate.entities} servers={estate.servers} />
   <Forest state={estate} {events} />
 </section>
+{:else}
+<!-- watch: the work first. Tonight's ranked needs and incidents down the left; the estate and its instruments beside them -->
+<div class="watch">
+  <section class="mod raised watch-tonight" aria-labelledby="w-tonight">
+    <Headline headline={estate.headline} {now} {away} {ondismiss} />
+    <NeedsYou needs={estate.headline.needs} entities={estate.entities} servers={estate.servers} max={6} />
+  </section>
+  <div class="watch-side">
+    <section class="hero strip raised" aria-label="The estate"><Forest state={estate} {events} /></section>
+    <ul class="tiles" aria-label="Instruments">
+      {#each tiles as x (x.k)}
+        <li><a class="tile-fig" class:warm={x.warm} href={x.href} data-tile={x.k}><span class="tf-l">{x.label}</span><b class="tf-v">{x.v}</b><small>{x.sub}</small></a></li>
+      {/each}
+    </ul>
+  </div>
+</div>
+{/if}
 
 {#snippet deploysMod()}
   <section class="mod raised c8" style="--in:.16s" aria-labelledby="h-deploys" data-module="deploys">
@@ -98,6 +138,7 @@
       {/if}
     </section>
 {/snippet}
+{#snippet deploysWide()}<div class="c12 wide-mod">{@render deploysMod()}</div>{/snippet}
 {#snippet budgetMod()}
   <section class="mod raised c4" style="--in:.22s" aria-labelledby="h-budget" data-module="budget">
         <h2 id="h-budget"><span>Error budget</span><span>{slo[0]?.facts.windowDays ? `${slo[0].facts.windowDays.value} d` : ""}<a class="to" href="/alerts" aria-label="Open Alerts">open →</a></span></h2>
@@ -157,6 +198,17 @@
      The timeline runs full width below when the optional side modules are missing; the sites board always does. -->
 <!-- the hero paints first; the modules below mount in the next idle slices (their data is already here and stays live) -->
 <Later>
+{#if layout === "watch"}
+<div class="grid home">
+  <Timeline {events} limit={Math.max(shown, 8)} error={eventsError} />
+  <div class="lane side c5">
+    {#if on(snaps)}{@render backupsMod()}{/if}
+    <HostLoad state={estate} />
+  </div>
+  {@render deploysWide()}
+  {#if on(gatus)}{@render sitesMod()}{/if}
+</div>
+{:else}
 <div class="grid home">
   <div class="lane side c4" class:short={wideTimeline}>
     <HostLoad state={estate} />
@@ -167,11 +219,12 @@
   <div class="lane main c8">
     {@render deploysMod()}
     {#if on(logs)}{@render logsMod()}{/if}
-    {#if !wideTimeline}<Timeline events={events.slice(0, shown)} error={eventsError} />{/if}
+    {#if !wideTimeline}<Timeline {events} limit={shown} error={eventsError} />{/if}
   </div>
-  {#if wideTimeline}<Timeline events={events.slice(0, shown)} error={eventsError} wide />{/if}
+  {#if wideTimeline}<Timeline {events} limit={shown} error={eventsError} wide />{/if}
   {#if on(gatus)}{@render sitesMod()}{/if}
 </div>
+{/if}
 </Later>
 
 {#if open}<Drawer entity={open} {events} now={t} onclose={() => (open = undefined)} />{/if}

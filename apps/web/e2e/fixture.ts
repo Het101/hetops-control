@@ -187,6 +187,19 @@ export function roughNight(): State {
   sec.facts.lastOk = { value: "2026-10-29T01:45:09.000Z" }; sec.facts.lastFailure = { value: "2026-10-30T01:45:02.000Z" }; sec.facts.failed = { value: 2 };
   s.series.push({ id: "lab/crowdsec/bans", server: "lab", label: "CrowdSec bans per hour", unit: "bans", stepMs: 3_600_000, observedAt: at, source: "crowdsec",
     points: Array.from({ length: 24 }, (_, i): [number, number] => [Date.parse(at) - (23 - i) * 3_600_000, [1, 0, 2, 3, 1, 0, 0, 4, 2, 1, 3, 2, 5, 1, 0, 2, 1, 3, 2, 0, 1, 2, 4, 1][i]!]) });
+  // the headline the center computes for this night (apps/center/src/headline.ts): something is down, so it says so first
+  s.headline = {
+    title: "Something is down.", emphasis: "2 need you now.",
+    detail: "NodeFilesystemAlmostFull is firing on lab: / on my-workspace is 91% full. ThreadVault on ops: 3 failed in a row.",
+    needs: [
+      { entity: "lab/alert/NodeFilesystemAlmostFull", server: "lab", text: "NodeFilesystemAlmostFull is firing on lab", detail: "/ on my-workspace is 91% full · since 06:05" },
+      { entity: "ops/site/products_threadvault", server: "ops", text: "ThreadVault is down", detail: "3 failed in a row: [STATUS] == 200 · since 06:23" },
+      { entity: "lab/app/chaos/chaos-api", server: "lab", text: "chaos-api is restarting on lab", detail: "2 restarts in 24h · last at 03:12", action: { id: "restart", label: "Restart", risk: "disruptive" } },
+      { entity: "ops/backup/nightly-security", server: "ops", text: "nightly-security failed", detail: "repository r2-security is not reachable · last ok 29 Oct 01:45", action: { id: "snapshot.now", label: "Snapshot now", risk: "safe" } },
+      { entity: "lab/app/coolify/radar-cloud", server: "lab", text: "radar-cloud has 7a5cba8 waiting for a deploy", detail: "the newest commit is not live" },
+      { entity: "lab/check/bedrock-staging", server: "lab", text: "staging has drifted from Bedrock", detail: "/etc/ssh/sshd_config differs · checked 06:00" },
+    ],
+  };
   return s;
 }
 export const roughEvents: Event[] = [

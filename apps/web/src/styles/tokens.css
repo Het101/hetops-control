@@ -5,8 +5,8 @@
   /* graphite: rail and wells, page, card, raised (active rows, inputs, the selected step); hairlines are primary text at 8% */
   --bg:#141415; --bg-deep:#0f0f10; --card:#19191b; --raised:#232325; --line:rgba(237,237,237,.08); --line-2:rgba(237,237,237,.14);
   --hi:rgba(255,255,255,.06); --lo:rgba(0,0,0,.5);
-  /* three text roles (muted is meta only, 4.9:1 on a card) and silver, the neutral that draws history in charts */
-  --ink:#ededed; --ink-2:#a1a1a6; --ink-3:#85858b; --quiet:#b4b4b9;
+  /* three text roles (muted is meta only: 4.7:1 even on a raised row) and silver, the neutral that draws history in charts */
+  --ink:#ededed; --ink-2:#a1a1a6; --ink-3:#8c8c92; --quiet:#b4b4b9;
   --ember-1:#ff9a3c; --ember-2:#f0582a; --ember-3:#c2391a; --ember:#f2702f;
   /* moss: alive and healthy. The second accent beside ember (needs you): a vivid emerald leaning teal, 7:1 on every surface,
      and kept well apart from ember for red-green colour vision. It never means "look at this"; only ember does. */
@@ -21,6 +21,9 @@
 :where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:2px solid var(--quiet);outline-offset:2px}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans),system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 .mono{font-family:var(--mono),ui-monospace,monospace}
+b,strong{font-weight:500}
+/* a muted line keeps its ember when it says something needs you: .row .t small would otherwise win */
+.row .t small.warm,.t small.warm,small.mono.warm{color:var(--ember)}
 /* depth is surface steps and hairlines: a card sits one step above the page, what is pressed into it one step below */
 .raised,.mod.raised{background:var(--card);box-shadow:inset 0 0 0 1px var(--line)}
 .pressed{background:var(--bg-deep);box-shadow:inset 0 0 0 1px var(--line)}
@@ -204,3 +207,6 @@ h1:focus{outline:none}
 :root[data-density="compact"] .mod{padding:16px;border-radius:12px}
 :root[data-density="compact"] .list .row{padding:6px 10px}
 :root[data-density="compact"] .page-intro{margin-bottom:14px}
+
+/* the headline's counted numbers stand out by colour, not weight: the metric-matched fallback face only matches regular
+   weight, so a heavier number measured differently while the web font loaded and the sentence re-broke (a layout shift) */
