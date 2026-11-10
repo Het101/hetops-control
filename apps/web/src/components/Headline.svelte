@@ -3,6 +3,7 @@
   import { countUp } from "../lib/motion.js";
   import type { Headline } from "../lib/api.js";
   import type { Away } from "../lib/away.js";
+  import { pinned, place, sky } from "../lib/sky.js";
   let { headline, now, away, ondismiss }: { headline: Headline; now: Date; away?: Away; ondismiss?: () => void } = $props();
   const n = (k: number, one: string, many = `${one}s`) => `${k} ${k === 1 ? one : many}`;
   const when = (t: number) => { const d = new Date(t); return `${DAYS[d.getUTCDay()]} ${two(d.getUTCHours())}:${two(d.getUTCMinutes())} UTC`; };
@@ -11,12 +12,14 @@
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const two = (n: number) => String(n).padStart(2, "0");
   const date = $derived(`${DAYS[now.getUTCDay()]} ${now.getUTCDate()} ${MONTHS[now.getUTCMonth()]} · ${two(now.getUTCHours())}:${two(now.getUTCMinutes())} UTC`);
+  // the season and the hour where the viewer is: the same sky the scene draws
+  const season = $derived.by(() => { const s = pinned(sky(now, place()), new URLSearchParams(typeof location === "undefined" ? "" : location.search)); return `${s.ritu.name} · ${s.phase}`; });
   // standalone integers count up; times (03:12), versions and hashes stay as written
   const parts = $derived(headline.detail.split(/(?<![\w:.])(\d+)(?![\w:.])/));
 </script>
 
 <div class="hero-copy">
-  <div class="date">{date}</div>
+  <div class="date">{date} · <span title="The season (ritu) and time of day where you are">{season}</span></div>
   {#if away}
     <!-- one line, then out of the way: what happened since you were last here; ember only for what still waits on you -->
     <p class="away" role="status">
