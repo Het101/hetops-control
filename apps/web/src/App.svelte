@@ -17,8 +17,10 @@
   import ActionDialog from "./components/ActionDialog.svelte";
   import Toasts from "./components/Toasts.svelte";
   import NeedsQueue from "./components/NeedsQueue.svelte";
+  import CommandPalette from "./components/CommandPalette.svelte";
   import { catalog, track } from "./lib/action-state.svelte.js";
   import { away, AWAY_MS, lastSeen, markSeen } from "./lib/away.js";
+  import { pinned, place, sky } from "./lib/sky.js";
 
   // Home shows the latest 6; the Timeline page keeps the most the center serves
   const SHOWN = 6, KEEP = 500, DOWN_MS = 10_000;
@@ -79,6 +81,11 @@
   const shown = $derived(stale && lastMsg !== undefined ? new Date(lastMsg) : now);
   const hhmmUTC = (t: number) => `${new Date(t).toISOString().slice(11, 16)} UTC`;
   const reconnecting = $derived((downSince !== undefined && now.getTime() - downSince >= DOWN_MS) || (ago !== undefined && ago * 1000 > SILENCE_MS));
+  // the hour and season where the viewer is, on <html>: tokens tint the room (warmer at dawn and dusk, cooler at night)
+  $effect(() => {
+    const set = () => { const s = pinned(sky(new Date(), place()), new URLSearchParams(location.search)); document.documentElement.dataset.phase = s.phase; document.documentElement.dataset.ritu = s.ritu.id; };
+    set(); const t = setInterval(set, 60_000); return () => clearInterval(t);
+  });
 </script>
 
 <div class="app">
@@ -86,7 +93,8 @@
   <main>
     <div class="top">
       <span class="brand">HetOps Control</span>
-      {#if estate}<NeedsQueue needs={estate.headline.needs} entities={estate.entities} />{/if}
+      {#if estate}<NeedsQueue needs={estate.headline.needs} entities={estate.entities} servers={estate.servers} />
+        <CommandPalette entities={estate.entities} />{/if}
       <span class="live" class:warm={reconnecting || signedOut} role="status">
         {#key lastMsg}<span class="pulse"></span>{/key}{signedOut ? "signed out" : reconnecting ? "reconnecting" : ago === undefined ? "connecting" : `live · ${ago} s ago`}{#if stale && lastMsg !== undefined}<small>{` · showing ${hhmmUTC(lastMsg)}`}</small>{/if}</span>
     </div>

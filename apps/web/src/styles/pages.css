@@ -543,3 +543,117 @@ a.row{color:inherit;text-decoration:none}
 .load .mem-a{fill:rgba(201,199,193,.07)}.load .mem-l{fill:none;stroke:var(--quiet);stroke-width:1.3;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
 .calm{display:flex;align-items:center;gap:9px;margin:12px 0 2px;font-size:13px;color:var(--ink-2)}
 .calm i{width:7px;height:7px;border-radius:50%;background:var(--moss)}
+
+/* the room follows the viewer's hour, barely: warmer at dawn and dusk, cooler at night; readability never changes */
+:root{--tint:transparent}
+:root[data-phase="dawn"]{--tint:rgba(255,170,110,.028)}
+:root[data-phase="dusk"]{--tint:rgba(255,140,96,.032)}
+:root[data-phase="night"]{--tint:rgba(92,118,190,.03)}
+body{background-image:linear-gradient(var(--tint),var(--tint));background-attachment:fixed}
+
+/* ---------- one need, everywhere (components/NeedRow.svelte) ---------- */
+.need-row{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:8px 8px;margin:0 -8px;border-radius:10px}
+.need-row+.need-row{margin-top:2px}
+.need-rank{font-size:12px;color:var(--ink-3);width:12px;text-align:right}
+.need-sev{width:8px;height:8px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--ember)}
+.need-row[data-sev="down"]{background:rgba(242,112,47,.08);box-shadow:inset 0 0 0 1px rgba(242,112,47,.28)}
+.need-row[data-sev="down"] .need-sev{background:var(--ember)}
+.need-row[data-sev="blind"] .need-sev{box-shadow:inset 0 0 0 1.5px var(--ink-3)}
+.need-t{font-size:14px;min-width:0}
+.need-t small{display:block;color:var(--ink-2);font-size:12px;margin-top:2px;overflow-wrap:anywhere}
+.need-w{display:block;font-size:12px;color:var(--ember);margin-bottom:2px}
+.need-row[data-sev="blind"] .need-w,.need-w[data-sev="blind"]{color:var(--ink-3)}
+.need-act{border:0;cursor:pointer;min-height:32px;padding:0 12px;border-radius:8px;background:var(--ember);color:#1a0d06;font:500 13px var(--sans);
+  transition:background-color .15s var(--ease),transform .15s var(--ease)}
+.need-act:hover{background:var(--ember-1)}.need-act:active{transform:scale(.97)}
+.need-go{min-height:32px;display:inline-flex;align-items:center;gap:.3em;padding:0 4px;color:var(--ink-2);font:400 13px var(--sans);text-decoration:none;white-space:nowrap;border-radius:6px;transition:color .15s var(--ease)}
+.need-go:hover{color:var(--ink)}
+.need-more{margin-top:8px;border:0;background:none;padding:4px 0;color:var(--ink-2);font:400 13px var(--sans);cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.need-more:hover{color:var(--ink)}
+.need-more kbd,.palette kbd{font:400 12px var(--mono);padding:0 6px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--line-2);color:var(--ink-2)}
+
+/* ---------- Ctrl+K palette (components/CommandPalette.svelte) ---------- */
+.pal-open{display:inline-flex;align-items:center;gap:8px;border:0;cursor:pointer;min-height:32px;padding:0 8px 0 10px;border-radius:8px;
+  background:var(--card);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink-3);font:400 13px var(--sans);transition:color .15s var(--ease)}
+.pal-open:hover{color:var(--ink)}
+.pal-open svg{width:16px;height:16px}
+.pal-open kbd,.pal-in kbd,.pal-keys kbd{font:400 12px var(--mono);padding:0 6px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--line-2);color:var(--ink-2)}
+.palette{border:0;border-radius:16px;padding:0;width:min(620px,calc(100vw - 32px));max-height:min(560px,calc(100dvh - 96px));color:var(--ink);
+  margin:12vh auto auto;box-shadow:inset 0 0 0 1px var(--line-2),0 24px 64px rgba(0,0,0,.55);animation:act-in .2s var(--ease);overflow:hidden}
+.palette[open]{display:flex;flex-direction:column}
+.palette::backdrop{background:rgba(10,10,11,.6)}
+.pal-in{display:flex;align-items:center;gap:12px;padding:12px 16px;box-shadow:inset 0 -1px 0 var(--line)}
+.pal-in svg{width:18px;height:18px;color:var(--ink-3);flex:none}
+.pal-in input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--ink);font:400 15px var(--sans);padding:6px 0}
+.pal-list{overflow-y:auto;padding:8px}
+.pal-g{font:400 12px var(--sans);color:var(--ink-3);padding:12px 8px 4px}
+.pal-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;min-height:40px;padding:0 8px;border-radius:8px;cursor:pointer}
+.pal-row.on{background:var(--raised);box-shadow:inset 0 1px 0 var(--hi)}
+.pal-l{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pal-h{font-size:12px;color:var(--ink-3);white-space:nowrap}
+.pal-do{font:500 12px var(--sans);color:var(--ember)}
+.pal-none{padding:24px 8px;color:var(--ink-3);font-size:14px;margin:0}
+.pal-keys{margin:0;padding:8px 16px;font-size:12px;color:var(--ink-3);box-shadow:inset 0 1px 0 var(--line)}
+@media (max-width:720px){.pal-open span,.pal-open kbd{display:none}.pal-open{min-width:44px;min-height:44px;justify-content:center;padding:0}}
+
+/* ---------- incident threads (lib/incidents.ts, components/Timeline.svelte) ---------- */
+button.row.incident{width:100%;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.thread-chev{width:8px;height:8px;border-right:1.5px solid var(--ink-3);border-bottom:1.5px solid var(--ink-3);transform:rotate(45deg);margin:0 4px 4px;transition:transform .2s var(--ease)}
+.incident[aria-expanded="true"] .thread-chev{transform:rotate(225deg);margin-bottom:-4px}
+.steps{list-style:none;margin:0 0 8px 20px;padding:4px 0 4px 16px;box-shadow:inset 1px 0 0 var(--line-2)}
+.steps li{display:flex;gap:12px;align-items:baseline;padding:4px 0;position:relative;font-size:13px}
+.steps li::before{content:"";position:absolute;left:-20px;top:11px;width:7px;height:7px;border-radius:50%;background:var(--bg);box-shadow:inset 0 0 0 1.5px var(--ink-3)}
+.steps li[data-level="down"]::before{background:var(--ember);box-shadow:none}
+.steps li[data-level="attention"]::before{box-shadow:inset 0 0 0 1.5px var(--ember)}
+.steps li[data-level="ok"]::before{background:var(--moss);box-shadow:none}
+.steps li[data-level="action"]::before{background:var(--ink);box-shadow:none}
+.steps .t small{display:block;color:var(--ink-2);font-size:12px}
+
+/* ---------- two Homes (Settings or the switch above Home): lookout and watch ---------- */
+.layout-pick{display:flex;justify-content:flex-end;gap:4px;margin:-8px 0 12px;padding:0}
+.layout-pick button{border:0;cursor:pointer;min-height:32px;padding:0 12px;border-radius:8px;background:none;color:var(--ink-3);font:400 13px var(--sans);transition:color .15s var(--ease),background-color .15s var(--ease)}
+.layout-pick button:hover{color:var(--ink)}
+.layout-pick button.on{color:var(--ink);background:var(--raised);box-shadow:inset 0 1px 0 var(--hi)}
+.watch{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:16px;align-items:start}
+.watch-tonight{padding:24px}
+.watch-tonight .hero-copy{position:static;max-width:none}
+.watch-tonight .needs{position:static;width:auto;margin-top:16px;padding:0;background:none;box-shadow:none}
+.watch-side{display:grid;gap:16px;min-width:0}
+.hero.strip{min-height:360px}
+/* the instruments: one row of equal figures, however many are on; two a row on a phone (.figs, not .tiles: those are the Server page workloads) */
+.figs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:12px;list-style:none;margin:0;padding:0}
+.figs li{display:grid}
+@media (max-width:720px){.figs{grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile-fig{display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:12px;background:var(--card);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);text-decoration:none;transition:background-color .15s var(--ease)}
+.tile-fig:hover{background:var(--raised)}
+.tf-l{font:400 12px var(--sans);color:var(--ink-3)}
+.tf-v{font:500 26px/1.1 var(--sans);font-variant-numeric:tabular-nums}
+.tile-fig small{font-size:12px;color:var(--ink-2)}
+.tile-fig.warm{box-shadow:inset 0 0 0 1px rgba(242,112,47,.4)}
+.tile-fig.warm .tf-v,.tile-fig.warm small{color:var(--ember)}
+.wide-mod{display:contents}
+.wide-mod>.mod{grid-column:1/-1}
+@media (max-width:1080px){.watch{grid-template-columns:1fr}}
+
+/* the hero's needs card is narrow: each row's one move sits under its words; the watch list is wide and keeps it inline */
+.needs .need-row{grid-template-columns:auto minmax(0,1fr)}
+.needs .need-row>.need-act,.needs .need-row>.need-go{grid-column:2;justify-self:start;margin-top:-4px}
+.needs .need-row>.need-rank{display:none}
+.watch-tonight .needs .need-row{grid-template-columns:auto auto minmax(0,1fr) auto}
+.watch-tonight .needs .need-row>.need-act,.watch-tonight .needs .need-row>.need-go{grid-column:auto;margin-top:0}
+.watch-tonight .needs .need-row>.need-rank{display:block}
+/* lookout: room above the trees for the ranked card, so it never covers a crown */
+.hero:not(.strip){min-height:600px}
+@media (max-width:720px){
+  /* a phone: an incident row wraps, its tag on a second line under the words, as the Timeline page's rows do */
+  button.row.incident{flex-wrap:wrap;row-gap:6px}
+  button.row.incident .t{flex:1 1 calc(100% - 84px);min-width:0}
+  button.row.incident .tag{margin-left:56px}
+  .row .t{min-width:0}
+  /* watch's list goes narrow too: each move under its words */
+  .watch-tonight .needs .need-row{grid-template-columns:auto minmax(0,1fr)}
+  .watch-tonight .needs .need-row>.need-act,.watch-tonight .needs .need-row>.need-go{grid-column:2;justify-self:start;margin-top:-4px}
+  .watch-tonight .needs .need-row>.need-rank{display:none}
+  .watch-tonight{padding:16px}
+}
+@media (max-width:720px){.hero.strip{min-height:260px}}

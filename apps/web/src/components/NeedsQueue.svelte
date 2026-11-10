@@ -1,17 +1,15 @@
 <script lang="ts">
-  import type { Entity } from "@hetops-control/contracts";
+  import type { Entity, ServerView } from "@hetops-control/contracts";
   import type { Headline } from "../lib/api.js";
   import { catalog, ui } from "../lib/action-state.svelte.js";
-  import { offer, pageOf } from "../lib/actions.js";
+  import { ranked } from "../lib/needs.js";
   import { go } from "../lib/router.svelte.js";
   // Everything that needs you, from any page: an ember pill in the top bar while anything does, and behind it a queue to work
   // through from the keyboard (n opens it; j/k or the arrows move; Enter acts, or opens the page when there is nothing to press).
-  let { needs, entities }: { needs: Headline["needs"]; entities: Entity[] } = $props();
+  let { needs, entities, servers }: { needs: Headline["needs"]; entities: Entity[]; servers: Record<string, ServerView> } = $props();
   let dlg = $state<HTMLDialogElement>(), list = $state<HTMLElement>();
-  const items = $derived(needs.map(n => {
-    const e = entities.find(x => x.id === n.entity), o = e && n.action ? offer(e, n.action.id, catalog.list) : undefined;
-    return { n, e, o, page: pageOf(n.entity) };
-  }));
+  // the same ranking as the hero: down first; each row's one move is its action, or its page
+  const items = $derived(ranked(needs, entities, servers, catalog.list));
   const rows = () => [...(list?.querySelectorAll<HTMLButtonElement>("button.q-row") ?? [])];
   const open = () => { dlg?.showModal(); rows()[0]?.focus(); };
   const act = (i: (typeof items)[number]) => {
@@ -43,7 +41,7 @@
     {#each items as i, k (i.n.entity + k)}
       <button type="button" class="q-row" onclick={() => act(i)}>
         <span class="q-n mono" aria-hidden="true">{k + 1}</span>
-        <span class="t">{i.n.text}<small>{i.n.detail}</small></span>
+        <span class="t"><span class="need-w mono" data-sev={i.sev}>{i.word}</span>{i.n.text}<small>{i.n.detail}</small></span>
         <span class="q-do">{i.o ? i.o.descriptor.label : `Open ${i.page.label}`} →</span>
       </button>
     {:else}<p class="need-none">Nothing is waiting on you.</p>{/each}

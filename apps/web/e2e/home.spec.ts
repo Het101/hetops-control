@@ -13,7 +13,8 @@ test("the headline renders from the state", async ({ page }) => {
   await expect(page.locator(".headline")).toContainText("The estate is healthy");
   await expect(page.locator(".headline em")).toHaveText("1 thing is waiting on you");
   await expect(page.locator(".needs h2")).toHaveText("Needs you · 1");
-  await expect(page.locator(".ember-btn")).toBeDisabled();
+  await expect(page.locator(".needs .need-go")).toHaveText(/^Open Appss*→$/);   // no action here: its page, never a dead button
+  await expect(page.locator(".needs .need-go")).toHaveAttribute("href", "/apps");
 });
 
 test("three stations with their status words", async ({ page }) => {
@@ -45,7 +46,10 @@ test("timeline ember rows are the incidents still open; a recovered one is silve
   await expect(tl.locator(".row.now")).toHaveCount(1);
   await expect(tl.locator(".row:not(.now)").filter({ hasText: "chaos.hetops.dev (ops) ok → attention" })).toContainText("Recovered 06:41");
   await expect(page.locator(".list[aria-labelledby=\"h-timeline\"] .row.now").filter({ hasText: "chaos-api (lab) ok → attention" })).toHaveCount(1);
-  await expect(page.locator(".list[aria-labelledby=\"h-timeline\"] .row:not(.now)").filter({ hasText: "attention → ok" })).toHaveCount(1);
+  // the recovery is folded into its incident: one row, and its steps open under it
+  const inc = tl.locator("button.row.incident").filter({ hasText: "chaos.hetops.dev (ops) ok → attention" });
+  await inc.click();
+  await expect(tl.locator(".steps")).toContainText("attention → ok");
 });
 
 test("a failing event log is said, not shown as empty", async ({ page }) => {

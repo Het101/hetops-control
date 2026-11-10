@@ -1,26 +1,21 @@
 <script lang="ts">
-  import type { Entity } from "@hetops-control/contracts";
+  import type { Entity, ServerView } from "@hetops-control/contracts";
   import type { Headline } from "../lib/api.js";
-  import { catalog, ui } from "../lib/action-state.svelte.js";
-  import { offer } from "../lib/actions.js";
-  let { needs, entities }: { needs: Headline["needs"]; entities: Entity[] } = $props();
-  const act = (n: Headline["needs"][number]) => {
-    const e = entities.find(x => x.id === n.entity), o = e && n.action ? offer(e, n.action.id, catalog.list) : undefined;
-    return e && o ? { entity: e, ...o } : undefined;
-  };
+  import { catalog } from "../lib/action-state.svelte.js";
+  import { ranked } from "../lib/needs.js";
+  import NeedRow from "./NeedRow.svelte";
+  // The hero's ranked list: the worst first, three at most; the rest are a click away in the queue (n), not stacked here
+  let { needs, entities, servers, max = 3 }: { needs: Headline["needs"]; entities: Entity[]; servers: Record<string, ServerView>; max?: number } = $props();
+  const rows = $derived(ranked(needs, entities, servers, catalog.list));
+  const openQueue = () => document.querySelector<HTMLButtonElement>("button.q-pill")?.click();
 </script>
 
 <div class="needs pressed">
   <h2 class:calm={!needs.length}>Needs you · {needs.length}</h2>
-  {#each needs as n, i (i)}
-    {@const a = act(n)}
-    <div class="need"><div class="txt">{n.text}<small>{n.detail}</small></div>
-      <!-- aria-disabled, not disabled: a need without an action stays focusable so keyboard users hear why -->
-      <button type="button" class="ember-btn" aria-disabled={a ? undefined : "true"}
-        title={a ? `${a.ref.label} ${a.entity.name}` : "No action for this one here: open its page to look"}
-        aria-label={a ? `${a.ref.label} ${a.entity.name}` : `${n.text}: no action to take here`} onclick={() => { if (a) ui.open = a; }}>
-        <svg viewBox="0 0 24 24" fill="#2a1408" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button></div>
+  {#each rows.slice(0, max) as r, i (r.n.entity + i)}
+    <NeedRow row={r} rank={max > 3 ? i + 1 : undefined} />
   {:else}
     <div class="need-none">Nothing is waiting on you.</div>
   {/each}
+  {#if rows.length > max}<button type="button" class="need-more" onclick={openQueue}>{rows.length - max} more in the queue <kbd>n</kbd></button>{/if}
 </div>

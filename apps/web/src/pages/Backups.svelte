@@ -33,7 +33,7 @@
     <div class="tal"><b>{list.length}</b><span class="mono">Policies</span></div>
     <div class="tal"><b class:warm={needing > 0}>{needing}</b><span class="mono">Need you</span></div>
     <div class="tal"><b>{kept.toLocaleString()}</b><span class="mono">Snapshots kept</span></div>
-    <div class="tal"><b>{failed}</b><span class="mono">FAILED, ALL TIME</span></div>
+    <div class="tal"><b>{failed}</b><span class="mono">Failed, all time</span></div>
     <div class="tal"><b class="sm">{soonest === undefined ? "—" : countdown(soonest - t)}</b><span class="mono">Next run</span></div>
   </section>
 

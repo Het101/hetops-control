@@ -64,8 +64,8 @@ test.describe("Alerts", () => {
     await mockApi(page); await page.goto("/alerts");
     // Home's one Needs-you item is not an alert; this page still says it, rather than calling the estate quiet
     await expect(page.locator("main h1")).toHaveText("Nothing is firing; 1 thing still needs you");
-    await expect(page.locator(".row[data-needs]")).toHaveCount(1);
-    await expect(page.locator(".row[data-needs]")).toContainText("chaos-api is restarting on lab");
+    await expect(page.locator("[data-needs] .need-row")).toHaveCount(1);
+    await expect(page.locator("[data-needs] .need-row")).toContainText("chaos-api is restarting on lab");
     await expect(page.locator(".wait").first()).toContainText("No error budget reporting yet");
     await expect(page.getByText("Alertmanager is not reporting yet")).toBeVisible();
     await expect(page.locator(".pill")).toHaveCount(19);
