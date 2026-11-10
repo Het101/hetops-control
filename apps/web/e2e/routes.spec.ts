@@ -99,9 +99,9 @@ test("reduce motion On stills every animation, and is remembered", async ({ page
   await page.getByText("On", { exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
   await page.getByRole("link", { name: "Home" }).click();
-  await expect(page.locator("circle.leaf").first()).toBeAttached();
+  await expect(page.locator(".map .tree").first()).toBeAttached();
   await page.reload();
-  await expect(page.locator("circle.leaf").first()).toBeAttached();
+  await expect(page.locator(".map .tree").first()).toBeAttached();
   expect(await page.evaluate(() => document.getAnimations().filter(a => a.playState === "running").length)).toBe(0);
 });
 
@@ -152,15 +152,20 @@ test("a desktop has no More: every page sits in the rail", async ({ page }) => {
   for (const l of await page.locator(".rail a.nav").all()) await expect(l).toBeVisible();
 });
 
-test("a server's own page: from its name under the tree, with its tree, load over the day, workloads, sources and timeline", async ({ page }) => {
+test("a server's own page: from its name on the map, its compartment zoomed in, load over the day, workloads, sources and timeline", async ({ page }) => {
   await page.clock.setFixedTime(new Date("2026-10-30T07:42:00.000Z"));
   await page.goto("/");
   await page.getByRole("link", { name: "Open Lab's page" }).click();
   await expect(page).toHaveURL("/servers/lab");
   await expect(page).toHaveTitle("Lab · HetOps Control");
   await expect(page.locator("main h1")).toHaveText("Lab needs a look");
-  await expect(page.locator(".srv-tree svg.forest")).toBeVisible();
-  await expect(page.locator(".stations")).toHaveCount(0);   // one tree, no station row
+  // its compartment fills the map, one tree per workload; a tree opens its drawer
+  await expect(page.locator('.srv-tree svg.map[data-map="lab"]')).toBeVisible();
+  await expect(page.locator(".map .compartment")).toHaveCount(1);
+  await page.locator('.tree[data-entity="lab/app/chaos/chaos-api"]').click();
+  await expect(page.getByRole("dialog")).toContainText("chaos-api");
+  await expect(page.locator('.tree[data-entity="lab/app/chaos/chaos-api"]')).toHaveAttribute("aria-current", "true");
+  await page.keyboard.press("Escape");
   const load = page.locator('[aria-labelledby="sv-load"]');
   await expect(load.locator("h2")).toContainText("Since");      // lab's agent has kept 9 h, and the page says so
   await expect(load.locator("path.cpu-l")).toHaveCount(1);

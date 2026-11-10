@@ -1,19 +1,20 @@
 /* Two faces, served by the app itself (Fontsource, SIL OFL 1.1, latin only): no request leaves for a font host.
-   IBM Plex Sans 400-600 (variable) is the interface; IBM Plex Mono 400 and 500 carries figures, times and meta. Plex Sans is
-   preloaded in index.html. The "fallback" faces are the local fonts shown during the swap, sized to the web fonts' metrics
-   so the swap shifts nothing. */
-@font-face{font-family:"IBM Plex Sans";font-style:normal;font-weight:400 600;font-display:swap;
-  src:url("@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2") format("woff2");
+   Overpass (variable 100-900) is the interface: it comes from the highway and forest-department signage lineage, legible at a
+   glance, at night, on a phone (docs/specs/2026-11-10-fire-line.md). Overpass Mono 400 and 500 carries figures, times and
+   coordinates. Overpass is preloaded in index.html. The "fallback" faces are the local fonts shown during the swap, sized to the
+   web fonts' metrics so the swap shifts nothing. */
+@font-face{font-family:"Overpass";font-style:normal;font-weight:100 900;font-display:swap;
+  src:url("@fontsource-variable/overpass/files/overpass-latin-wght-normal.woff2") format("woff2");
   unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:400;font-display:swap;
-  src:url("@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2") format("woff2");
+@font-face{font-family:"Overpass Mono";font-style:normal;font-weight:400;font-display:swap;
+  src:url("@fontsource/overpass-mono/files/overpass-mono-latin-400-normal.woff2") format("woff2");
   unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:500;font-display:swap;
-  src:url("@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2") format("woff2");
+@font-face{font-family:"Overpass Mono";font-style:normal;font-weight:500;font-display:swap;
+  src:url("@fontsource/overpass-mono/files/overpass-mono-latin-500-normal.woff2") format("woff2");
   unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 /* metrics from @capsizecss/metrics 3: Arial and Courier New scaled to each web font's x-width, ascent and descent;
    the same latin range, so a glyph the web font lacks (→, ●) still comes from the system font, as before */
-@font-face{font-family:"IBM Plex Sans fallback";src:local("Arial"),local("ArialMT");size-adjust:101.1663%;ascent-override:101.3184%;descent-override:27.183%;line-gap-override:0%;
+@font-face{font-family:"Overpass fallback";src:local("Arial"),local("ArialMT");size-adjust:100.7176%;ascent-override:87.6708%;descent-override:38.0271%;line-gap-override:0%;
   unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:"IBM Plex Mono fallback";src:local("Courier New"),local("CourierNewPSMT");size-adjust:99.9837%;ascent-override:102.5167%;descent-override:27.5045%;line-gap-override:0%;
+@font-face{font-family:"Overpass Mono fallback";src:local("Courier New"),local("CourierNewPSMT");size-adjust:102.65%;ascent-override:86.0205%;descent-override:37.3113%;line-gap-override:0%;
   unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}

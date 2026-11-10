@@ -73,7 +73,7 @@ test("a rough night: the budget, silver bans, and ember only where the owner is 
   await expect(mod(page, "budget").locator(".budget-num b")).toHaveAttribute("data-final", "58");
   await expect(mod(page, "budget").locator(".budget-num.warm")).toHaveCount(0);
   await expect(mod(page, "knocks").locator(".knock")).toHaveCount(7);
-  await expect(mod(page, "knocks").locator(".knock").first()).toHaveCSS("fill", "rgb(180, 180, 185)"); // --quiet, never ember
+  await expect(mod(page, "knocks").locator(".knock").first()).toHaveCSS("fill", "rgb(180, 185, 182)"); // --quiet, never fire
   await expect(mod(page, "knocks").locator("h2")).toContainText("37 banned");
   await expect(mod(page, "deploys").locator(".dep.hot")).toHaveCount(1);   // the waiting deploy sits at "now" in its lane, ember
   await expect(mod(page, "deploys").locator(".wait-row")).toContainText("radar-cloud has 7a5cba8 waiting for a deploy");

@@ -293,8 +293,6 @@ a.row{color:inherit;text-decoration:none}
   .hero{min-height:0;padding:28px 30px 12px}
   .hero-copy{position:static;max-width:640px}
   .needs{position:static;width:auto;max-width:520px;margin-top:18px}
-  svg.forest{position:relative;bottom:auto;display:block;width:calc(100% + 60px);height:auto;margin:12px -30px 0}
-  .stations{position:static;margin-top:4px}
 }
 
 /* ---------- narrow screens ---------- */
@@ -383,7 +381,6 @@ a.row{color:inherit;text-decoration:none}
   .hero{padding:22px 18px 10px;border-radius:16px}
   .headline{font-size:28px}
   .needs{padding:12px 14px}
-  svg.forest{width:calc(100% + 36px);margin:10px -18px 0}
   .st b{font-size:14px}
   .st span{display:none}
   .st i{font-size:12px}
@@ -532,10 +529,6 @@ a.row{color:inherit;text-decoration:none}
 .intro-line{margin:8px 0 0;font-size:12px;color:var(--ink-3)}
 .st-l{color:inherit;text-decoration:none}
 .st-l:hover{text-decoration:underline;text-decoration-color:var(--ink-3);text-underline-offset:4px}
-.srv-tree{padding-bottom:6px}
-/* the Home hero lays the forest absolutely over its sky; here it is the module's own content, so it flows */
-.srv-tree{display:flex;align-items:flex-end;min-height:300px}
-.srv-tree svg.forest{position:relative;bottom:auto;display:block;width:100%;height:300px;margin:0}
 .load + .ends{font-size:12px;color:var(--ink-3);margin-top:6px}
 .load{display:block;width:100%;height:150px;margin-top:14px}
 .load .grid-l{stroke:rgba(237,237,237,.14);stroke-width:1;stroke-dasharray:2 5;vector-effect:non-scaling-stroke}
@@ -609,51 +602,22 @@ button.row.incident{width:100%;border:0;background:none;color:inherit;font:inher
 .steps li[data-level="action"]::before{background:var(--ink);box-shadow:none}
 .steps .t small{display:block;color:var(--ink-2);font-size:12px}
 
-/* ---------- two Homes (Settings or the switch above Home): lookout and watch ---------- */
-.layout-pick{display:flex;justify-content:flex-end;gap:4px;margin:-8px 0 12px;padding:0}
-.layout-pick button{border:0;cursor:pointer;min-height:32px;padding:0 12px;border-radius:8px;background:none;color:var(--ink-3);font:400 13px var(--sans);transition:color .15s var(--ease),background-color .15s var(--ease)}
-.layout-pick button:hover{color:var(--ink)}
-.layout-pick button.on{color:var(--ink);background:var(--raised);box-shadow:inset 0 1px 0 var(--hi)}
-.watch{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:16px;align-items:start}
-.watch-tonight{padding:24px}
-.watch-tonight .hero-copy{position:static;max-width:none}
-.watch-tonight .needs{position:static;width:auto;margin-top:16px;padding:0;background:none;box-shadow:none}
-.watch-side{display:grid;gap:16px;min-width:0}
-.hero.strip{min-height:360px}
-/* the instruments: one row of equal figures, however many are on; two a row on a phone (.figs, not .tiles: those are the Server page workloads) */
-.figs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:12px;list-style:none;margin:0;padding:0}
-.figs li{display:grid}
-@media (max-width:720px){.figs{grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr))}}
-.tile-fig{display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:12px;background:var(--card);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);text-decoration:none;transition:background-color .15s var(--ease)}
-.tile-fig:hover{background:var(--raised)}
-.tf-l{font:400 12px var(--sans);color:var(--ink-3)}
-.tf-v{font:500 26px/1.1 var(--sans);font-variant-numeric:tabular-nums}
-.tile-fig small{font-size:12px;color:var(--ink-2)}
-.tile-fig.warm{box-shadow:inset 0 0 0 1px rgba(242,112,47,.4)}
-.tile-fig.warm .tf-v,.tile-fig.warm small{color:var(--ember)}
-.wide-mod{display:contents}
-.wide-mod>.mod{grid-column:1/-1}
-@media (max-width:1080px){.watch{grid-template-columns:1fr}}
-
-/* the hero's needs card is narrow: each row's one move sits under its words; the watch list is wide and keeps it inline */
+/* ---------- Home (Fire line): the bulletin over the map, what needs you beside it ---------- */
+.fire-home{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px 24px;align-items:start;margin-bottom:24px}
+.fh-head{grid-column:1/-1}
+.fh-head .hero-copy{position:static;max-width:none}
+.fh-side .needs{position:static;width:auto;padding:16px;background:var(--card);box-shadow:inset 0 0 0 1px var(--line)}
+@media (max-width:1080px){.fire-home{grid-template-columns:1fr}}
+/* a phone keeps the map at a readable scale and lets it scroll sideways (the phone's own layout is a later step of the plan) */
+@media (max-width:720px){.fh-map{overflow-x:auto;margin:0 -16px;padding:0 16px;scrollbar-width:none}.fh-map .map{min-width:760px}}
+/* the side column is narrow: each row's one move sits under its words */
 .needs .need-row{grid-template-columns:auto minmax(0,1fr)}
 .needs .need-row>.need-act,.needs .need-row>.need-go{grid-column:2;justify-self:start;margin-top:-4px}
 .needs .need-row>.need-rank{display:none}
-.watch-tonight .needs .need-row{grid-template-columns:auto auto minmax(0,1fr) auto}
-.watch-tonight .needs .need-row>.need-act,.watch-tonight .needs .need-row>.need-go{grid-column:auto;margin-top:0}
-.watch-tonight .needs .need-row>.need-rank{display:block}
-/* lookout: room above the trees for the ranked card, so it never covers a crown */
-.hero:not(.strip){min-height:600px}
 @media (max-width:720px){
   /* a phone: an incident row wraps, its tag on a second line under the words, as the Timeline page's rows do */
   button.row.incident{flex-wrap:wrap;row-gap:6px}
   button.row.incident .t{flex:1 1 calc(100% - 84px);min-width:0}
   button.row.incident .tag{margin-left:56px}
   .row .t{min-width:0}
-  /* watch's list goes narrow too: each move under its words */
-  .watch-tonight .needs .need-row{grid-template-columns:auto minmax(0,1fr)}
-  .watch-tonight .needs .need-row>.need-act,.watch-tonight .needs .need-row>.need-go{grid-column:2;justify-self:start;margin-top:-4px}
-  .watch-tonight .needs .need-row>.need-rank{display:none}
-  .watch-tonight{padding:16px}
 }
-@media (max-width:720px){.hero.strip{min-height:260px}}

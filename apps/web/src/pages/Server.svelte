@@ -2,14 +2,14 @@
   import type { Entity, Event, ServerId } from "@hetops-control/contracts";
   import { num, type State } from "../lib/api.js";
   import { heading, ago, areas, DAY, hhmm, needsLook, needsYou, str, toneOf, workloads } from "../lib/pages.js";
-  import Forest from "../components/Forest.svelte";
+  import Map from "../components/Map.svelte";
   import Dial from "../components/Dial.svelte";
   import Status from "../components/Status.svelte";
   import Timeline from "../components/Timeline.svelte";
   import Waiting from "../components/Waiting.svelte";
   import Drawer from "../components/Drawer.svelte";
 
-  // One server, whole: its tree drawn large, how loaded it is now and over the day, the workloads that need a look, what its
+  // One server, whole: its compartment of the map zoomed in (a tree per workload, by namespace), how loaded it is now and over the day, the workloads that need a look, what its
   // agent reads and whether its host has drifted from Bedrock, and what happened on it.
   let { id, estate, events, now }: { id: ServerId; estate: State | undefined; events: Event[]; now: Date } = $props();
   const NAME: Record<ServerId, string> = { lab: "Lab", staging: "Staging", ops: "Ops" };
@@ -66,7 +66,7 @@
 {:else}
 <div class="grid">
   <section class="mod raised c8 srv-tree" style="--in:.04s" aria-label={`${NAME[id]}'s tree`}>
-    <Forest state={estate} {events} only={id} />
+    <Map state={estate} {events} {now} only={id} selected={open?.id} onpick={e => (open = e)} />
   </section>
   <section class="mod raised c4" style="--in:.08s" aria-labelledby="sv-now">
     <h2 id="sv-now"><span>Host · now</span><span>{nodes.length > 1 ? `busiest of ${nodes.length} nodes` : nodes[0]?.name ?? ""}</span></h2>
