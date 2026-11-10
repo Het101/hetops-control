@@ -30,7 +30,7 @@
     <!-- a slow radar sweep out from the lab: two rings, half a period apart -->
     {#if !$reduced}{#each [0, 1] as n (n)}<circle class="scan" data-wind="scan" data-f="6" data-ph={n * 3} data-ox={lab[0]} data-oy={lab[1]} stroke-opacity="0" cx={lab[0]} cy={lab[1]} r={Math.min(w, h * 2.4) * .3}/>{/each}{/if}
     <circle cx={lab[0]} cy={lab[1]} r={9 * Math.max(k, .6)} class="lab-ring"/><circle cx={lab[0]} cy={lab[1]} r={4 * Math.max(k, .7)} class="lab-dot"/>
-    {#if labels}<text x={lab[0] + 12} y={lab[1] + 4} class="lab-l">LAB</text>{/if}
+    {#if labels}<text x={lab[0] + 12} y={lab[1] + 4} class="lab-l">Lab</text>{/if}
   </svg>
   </Later>
 </div>

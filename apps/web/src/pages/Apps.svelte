@@ -2,7 +2,7 @@
   import Status from "../components/Status.svelte";
   import { ServerIdSchema, type Entity, type Event } from "@hetops-control/contracts";
   import { num, type State } from "../lib/api.js";
-  import { ago, facets, matches, needsYou, picked, pips, needsLook, serverApps, sourceState, str, time, workloads } from "../lib/pages.js";
+  import { heading, sentence, ago, facets, matches, needsYou, picked, pips, needsLook, serverApps, sourceState, str, time, workloads } from "../lib/pages.js";
   import Chips from "../components/Chips.svelte";
   import Search from "../components/Search.svelte";
   import Knob from "../components/Knob.svelte";
@@ -51,15 +51,15 @@
 </script>
 
 <section class="page-intro">
-  <span class="kicker">APPS · WORKLOADS · SITES</span>
-  <h1 tabindex="-1">{!estate ? "Every app Argo and Coolify run, and the sites they serve."
-    : `${total} workloads on ${sums.filter(s => s.apps || s.argo).length} servers${needing ? `; ${needing} need${needing === 1 ? "s" : ""} you.` : ", all steady."}`}</h1>
+  <span class="kicker">Apps · workloads · sites</span>
+  <h1 tabindex="-1">{heading(!estate ? "Every app Argo and Coolify run, and the sites they serve."
+    : `${total} workloads on ${sums.filter(s => s.apps || s.argo).length} servers${needing ? `; ${needing} need${needing === 1 ? "s" : ""} you.` : ", all steady."}`)}</h1>
 </section>
 
 <div class="grid">
   {#each sums as s, i (s.id)}
     <section class="mod raised c4 srv" data-server={s.id} style={`--in:${.04 + i * .04}s`} aria-label={`${s.id} apps`}>
-      <h2><span>{s.id.toUpperCase()}</span><span class:warm={s.needs > 0 || (!!s.view?.configured && !s.view?.reachable)} class:moss={word(s) === "steady"}>{word(s)}</span></h2>
+      <h2><span>{sentence(s.id)}</span><span class:warm={s.needs > 0 || (!!s.view?.configured && !s.view?.reachable)} class:moss={word(s) === "steady"}>{word(s)}</span></h2>
       {#if s.apps || s.argo}
         <div class="nums">
           <div><b>{s.apps}</b><span>workloads</span></div>
@@ -82,7 +82,7 @@
   </section>
 
   <section class={`mod raised ${coolQuiet ? "c12" : "c7"} list`} style="--in:.18s" aria-labelledby="ap-argo">
-    <h2 id="ap-argo"><span>ARGO CD · SYNC AND HEALTH</span><span>{argo.length}</span></h2>
+    <h2 id="ap-argo"><span>Argo CD · sync and health</span><span>{argo.length}</span></h2>
     <div class="cards">
       {#each argo as e (e.id)}
         {@const warm = needsYou(e.status)}
@@ -101,7 +101,7 @@
   </section>
 
   <section class={`mod raised ${coolQuiet ? "c12 slim" : "c5"} list`} style="--in:.22s" aria-labelledby="ap-cool">
-    <h2 id="ap-cool"><span>COOLIFY · DEPLOYS</span><span>{coolify.length || ""}</span></h2>
+    <h2 id="ap-cool"><span>Coolify · deploys</span><span>{coolify.length || ""}</span></h2>
     {#if cool.failing.length}
       <Waiting title={`Can't read Coolify on ${cool.failing[0]!.server}.`} warm>{cool.failing[0]!.error}</Waiting>
     {:else if !cool.reporting.length}
@@ -123,10 +123,10 @@
   </section>
 
   <section class="mod raised c12 list" style="--in:.26s" aria-labelledby="ap-work">
-    <h2 id="ap-work"><span>WORKLOADS · PODS AND RESTARTS</span><span>{work.length}{#if !filtering}<button type="button" class="linkish" onclick={() => { everything = !everything; unfolded = []; }}>{everything ? "fold the healthy" : "show all"}</button>{/if}</span></h2>
+    <h2 id="ap-work"><span>Workloads · pods and restarts</span><span>{work.length}{#if !filtering}<button type="button" class="linkish" onclick={() => { everything = !everything; unfolded = []; }}>{everything ? "fold the healthy" : "show all"}</button>{/if}</span></h2>
     <div class="tiles">
     {#each shelves as g (g.key)}
-      <div class="tile-h">{g.server.toUpperCase()}<small>{g.apps.length} workloads · {#if g.look}<span class="warm">{g.look} to look at</span>{:else}<span class="moss">all healthy</span>{/if}</small></div>
+      <div class="tile-h">{sentence(g.server)}<small>{g.apps.length} workloads · {#if g.look}<span class="warm">{g.look} to look at</span>{:else}<span class="moss">all healthy</span>{/if}</small></div>
         {#each g.tiles as e (e.id)}
           {@const ready = num(e, "pods") ?? 0} {@const want = num(e, "podsDesired") ?? 0} {@const p = pips(ready, want)}
           {@const r = num(e, "restarts24h") ?? 0} {@const warm = needsYou(e.status)}
@@ -148,7 +148,7 @@
   </section>
 
   <section class="mod raised c12" style="--in:.3s" aria-labelledby="ap-sites" data-module="sites">
-    <h2 id="ap-sites" class="board-h"><span>SITES · 24 H</span><span>{rows.length ? summary(rows) : ""}</span></h2>
+    <h2 id="ap-sites" class="board-h"><span>Sites · 24 h</span><span>{rows.length ? summary(rows) : ""}</span></h2>
     {#if gat.failing.length}<Waiting title={`Can't read Gatus on ${gat.failing[0]!.server}.`} warm>{gat.failing[0]!.error}</Waiting>{/if}
     {#if rows.length}<SiteBoard {rows} onopen={e => (open = e)} />
     {:else if !gat.failing.length}<Waiting title={gat.reporting.length ? "No sites match." : "Gatus is not reporting yet."}>Public sites and products with their last 24 hours.</Waiting>{/if}

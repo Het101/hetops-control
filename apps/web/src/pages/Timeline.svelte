@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Event } from "@hetops-control/contracts";
   import type { State } from "../lib/api.js";
-  import { byHour, eventDays, facets, filterEvents, heat, hhmm, hourly, keyOf, levelOf } from "../lib/pages.js";
+  import { heading, sentence, byHour, eventDays, facets, filterEvents, heat, hhmm, hourly, keyOf, levelOf } from "../lib/pages.js";
   import Chips from "../components/Chips.svelte";
   import Search from "../components/Search.svelte";
   import Glyph from "../components/Glyph.svelte";
@@ -24,7 +24,7 @@
   const list = $derived(filterEvents(chipped, { server: [], kind: [], source: [], level: [], q: "", day: hour === undefined ? undefined : shownDay, hour }));
   const groups = $derived(byHour(list));
   const LEVEL: Record<string, string> = { down: "down", attention: "attention", ok: "recovered", unknown: "unknown", none: "no status" };
-  const dayName = (d: string) => new Date(`${d}T00:00:00Z`).toUTCString().slice(0, 11).toUpperCase();
+  const dayName = (d: string) => new Date(`${d}T00:00:00Z`).toUTCString().slice(0, 11);
   const span = $derived(events.length ? `since ${events.at(-1)!.at.slice(0, 10) === events[0]!.at.slice(0, 10) ? hhmm(events.at(-1)!.at) : dayName(events.at(-1)!.at.slice(0, 10))}` : "");
   const servers = $derived(new Set(events.map(e => e.server)).size);
   const pickHour = (h: number) => { hour = hour === h ? undefined : h; };
@@ -38,13 +38,13 @@
 </script>
 
 <section class="page-intro">
-  <span class="kicker">TIMELINE · ALL SERVERS</span>
-  <h1 tabindex="-1">{events.length ? `${events.length} events across ${servers} server${servers === 1 ? "" : "s"}, ${span}.` : "Every event from every server, in one place."}</h1>
+  <span class="kicker">Timeline · all servers</span>
+  <h1 tabindex="-1">{heading(events.length ? `${events.length} events across ${servers} server${servers === 1 ? "" : "s"}, ${span}.` : "Every event from every server, in one place.")}</h1>
 </section>
 
 <div class="grid">
   <section class="mod raised c12 scrub" style="--in:.04s" aria-labelledby="t-day">
-    <h2 id="t-day"><span>DAY · EVENTS PER HOUR (UTC)</span><span>{hour === undefined ? "pick an hour to narrow the list" : `${String(hour).padStart(2, "0")}:00 to ${String(hour).padStart(2, "0")}:59 · `}{#if hour !== undefined}<button type="button" class="linkish" onclick={() => (hour = undefined)}>clear</button>{/if}</span></h2>
+    <h2 id="t-day"><span>Day · events per hour (UTC)</span><span>{hour === undefined ? "pick an hour to narrow the list" : `${String(hour).padStart(2, "0")}:00 to ${String(hour).padStart(2, "0")}:59 · `}{#if hour !== undefined}<button type="button" class="linkish" onclick={() => (hour = undefined)}>clear</button>{/if}</span></h2>
     {#if days.length}
       <div class="days" role="group" aria-label="Day">
         {#each days.slice(0, 7) as d (d)}<button type="button" class="chip" class:on={d === shownDay} aria-pressed={d === shownDay} onclick={() => { day = d; hour = undefined; }}>{dayName(d)}</button>{/each}
@@ -64,7 +64,7 @@
   </section>
 
   <section class="mod raised c12 list feed" style="--in:.1s" aria-labelledby="t-feed">
-    <h2 id="t-feed"><span>FEED</span><span>{list.length} of {events.length}</span></h2>
+    <h2 id="t-feed"><span>Feed</span><span>{list.length} of {events.length}</span></h2>
     <div class="filters">
       <Search bind:q placeholder="Search events, apps, people" />
       <Chips label="Server" bind:selected={server} options={facets(events, e => e.server)} />
@@ -87,7 +87,7 @@
           <Glyph kind={e.kind} {warm} />
           <span class="n" class:warm>{e.at.slice(11, 19)}</span>
           <span class="t">{e.summary}<small><span class="m-at" class:warm>{e.at.slice(11, 16)} · </span>{e.server} · {e.source}{e.actor ? ` · ${e.actor}` : ""}{e.level ? ` · ${LEVEL[e.level] ?? e.level}` : ""}</small></span>
-          <span class="tag pressed" class:warm class:ok={!warm && !!back} class:srv={!warm && !back}>{warm ? (e.level ?? "").toUpperCase() : back ? `RECOVERED ${hhmm(back)}` : e.server.toUpperCase()}</span>
+          <span class="tag pressed" class:warm class:ok={!warm && !!back} class:srv={!warm && !back}>{warm ? sentence(e.level ?? "") : back ? `Recovered ${hhmm(back)}` : e.server}</span>
         </button>
       {/each}
     {:else}

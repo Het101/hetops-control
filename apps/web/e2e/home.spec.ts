@@ -10,17 +10,17 @@ test.beforeEach(async ({ page }, info) => {
 });
 
 test("the headline renders from the state", async ({ page }) => {
-  await expect(page.locator(".headline")).toContainText("The estate is healthy.");
-  await expect(page.locator(".headline em")).toHaveText("1 thing is waiting on you.");
-  await expect(page.locator(".needs h2")).toHaveText("NEEDS YOU · 1");
+  await expect(page.locator(".headline")).toContainText("The estate is healthy");
+  await expect(page.locator(".headline em")).toHaveText("1 thing is waiting on you");
+  await expect(page.locator(".needs h2")).toHaveText("Needs you · 1");
   await expect(page.locator(".ember-btn")).toBeDisabled();
 });
 
 test("three stations with their status words", async ({ page }) => {
   await expect(page.locator(".st")).toHaveCount(3);
-  await expect(page.locator('.st[data-server="lab"] i')).toHaveText("● SMOULDERING · 2 restarts");
-  await expect(page.locator('.st[data-server="staging"] i')).toHaveText("● NOT CONNECTED");
-  await expect(page.locator('.st[data-server="ops"] i')).toHaveText("● HEALTHY");
+  await expect(page.locator('.st[data-server="lab"] i')).toHaveText("● Smouldering · 2 restarts");
+  await expect(page.locator('.st[data-server="staging"] i')).toHaveText("● Not connected");
+  await expect(page.locator('.st[data-server="ops"] i')).toHaveText("● Healthy");
 });
 
 test("the struggling app grows ember leaves", async ({ page }) => {
@@ -43,7 +43,7 @@ test("timeline ember rows are the incidents still open; a recovered one is silve
   // chaos-api moved into attention and is still there; the chaos site did too, then recovered at 06:41, so it is history
   const tl = page.locator(".list[aria-labelledby=\"h-timeline\"]");
   await expect(tl.locator(".row.now")).toHaveCount(1);
-  await expect(tl.locator(".row:not(.now)").filter({ hasText: "chaos.hetops.dev (ops) ok → attention" })).toContainText("RECOVERED 06:41");
+  await expect(tl.locator(".row:not(.now)").filter({ hasText: "chaos.hetops.dev (ops) ok → attention" })).toContainText("Recovered 06:41");
   await expect(page.locator(".list[aria-labelledby=\"h-timeline\"] .row.now").filter({ hasText: "chaos-api (lab) ok → attention" })).toHaveCount(1);
   await expect(page.locator(".list[aria-labelledby=\"h-timeline\"] .row:not(.now)").filter({ hasText: "attention → ok" })).toHaveCount(1);
 });
@@ -70,12 +70,12 @@ test.describe("reduced motion", () => {
   });
 });
 
-test("a configured server that never connected reads UNREACHABLE", async ({ page }) => {
+test("a configured server that never connected reads Unreachable", async ({ page }) => {
   const state = StateSchema.parse({ ...fixtureState, servers: { ...fixtureState.servers, staging: { ...fixtureState.servers.staging, configured: true } } });
   await page.route("**/api/state", r => r.fulfill({ json: state }));
   await page.reload();
-  await expect(page.locator('.st[data-server="staging"] i')).toHaveText("● UNREACHABLE");
-  await expect(page.locator('.st[data-server="lab"] i')).not.toHaveText("● UNREACHABLE");
+  await expect(page.locator('.st[data-server="staging"] i')).toHaveText("● Unreachable");
+  await expect(page.locator('.st[data-server="lab"] i')).not.toHaveText("● Unreachable");
 });
 
 test("rail tips sit above the page content", async ({ page }) => {

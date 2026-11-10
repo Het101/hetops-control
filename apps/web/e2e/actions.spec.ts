@@ -133,7 +133,7 @@ test("Needs you opens the same dialog; a knob without an offer stays dimmed and 
   // the two never look alike: the one that can run names its verb on a surface; the one that can't has no surface, a dashed ring
   const can = page.getByRole("button", { name: `Sync ${app.name}`, exact: true });
   await expect(can).toHaveText("Sync");
-  expect(await can.evaluate(e => getComputedStyle(e).boxShadow)).not.toBe("none");
+  expect(await can.evaluate(e => getComputedStyle(e).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");   // a filled surface
   expect(await knob.evaluate(e => [getComputedStyle(e).boxShadow, getComputedStyle(e).borderStyle])).toEqual(["none", "dashed"]);
   await expect(knob).toHaveText("");
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -189,7 +189,7 @@ test("a running toast is quiet silver, has no dismiss, and no link to the page i
   await expect(toast).toHaveAttribute("data-tone", "running");
   await expect(toast.getByRole("button", { name: /Dismiss/ })).toHaveCount(0);
   await expect(toast.getByRole("link")).toHaveCount(0);   // already on Backups
-  expect(await toast.locator(".tg").evaluate(el => getComputedStyle(el).stroke)).toBe("rgb(201, 199, 193)");
+  expect(await toast.locator(".tg").evaluate(el => getComputedStyle(el).stroke)).toBe("rgb(180, 180, 185)");
 });
 
 test("hovering holds a success; leaving lets it go", async ({ page }) => {

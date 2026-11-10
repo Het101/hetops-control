@@ -2,7 +2,7 @@
   import { ServerIdSchema, type Entity, type Event, type ServerId } from "@hetops-control/contracts";
   import { growTree, hash, rng, struggling, type Branch, type ForestApp } from "../lib/forest.js";
   import { num, type State } from "../lib/api.js";
-  import { workloads } from "../lib/pages.js";
+  import { sentence, workloads } from "../lib/pages.js";
   import { reduced } from "../lib/motion.js";
   import { windy } from "../lib/wind.js";
 
@@ -54,15 +54,15 @@
     const base = { id, name: NAME[id], line, bare: !view.reachable };
     const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
     // never connected: an alarm only if the center has an agent configured for it; lost after a connection always is
-    if (!view.reachable) return view.agentVersion ? { ...base, word: "UNREACHABLE", warm: true } : { ...base, word: view.configured ? "UNREACHABLE" : "NOT CONNECTED", warm: view.configured };
-    if (view.status === "down" || list.some(e => e.status === "down")) return { ...base, word: "DOWN", warm: true };
-    if (restarting > 0) return { ...base, word: `SMOULDERING · ${plural(restarting, "restart")}`, warm: true };
+    if (!view.reachable) return view.agentVersion ? { ...base, word: "Unreachable", warm: true } : { ...base, word: view.configured ? "Unreachable" : "Not connected", warm: view.configured };
+    if (view.status === "down" || list.some(e => e.status === "down")) return { ...base, word: "Down", warm: true };
+    if (restarting > 0) return { ...base, word: `Smouldering · ${plural(restarting, "restart")}`, warm: true };
     const failing = view.failingSources?.length ?? 0, stale = Number(/(\d+) readings? stale/.exec(view.statusReason ?? "")?.[1] ?? 0);
-    if (failing || stale) return { ...base, word: `BLIND · ${[failing && `${plural(failing, "source")} failing`, stale && `${plural(stale, "reading")} stale`].filter(Boolean).join(" · ")}`, warm: true };
-    if (view.status === "attention" || list.some(e => e.status === "attention")) return { ...base, word: "SMOULDERING", warm: true };
-    if (view.status === "unknown") return { ...base, word: (view.statusReason ?? "unknown").toUpperCase(), warm: false };
+    if (failing || stale) return { ...base, word: `Blind · ${[failing && `${plural(failing, "source")} failing`, stale && `${plural(stale, "reading")} stale`].filter(Boolean).join(" · ")}`, warm: true };
+    if (view.status === "attention" || list.some(e => e.status === "attention")) return { ...base, word: "Smouldering", warm: true };
+    if (view.status === "unknown") return { ...base, word: sentence(view.statusReason ?? "unknown"), warm: false };
     // restarts that healed are history: said, in moss
-    return { ...base, word: restarts ? `HEALTHY · ${plural(restarts, "restart")} in 24 h` : "HEALTHY", warm: false };
+    return { ...base, word: restarts ? `Healthy · ${plural(restarts, "restart")} in 24 h` : "Healthy", warm: false };
   }));
 
   let svg = $state<SVGSVGElement>();
@@ -180,6 +180,6 @@
 </svg>
 {#if !only}<div class="stations">
   {#each stations as s (s.id)}
-    <div class="st" data-server={s.id}><b><a class="st-l" href={`/servers/${s.id}`} aria-label={`Open ${s.name}'s page`}>{s.name}</a></b><span>{s.line}</span><br><i class:warm={s.warm} class:ok={s.word === "HEALTHY"}>● {s.word}</i></div>
+    <div class="st" data-server={s.id}><b><a class="st-l" href={`/servers/${s.id}`} aria-label={`Open ${s.name}'s page`}>{s.name}</a></b><span>{s.line}</span><br><i class:warm={s.warm} class:ok={s.word === "Healthy"}>● {s.word}</i></div>
   {/each}
 </div>{/if}

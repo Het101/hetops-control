@@ -27,8 +27,8 @@ test("Settings opens and shows agents, sources, identity and about", async ({ pa
   await page.getByRole("link", { name: "Settings" }).click();
   await expect(page).toHaveURL("/settings");
   await expect(page.locator('[data-server="lab"]')).toContainText("agent 0.1.0");
-  await expect(page.locator('[data-server="lab"] .tag')).toHaveText("CONNECTED");
-  await expect(page.locator('[data-server="staging"] .tag')).toHaveText("NOT CONNECTED");
+  await expect(page.locator('[data-server="lab"] .tag')).toHaveText("Connected");
+  await expect(page.locator('[data-server="staging"] .tag')).toHaveText("Not connected");
   await expect(page.locator('[data-source="ops/argo"]')).toContainText("every 1 min");
   await expect(page.locator('[data-source="lab/kubernetes"] .tag')).toHaveText("OK");
   await expect(page.getByText("het@hetops.dev")).toBeVisible();
@@ -41,10 +41,10 @@ test("Settings: an unreachable agent and a failing source are said, in ember", a
   s.servers.lab.sources = [{ id: "argo", periodMs: 60_000, ok: false, lastRunAt: "2026-10-30T07:41:00.000Z", error: "forbidden" }];
   await mockApi(page, s);
   await page.goto("/settings");
-  await expect(page.locator('[data-server="ops"] .tag.warm')).toHaveText("UNREACHABLE");
+  await expect(page.locator('[data-server="ops"] .tag.warm')).toHaveText("Unreachable");
   await expect(page.locator('[data-server="ops"]')).toContainText("last error: connect ECONNREFUSED");
-  await expect(page.locator('[data-source="lab/argo"] .tag.warm')).toHaveText("FAILING");
-  await expect(page.getByLabel("SOURCES")).toContainText("Unreachable: its sources cannot be read.");
+  await expect(page.locator('[data-source="lab/argo"] .tag.warm')).toHaveText("Failing");
+  await expect(page.getByLabel("Sources")).toContainText("Unreachable: its sources cannot be read.");
 });
 
 test("deep links load the page directly", async ({ page }) => {
@@ -60,7 +60,7 @@ test("back and forward walk the history", async ({ page }) => {
   await page.getByRole("link", { name: "Alerts" }).click(); await expect(page).toHaveURL("/alerts");
   await page.getByRole("link", { name: "Settings" }).click(); await expect(page).toHaveURL("/settings");
   await page.goBack(); await expect(page).toHaveURL("/alerts");
-  await expect(page.locator(".kicker")).toHaveText("ALERTS");
+  await expect(page.locator(".kicker")).toHaveText("Alerts");
   await page.goBack(); await expect(page).toHaveURL("/");
   await expect(page.locator(".headline")).toBeVisible();
   await page.goForward(); await expect(page).toHaveURL("/alerts");
@@ -109,7 +109,7 @@ test("compact density tightens the modules", async ({ page }) => {
   await page.goto("/settings");
   await page.getByText("Compact", { exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-density", "compact");
-  await expect(page.locator(".mod").first()).toHaveCSS("padding-top", "14px");
+  await expect(page.locator(".mod").first()).toHaveCSS("padding-top", "16px");
 });
 
 test("screenshot of Settings", async ({ page }) => {
@@ -158,22 +158,22 @@ test("a server's own page: from its name under the tree, with its tree, load ove
   await page.getByRole("link", { name: "Open Lab's page" }).click();
   await expect(page).toHaveURL("/servers/lab");
   await expect(page).toHaveTitle("Lab · HetOps Control");
-  await expect(page.locator("main h1")).toHaveText("Lab needs a look.");
+  await expect(page.locator("main h1")).toHaveText("Lab needs a look");
   await expect(page.locator(".srv-tree svg.forest")).toBeVisible();
   await expect(page.locator(".stations")).toHaveCount(0);   // one tree, no station row
   const load = page.locator('[aria-labelledby="sv-load"]');
-  await expect(load.locator("h2")).toContainText("SINCE");      // lab's agent has kept 9 h, and the page says so
+  await expect(load.locator("h2")).toContainText("Since");      // lab's agent has kept 9 h, and the page says so
   await expect(load.locator("path.cpu-l")).toHaveCount(1);
   await expect(load.locator("path.mem-l")).toHaveCount(1);
   await expect(page.locator('[aria-labelledby="sv-work"] button.row')).toContainText(["chaos-api"]);
   await expect(page.locator('[aria-labelledby="sv-work"] .calm')).toContainText("The other 19 are healthy");
   await expect(page.locator('[aria-labelledby="sv-src"] .row').first()).toBeVisible();
-  await expect(page.locator('[aria-labelledby="h-timeline"]')).toContainText("TIMELINE · LAB");
+  await expect(page.locator('[aria-labelledby="h-timeline"]')).toContainText("Timeline · lab");
   await page.screenshot({ path: "e2e/__screens__/server-lab.png", fullPage: true, animations: "disabled" });
   await page.goto("/servers/ops");
   await expect(page.locator('[aria-labelledby="sv-load"] h2')).toContainText("24 H");
   await page.goto("/servers/staging");
-  await expect(page.locator("main h1")).toHaveText("Staging is not connected.");
+  await expect(page.locator("main h1")).toHaveText("Staging is not connected");
   await page.goto("/servers/nope");
   await expect(page.locator("main h1")).toContainText("no page at /servers/nope");   // an unknown server is a 404
 });

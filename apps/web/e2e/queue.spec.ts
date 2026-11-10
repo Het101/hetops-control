@@ -6,7 +6,7 @@ test("the Needs-you pill is on every page; n opens the queue, the keys move, Ent
   const pill = page.getByRole("button", { name: "1 needs you" });
   await expect(pill).toBeVisible();
   await page.keyboard.press("n");
-  const q = page.getByRole("dialog", { name: "NEEDS YOU · 1" });
+  const q = page.getByRole("dialog", { name: "Needs you · 1" });
   await expect(q).toBeVisible();
   const row = q.locator("button.q-row").first();
   await expect(row).toBeFocused();
@@ -35,7 +35,7 @@ test.describe("while you were away", () => {
     await page.addInitScript(() => { if (!sessionStorage.getItem("set")) { localStorage.setItem("hetops-control.seen", String(Date.parse("2026-10-30T02:00:00.000Z"))); sessionStorage.setItem("set", "1"); } });
     await mockApi(page); await page.goto("/");
     const line = page.locator(".away");
-    await expect(line).toContainText("SINCE FRI 02:00 UTC");
+    await expect(line).toContainText("Since Fri 02:00 UTC");
     await expect(line).toContainText("1 recovered on its own");
     await expect(line).toContainText("1 still waiting");
     await expect(line.locator("b.warm")).toHaveText("1 still waiting");   // ember only for what waits on you

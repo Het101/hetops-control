@@ -1,8 +1,12 @@
-/* Tokens, surfaces, type and motion: verbatim from docs/design/home.html (the approved mock), except --ink-3 lifted to 4.5:1 (was #86857f) and no drop-shadow filter on the animated .ember-p; additions for live data at the end. */
+/* Tokens, surfaces, type and motion. Unslopped 8 Nov (docs/specs/2026-11-08-unslop.md): a graphite ramp with hairlines instead of
+   neumorphic shadows, one interface family (IBM Plex Sans) with Plex Mono for figures, ember the one chrome accent. */
 :root{
   /* text never goes below 11px: the smallest labels, tags and captions all sit at that floor */
-  --bg:#2a2b2f; --bg-deep:#232427; --hi:rgba(255,255,255,.055); --lo:rgba(0,0,0,.42);
-  --ink:#ecebe7; --ink-2:#b4b2ac; --ink-3:#9a9993; --quiet:#c9c7c1;
+  /* graphite: rail and wells, page, card, raised (active rows, inputs, the selected step); hairlines are primary text at 8% */
+  --bg:#141415; --bg-deep:#0f0f10; --card:#19191b; --raised:#232325; --line:rgba(237,237,237,.08); --line-2:rgba(237,237,237,.14);
+  --hi:rgba(255,255,255,.06); --lo:rgba(0,0,0,.5);
+  /* three text roles (muted is meta only, 4.9:1 on a card) and silver, the neutral that draws history in charts */
+  --ink:#ededed; --ink-2:#a1a1a6; --ink-3:#85858b; --quiet:#b4b4b9;
   --ember-1:#ff9a3c; --ember-2:#f0582a; --ember-3:#c2391a; --ember:#f2702f;
   /* moss: alive and healthy. The second accent beside ember (needs you): a vivid emerald leaning teal, 7:1 on every surface,
      and kept well apart from ember for red-green colour vision. It never means "look at this"; only ember does. */
@@ -10,72 +14,45 @@
   --ease:cubic-bezier(.22,1,.36,1); --ease-io:cubic-bezier(.65,0,.35,1);
   /* type: the app's own fonts (fonts.css), each followed by a metric-matched local face for the moment before it loads;
      every use keeps its own generic tail, so a glyph the font lacks falls back exactly as it did */
-  --serif:Fraunces,"Fraunces fallback"; --sans:"Plus Jakarta Sans","Plus Jakarta Sans fallback"; --mono:"IBM Plex Mono","IBM Plex Mono fallback";
+  --sans:"IBM Plex Sans","IBM Plex Sans fallback"; --serif:var(--sans); --mono:"IBM Plex Mono","IBM Plex Mono fallback";
 }
 *{box-sizing:border-box}
 /* one focus ring for everything focusable; components that draw their own keep it the same colour */
 :where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:2px solid var(--quiet);outline-offset:2px}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans),system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 .mono{font-family:var(--mono),ui-monospace,monospace}
-/* raised and pressed surfaces (neumorphic) */
-.raised{background:linear-gradient(145deg,#2f3034,#27282b);box-shadow:-6px -6px 14px var(--hi),8px 10px 22px var(--lo)}
-/* three depths, so the eye knows where to land: the hero is the one fully raised, glowing surface; a module sits a step
-   lower, a flatter plate with a thin light along its top edge; what is inside a module is pressed into it */
-.mod.raised{background:linear-gradient(180deg,#2e2f33,#2a2b2e);box-shadow:inset 0 1px 0 rgba(255,255,255,.055),inset 0 0 0 1px rgba(255,255,255,.018),0 18px 36px -18px rgba(0,0,0,.7)}
-.pressed{background:linear-gradient(145deg,#25262a,#2d2e32);box-shadow:inset -4px -4px 10px var(--hi),inset 6px 6px 14px var(--lo)}
+/* depth is surface steps and hairlines: a card sits one step above the page, what is pressed into it one step below */
+.raised,.mod.raised{background:var(--card);box-shadow:inset 0 0 0 1px var(--line)}
+.pressed{background:var(--bg-deep);box-shadow:inset 0 0 0 1px var(--line)}
 /* the modules mount a moment after the hero (components/Later.svelte): the scrollbar's gutter is kept from the start and the
    rows never stretch to fill the screen, so the page growing beneath the hero moves nothing already drawn */
 html{scrollbar-gutter:stable}
-.app{display:grid;grid-template-columns:92px 1fr;align-content:start;min-height:100vh;max-width:1500px;margin:0 auto}
+.app{display:grid;grid-template-columns:72px 1fr;align-content:start;min-height:100vh;max-width:1500px;margin:0 auto}
 
 /* ---------- rail with animated icons ---------- */
 /* the rail stays put while the page scrolls: sticky to the viewport, full height, so the gear at the foot is always in reach */
-.rail{position:sticky;top:0;align-self:start;height:100vh;height:100dvh;z-index:20;display:flex;flex-direction:column;align-items:center;gap:18px;padding:22px 0}
-.logo{width:46px;height:46px;border-radius:50%;margin-bottom:10px;display:grid;place-items:center}
-.logo i{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffc08a,var(--ember-2) 60%,var(--ember-3));box-shadow:0 0 14px rgba(242,112,47,.55);animation:breathe 4.5s var(--ease-io) infinite}
-.nav{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:var(--ink-3);cursor:pointer;transition:transform .35s var(--ease),color .3s,box-shadow .35s var(--ease);position:relative}
-.nav:hover{color:var(--ink);transform:translateY(-1px)}
-.nav.on{color:var(--moss)}   /* where you are: moss, not ember, which is kept for what needs you */
-.nav svg{width:22px;height:22px;overflow:visible}
+.rail{position:sticky;top:0;align-self:start;height:100vh;height:100dvh;z-index:20;display:flex;flex-direction:column;align-items:center;gap:4px;padding:20px 0}
+/* the mark: a flat ember, the product's one accent, still and without a glow */
+.logo{width:40px;height:40px;margin-bottom:16px;display:grid;place-items:center}
+.logo i{width:12px;height:12px;border-radius:3px;background:var(--ember);transform:rotate(45deg)}
+.nav{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:var(--ink-3);cursor:pointer;transition:color .15s var(--ease),background-color .15s var(--ease);position:relative}
+.nav:hover{color:var(--ink);background:var(--card)}
+.nav.on{color:var(--ink);background:var(--raised);box-shadow:inset 0 1px 0 var(--hi)}   /* where you are: a surface step, no colour */
+.nav svg{width:18px;height:18px;overflow:visible}
 .nav svg *{vector-effect:non-scaling-stroke}
-.nav .tip{position:absolute;left:62px;white-space:nowrap;font:500 12px var(--sans);color:var(--ink);background:#1f2023;padding:5px 10px;border-radius:8px;opacity:0;transform:translateX(-6px);pointer-events:none;transition:opacity .25s,transform .35s var(--ease);box-shadow:0 8px 18px var(--lo)}
+.nav .tip{position:absolute;left:52px;white-space:nowrap;font:400 13px var(--sans);color:var(--ink);background:var(--raised);padding:4px 8px;border-radius:6px;opacity:0;transform:translateX(-4px);pointer-events:none;transition:opacity .16s var(--ease),transform .16s var(--ease);box-shadow:inset 0 0 0 1px var(--line),0 8px 24px var(--lo)}
 .nav:hover .tip{opacity:1;transform:none}
 .rail .sp{flex:1}
 
-/* icon motions (from the animated icon set) */
-.smoke{opacity:0}
-.nav:hover .smoke,.nav.on .smoke{animation:smoke 1.8s var(--ease) infinite}
-.nav:hover .smoke.s2,.nav.on .smoke.s2{animation-delay:.6s}
-@keyframes smoke{0%{opacity:0;transform:translateY(0) scale(.6)}30%{opacity:.9}100%{opacity:0;transform:translateY(-7px) scale(1.25)}}
-.travel{opacity:0}
-.nav:hover .travel{opacity:1;offset-rotate:0deg;animation:travel 1.6s var(--ease-io) infinite}
-@keyframes travel{from{offset-distance:0%}to{offset-distance:100%}}
-.hand{transform-origin:12px 12px;transform-box:view-box}
-.nav:hover .hand.m{animation:spin 1.2s linear infinite}.nav:hover .hand.h{animation:spin 7.2s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.wave{opacity:.25;transition:opacity .3s}
-.nav:hover .wave,.nav.on .wave{animation:wave 1.4s var(--ease-io) infinite}
-.nav:hover .wave.w2,.nav.on .wave.w2{animation-delay:.18s}.nav:hover .wave.w3,.nav.on .wave.w3{animation-delay:.36s}
-@keyframes wave{0%,100%{opacity:.2}40%{opacity:1}}
-.dot{transform-box:fill-box;transform-origin:center}
-.nav:hover .dot{animation:bounce .9s var(--ease-io) infinite}
-.nav:hover .dot.d2{animation-delay:.12s}.nav:hover .dot.d3{animation-delay:.24s}
-@keyframes bounce{0%,100%{transform:translateY(0)}45%{transform:translateY(-4px)}}
-.arrow{transition:transform .4s var(--ease)}
-.nav:hover .arrow{animation:drop 1.3s var(--ease) infinite}
-@keyframes drop{0%{transform:translateY(-5px);opacity:0}35%{opacity:1}70%,100%{transform:translateY(1px);opacity:1}}
-.ring{stroke-dasharray:60;stroke-dashoffset:0}
-.nav:hover .ring{animation:draw 1.6s var(--ease) infinite}
-@keyframes draw{0%{stroke-dashoffset:60}60%,100%{stroke-dashoffset:0}}
-.gear{transform-origin:12px 12px;transform-box:view-box;transition:transform .9s var(--ease)}
-.nav:hover .gear{transform:rotate(120deg)}
+/* the rail icons are still drawings: a hover is a colour and surface step, nothing loops */
+.smoke,.travel{opacity:0}.wave{opacity:.6}
 
-main{padding:24px 28px 34px 8px}
+main{padding:24px 32px 40px 8px}
 /* ---------- top bar ---------- */
-.top{display:flex;align-items:center;gap:18px;margin-bottom:22px}
-.brand{font:600 13px var(--mono);letter-spacing:.16em;color:var(--ink-2)}
-.live{display:flex;align-items:center;gap:9px;font:500 12px var(--mono);color:var(--ink-2)}
-.pulse{position:relative;width:9px;height:9px;border-radius:50%;background:var(--moss);box-shadow:0 0 8px rgba(70,214,176,.5)}
+.top{display:flex;align-items:center;gap:16px;margin-bottom:24px;min-height:32px}
+.brand{font:500 15px var(--sans);color:var(--ink)}
+.live{display:flex;align-items:center;gap:8px;font:400 12px var(--mono);color:var(--ink-3)}
+.pulse{position:relative;width:8px;height:8px;border-radius:50%;background:var(--moss)}
 /* the live dot is re-keyed on every stream message: it blips and sends one ring out, so the pulse is the data arriving */
 .pulse{animation:blip .7s var(--ease)}
 @keyframes blip{from{transform:scale(1.6)}}
@@ -83,35 +60,31 @@ main{padding:24px 28px 34px 8px}
 @keyframes ping{0%{transform:scale(1);opacity:.8}100%{transform:scale(3);opacity:0}}
 
 /* ---------- hero ---------- */
-.hero{position:relative;border-radius:30px;overflow:hidden;min-height:520px}
-.hero-copy{position:absolute;left:34px;top:30px;max-width:540px;z-index:3}
-.date{font:500 12px var(--mono);color:var(--ink-3);letter-spacing:.08em}
-.headline{font:600 36px/1.08 var(--serif),Georgia,serif;margin:10px 0 12px;letter-spacing:-.01em}
-.headline em{font-style:normal;background:linear-gradient(90deg,var(--ember-1),var(--ember-2));-webkit-background-clip:text;background-clip:text;color:transparent}
-.sub{font-size:14.5px;line-height:1.65;color:var(--ink-2)}
-.needs{position:absolute;right:28px;top:28px;width:350px;z-index:3;border-radius:24px;padding:16px 18px}
-.needs h2{margin:0 0 6px;font:600 12px var(--mono);letter-spacing:.14em;color:var(--ember)}
-.need{display:flex;align-items:center;gap:12px;padding:12px 8px;border-radius:16px;margin:0 -8px;transition:background .3s}
-.need:hover{background:rgba(0,0,0,.18)}
-.need .txt{flex:1;font-size:13.5px}
-.need small{display:block;color:var(--ink-3);font-size:11.5px;margin-top:3px}
-.ember-btn{width:44px;height:44px;border-radius:50%;border:none;display:grid;place-items:center;cursor:pointer;
-  background:radial-gradient(circle at 35% 30%,var(--ember-1),var(--ember-2) 60%,var(--ember-3));
-  box-shadow:0 0 0 4px #26272a,0 0 22px rgba(242,88,42,.55),0 8px 16px rgba(0,0,0,.45);
-  transition:transform .3s var(--ease),box-shadow .3s var(--ease);animation:glow 3s var(--ease-io) infinite}
-.ember-btn:hover{transform:scale(1.07)}
-.ember-btn:active{transform:scale(.94)}
+.hero{position:relative;border-radius:16px;overflow:hidden;min-height:520px}
+.hero-copy{position:absolute;left:32px;top:32px;max-width:540px;z-index:3}
+.date{font:400 12px var(--mono);color:var(--ink-3)}
+.headline{font:500 36px/1.12 var(--sans),system-ui,sans-serif;margin:8px 0 12px;letter-spacing:-.01em}
+.headline em{font-style:normal;color:var(--ember)}   /* the need, in the accent: solid, never gradient text */
+.sub{font-size:15px;line-height:1.5;color:var(--ink-2)}
+.needs{position:absolute;right:28px;top:28px;width:340px;z-index:3;border-radius:12px;padding:16px 16px 12px}
+.needs h2{margin:0 0 4px;font:500 13px var(--sans);color:var(--ember)}
+.need{display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;margin:0 -8px;transition:background-color .15s var(--ease)}
+.need:hover{background:var(--raised)}
+.need .txt{flex:1;font-size:14px}
+.need small{display:block;color:var(--ink-3);font-size:12px;margin-top:2px}
+.ember-btn{width:40px;height:40px;border-radius:10px;border:none;display:grid;place-items:center;cursor:pointer;color:#1a0d06;
+  background:var(--ember);transition:background-color .15s var(--ease),transform .15s var(--ease)}
+.ember-btn:hover{background:var(--ember-1)}
+.ember-btn:active{transform:scale(.97)}
 .ember-btn svg{width:16px;height:16px}
-@keyframes glow{0%,100%{box-shadow:0 0 0 4px #26272a,0 0 16px rgba(242,88,42,.45),0 8px 16px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 4px #26272a,0 0 30px rgba(242,88,42,.75),0 8px 16px rgba(0,0,0,.45)}}
-@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
 svg.forest{position:absolute;left:0;right:0;bottom:70px;width:100%;height:320px;z-index:1}
 /* its own compositor layer: the wind repaints the forest only, never the hero's gradient and shadows behind it */
 svg.forest{will-change:transform;contain:paint}
 .stations{position:absolute;left:28px;right:28px;bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);z-index:2}
 .st{text-align:center}
-.st b{display:block;font:600 16px var(--serif),serif}
-.st span{font:500 11.5px var(--mono);color:var(--ink-3)}
-.st i{font-style:normal;font:600 11px var(--mono);letter-spacing:.08em;color:var(--quiet)}
+.st b{display:block;font:500 16px var(--sans)}
+.st span{font:400 12px var(--mono);color:var(--ink-3)}
+.st i{font-style:normal;font:400 12px var(--mono);color:var(--ink-2)}
 .st i.warm{color:var(--ember)}
 .st i.ok{color:var(--moss)}
 /* forest motion */
@@ -123,31 +96,34 @@ svg.forest{will-change:transform;contain:paint}
 .mote{fill:var(--quiet)}
 
 /* ---------- modules ---------- */
-.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:22px;margin-top:24px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:16px}
 /* modules float in, staggered by --in; visible by default, so a failed script never hides the page, and free to lift on hover */
-.mod{border-radius:26px;padding:20px 22px;position:relative;overflow:hidden;animation:enter .8s var(--ease) backwards;animation-delay:var(--in,0s);transition:transform .45s var(--ease),box-shadow .45s var(--ease)}
-@keyframes enter{from{opacity:0;transform:translateY(14px)}}
-.mod h2{margin:0;font:600 11.5px var(--mono);letter-spacing:.13em;color:var(--ink-3);display:flex;justify-content:space-between}
-.note{font-size:12px;color:var(--ink-3);margin-top:6px}
+.mod{border-radius:16px;padding:20px 24px;position:relative;overflow:hidden;animation:enter .4s var(--ease) backwards;animation-delay:var(--in,0s)}
+@keyframes enter{from{opacity:0;transform:translateY(8px)}}
+.mod h2{margin:0;font:500 14px var(--sans);color:var(--ink);display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.mod h2>span+span{font:400 12px var(--mono);color:var(--ink-3)}   /* the meta on the right: quiet mono */
+.note{font-size:12px;color:var(--ink-3);margin-top:8px}
 .c4{grid-column:span 4}.c5{grid-column:span 5}.c7{grid-column:span 7}
 .dials{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
-.dial{text-align:center;font:500 11px var(--mono);color:var(--ink-3)}
+.dial{text-align:center;font:400 12px var(--mono);color:var(--ink-3)}
 .dial .face{width:96px;height:96px;margin:0 auto 8px;border-radius:50%;display:grid;place-items:center;position:relative}
 .dial svg{position:absolute;inset:0}
-.dial b{font:600 20px var(--serif),serif;color:var(--ink);position:relative}
+.dial b{font:500 20px var(--sans);font-variant-numeric:tabular-nums;color:var(--ink);position:relative}
 .arc{transition:stroke-dashoffset 1.6s var(--ease)}
 /* track list (from the player reference) */
-.list .row{display:flex;align-items:center;gap:14px;padding:10px 10px;margin:0 -10px;border-radius:16px;transition:background .3s}
-.list .row:hover{background:rgba(0,0,0,.16)}
-.list .row.now{background:#212225;box-shadow:inset 0 0 0 1px #34353a}
-.row .n{font:500 11.5px var(--mono);color:var(--ink-3);width:44px}
-.row .t{flex:1;font-size:13.5px}
-.row .t small{display:block;color:var(--ink-3);font-size:11.5px;margin-top:2px}
-.knob{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--ink-3);cursor:pointer;transition:transform .3s var(--ease),color .3s}
-.knob:hover{color:var(--ink);transform:scale(1.06)}
+.list .row{display:flex;align-items:center;gap:12px;padding:8px 12px;margin:0 -12px;border-radius:10px;transition:background-color .15s var(--ease)}
+.list .row:hover{background:var(--raised)}
+.list .row.now{background:var(--raised);box-shadow:inset 0 1px 0 var(--hi)}
+.row .n{font:400 12px var(--mono);font-variant-numeric:tabular-nums;color:var(--ink-3);width:44px}
+.row .t{flex:1;font-size:14px}
+.row .t small{display:block;color:var(--ink-3);font-size:12px;margin-top:2px}
+.knob{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:var(--ink-3);cursor:pointer;transition:color .15s var(--ease),background-color .15s var(--ease)}
+.knob:hover{color:var(--ink)}
+.knob:active{transform:scale(.97)}
 .knob svg{width:12px;height:12px}
-.knob.ember{background:radial-gradient(circle at 35% 30%,var(--ember-1),var(--ember-2) 60%,var(--ember-3));box-shadow:0 0 14px rgba(242,88,42,.55);color:#2a1408}
-.tag{font:600 11px var(--mono);letter-spacing:.08em;padding:3px 8px;border-radius:999px;color:var(--ink-2)}
+.knob.ember{background:var(--ember);color:#1a0d06}
+.knob.ember:hover{background:var(--ember-1)}
+.tag{font:400 12px var(--mono);padding:2px 6px;border-radius:4px;color:var(--ink-2)}
 /* a counting number (lib/motion.ts countUp) holds its final width from the first frame: an invisible, zero-height copy
    of the final value sits above the digits, so the box is never narrower than where the count will end */
 [data-final]{display:inline-block}
@@ -160,13 +136,13 @@ svg.forest{will-change:transform;contain:paint}
 /* ---------- live-data additions (same tokens) ---------- */
 .live{margin-left:auto}
 .live.warm{color:var(--ember)}
-.live.warm .pulse{background:var(--ember);box-shadow:none}.live.warm .pulse::after{border-color:var(--ember)}
+.live.warm .pulse{background:var(--ember)}.live.warm .pulse::after{border-color:var(--ember)}
 a.nav{text-decoration:none}
 .nav:focus-visible .tip{opacity:1;transform:none}
-.nav:focus-visible,.ember-btn:focus-visible{outline:2px solid var(--quiet);outline-offset:3px}
-.needs h2.calm{color:var(--ink-3)}
-.need-none{font-size:13.5px;color:var(--ink-2);padding:12px 0 4px}
-.need-none::before{content:"";display:inline-block;width:7px;height:7px;margin-right:9px;border-radius:50%;background:var(--moss);vertical-align:1px;box-shadow:0 0 8px rgba(70,214,176,.5)}
+.nav:focus-visible,.ember-btn:focus-visible{outline:2px solid var(--quiet);outline-offset:2px}
+.needs h2.calm{color:var(--ink-2)}
+.need-none{font-size:14px;color:var(--ink-2);padding:8px 0 4px}
+.need-none::before{content:"";display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--moss);vertical-align:1px}
 /* an action that is not wired yet: dimmed and still, but focusable so its title can be reached */
 .ember-btn[aria-disabled="true"]{cursor:not-allowed;animation:none;opacity:.5}
 .ember-btn[aria-disabled="true"]:hover,.ember-btn[aria-disabled="true"]:active{transform:none}
@@ -181,43 +157,43 @@ a.nav{text-decoration:none}
 .arc{animation:sweep 2s var(--ease) backwards;animation-delay:var(--in,0s)}
 /* sweep past the reading by a hair, then settle back onto it */
 @keyframes sweep{0%{stroke-dashoffset:var(--full)}70%{stroke-dashoffset:var(--over,0)}100%{stroke-dashoffset:var(--off,0)}}
-.dial small{display:block;margin-top:3px;font-size:11px;color:var(--ink-3)}
+.dial small{display:block;margin-top:4px;font-size:12px;color:var(--ink-3)}
 .dial .none{color:var(--ink-3)}
 .row .tag{margin-left:auto}
-.list .empty{font-size:13px;color:var(--ink-3);padding:12px 0}
+.list .empty{font-size:14px;color:var(--ink-3);padding:12px 0}
 .knob[aria-hidden="true"]{cursor:default}
 
 /* ---------- pages (router) ---------- */
 h1:focus{outline:none}
-.page-intro{margin:6px 0 22px;max-width:760px}
-.kicker{font:600 12px var(--mono);letter-spacing:.14em;color:var(--ink-3)}
-.page-intro h1{font:600 32px/1.12 var(--serif),Georgia,serif;letter-spacing:-.01em;margin:10px 0 0}
+.page-intro{margin:8px 0 24px;max-width:760px}
+.kicker{font:400 13px var(--sans);color:var(--ink-3)}
+.page-intro h1{font:500 32px/1.15 var(--sans),system-ui,sans-serif;letter-spacing:-.01em;margin:8px 0 0}
 .waiting{max-width:760px}
-.waiting p{font-size:14px;line-height:1.65;color:var(--ink-2);margin:12px 0}
+.waiting p{font-size:14px;line-height:1.5;color:var(--ink-2);margin:12px 0}
 .waiting ul{margin:0 0 18px;padding:0;list-style:none}
-.waiting li{position:relative;padding:7px 0 7px 22px;font-size:13.5px;color:var(--ink-2)}
+.waiting li{position:relative;padding:8px 0 8px 20px;font-size:14px;color:var(--ink-2)}
 .waiting li::before{content:"";position:absolute;left:4px;top:14px;width:7px;height:7px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--ink-3)}
-.back{display:inline-block;padding:10px 18px;border-radius:999px;color:var(--ink);font:500 13px var(--sans);text-decoration:none;transition:transform .3s var(--ease)}
-.back:hover{transform:translateY(-1px)}
+.back{display:inline-block;padding:8px 16px;border-radius:10px;color:var(--ink);font:500 14px var(--sans);text-decoration:none;transition:background-color .15s var(--ease)}
+.back:hover{background:var(--raised)}
 .back:focus-visible,.facts a:focus-visible{outline:2px solid var(--quiet);outline-offset:3px}
 .tag.warm,small.warm,.note.warm{color:var(--ember)}
 .tag.ok,.mod h2 .moss{color:var(--moss)}
-.list .group{font-size:11px;letter-spacing:.12em;color:var(--ink-3);margin:14px 0 2px}
+.list .group{font:400 12px var(--sans);color:var(--ink-3);margin:16px 0 4px}
 .list .group:first-of-type{margin-top:10px}
-.big{font:600 20px var(--serif),Georgia,serif;margin:12px 0 0;overflow-wrap:anywhere}
+.big{font:500 20px var(--sans);margin:12px 0 0;overflow-wrap:anywhere}
 .sub-h,.mod h2.sub-h{margin-top:22px}   /* a second heading inside a module or drawer: specific enough to beat .mod h2{margin:0} */
-.facts{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;margin:12px 0 0;font-size:13px}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:12px 0 0;font-size:14px}
 .facts dt{color:var(--ink-3)}
 .facts dd{margin:0;color:var(--ink-2);overflow-wrap:anywhere}
 .facts a{color:var(--ink);text-decoration-color:var(--ink-3);text-underline-offset:3px}
 .servers .row .n{width:64px}
 .pick{border:0;margin:14px 0 0;padding:0}
-.pick legend{padding:0;font-size:13.5px;color:var(--ink);margin-bottom:8px}
-.pick small{display:block;margin-top:8px;font-size:11.5px;color:var(--ink-3)}
-.seg{display:inline-flex;gap:4px;padding:4px;border-radius:999px}
-.seg label{position:relative;padding:7px 14px;border-radius:999px;font:500 12px var(--mono);color:var(--ink-3);cursor:pointer;transition:color .3s,background .3s}
+.pick legend{padding:0;font-size:14px;color:var(--ink);margin-bottom:8px}
+.pick small{display:block;margin-top:8px;font-size:12px;color:var(--ink-3)}
+.seg{display:inline-flex;gap:4px;padding:4px;border-radius:10px}
+.seg label{position:relative;padding:4px 12px;border-radius:6px;font:400 13px var(--sans);color:var(--ink-3);cursor:pointer;transition:color .15s var(--ease),background-color .15s var(--ease)}
 .seg label:hover{color:var(--ink)}
-.seg label.on{color:var(--ink);background:linear-gradient(145deg,#2f3034,#27282b);box-shadow:-3px -3px 8px var(--hi),4px 5px 12px var(--lo)}
+.seg label.on{color:var(--ink);background:var(--raised);box-shadow:inset 0 1px 0 var(--hi)}
 .seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
 .seg label:has(input:focus-visible){outline:2px solid var(--quiet);outline-offset:2px}
 
@@ -225,6 +201,6 @@ h1:focus{outline:none}
 :root[data-density="compact"] main{padding-top:16px}
 :root[data-density="compact"] .top{margin-bottom:14px}
 :root[data-density="compact"] .grid{gap:14px;margin-top:14px}
-:root[data-density="compact"] .mod{padding:14px 16px;border-radius:20px}
+:root[data-density="compact"] .mod{padding:16px;border-radius:12px}
 :root[data-density="compact"] .list .row{padding:6px 10px}
 :root[data-density="compact"] .page-intro{margin-bottom:14px}

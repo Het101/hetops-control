@@ -12,11 +12,11 @@ const noScroll = async (page: Page, w: number) => expect(await page.evaluate(() 
 
 test("a calm morning: every built link carries traffic, staging is drawn as not built yet", async ({ page }) => {
   await mockApi(page); await page.goto("/topology");
-  await expect(page.locator("main h1")).toHaveText("Every link is carrying traffic; Lab needs a look.");
+  await expect(page.locator("main h1")).toHaveText("Every link is carrying traffic; Lab needs a look");
   await expect(page.locator(".link-chip")).toHaveCount(9);
   await expect(page.locator(".link-chip.ok")).toHaveCount(8);
   await expect(page.locator('[data-edge="agent-staging"]')).toHaveClass(/planned/);
-  await expect(page.locator('[data-node="staging"]')).toContainText("NOT CONNECTED");
+  await expect(page.locator('[data-node="staging"]')).toContainText("Not connected");
   await expect(page.locator('[data-edge="logs"]')).toContainText(/9200 · [\d,]+\/min/);
   await expect(page.locator(".wires .wire.attention, .wires .wire.down")).toHaveCount(0);
   // travelling dots on the live links, none on the planned one
@@ -39,7 +39,7 @@ test("clicking a link opens its signals; clicking a station opens its links", as
 
 test("a rough night: the failing links are ember, the headline names the worst", async ({ page }) => {
   await mockApi(page, roughNight(), roughEvents); await page.goto("/topology");
-  await expect(page.locator("main h1")).toHaveText("Cloudflare Tunnel to the lab needs a look. 1 more link needs you.");
+  await expect(page.locator("main h1")).toHaveText("Cloudflare Tunnel to the lab needs a look. 1 more link needs you");
   await expect(page.locator('[data-edge="tunnel-lab"]')).toHaveClass(/attention/);
   await expect(page.locator('[data-edge="snap-r2"]')).toHaveClass(/attention/);
   await expect(page.locator(".link-chip.attention, .link-chip.down")).toHaveCount(2);
@@ -49,14 +49,14 @@ test("logs that stopped: the link is down, still, and the headline says since wh
   const s = structuredClone(fixtureState), now = Date.parse(s.generatedAt);
   for (const x of s.series) x.points = x.points.map(([t, v]) => [t, t > now - 20 * 60_000 ? 0 : v]);
   await mockApi(page, s, fixtureEvents); await page.goto("/topology");
-  await expect(page.locator("main h1")).toHaveText("Logs from the lab stopped 12 min ago.");
+  await expect(page.locator("main h1")).toHaveText("Logs from the lab stopped 12 min ago");
   await expect(page.locator('[data-edge="logs"]')).toHaveClass(/down/);
   await expect(page.locator('.link-chip.down')).toHaveCount(1);
 });
 
 test("no signal at all: links are unknown, never green", async ({ page }) => {
   await mockApi(page, { ...fixtureState, entities: [], series: [] }, []); await page.goto("/topology");
-  await expect(page.locator("main h1")).toHaveText("Every link that reports is carrying traffic; 7 have no signal yet, and Lab needs a look.");
+  await expect(page.locator("main h1")).toHaveText("Every link that reports is carrying traffic; 7 have no signal yet, and Lab needs a look");
   await expect(page.locator(".link-chip.unknown")).toHaveCount(7);
 });
 

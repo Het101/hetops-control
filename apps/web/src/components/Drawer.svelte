@@ -3,7 +3,7 @@
   import Knob from "./Knob.svelte";
   import Glyph from "./Glyph.svelte";
   import Status from "./Status.svelte";
-  import { ago, heat, hhmm, keyOf, needsYou, toneOf } from "../lib/pages.js";
+  import { sentence, ago, heat, hhmm, keyOf, needsYou, toneOf } from "../lib/pages.js";
 
   // the detail drawer: a native modal dialog (focus trap, Esc and inert page come from the browser)
   let { entity, event, events, now, onclose }: { entity?: Entity; event?: Event; events: Event[]; now: number; onclose: () => void } = $props();
@@ -23,7 +23,7 @@
   onclick={e => { if (e.target === dlg) dlg?.close(); }}>
   <div class="drawer-in">
     <header>
-      <span class="kicker">{entity ? `${entity.kind.toUpperCase()} · ${entity.server.toUpperCase()}` : event ? `${event.kind.toUpperCase()} EVENT · ${event.server.toUpperCase()}` : ""}</span>
+      <span class="kicker">{entity ? `${sentence(entity.kind)} · ${entity.server}` : event ? `${sentence(event.kind)} event · ${event.server}` : ""}</span>
       <button type="button" class="knob raised x" aria-label="Close" onclick={() => dlg?.close()}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </header>
@@ -39,22 +39,22 @@
     {/if}
     {#if entity}
       {#if event}<h3 class="sub-h"><span>{entity.name} now</span></h3>{:else}<h2 id="drawer-h">{entity.name}</h2>{/if}
-      <div class="state-row"><Status tone={toneOf(entity.status)} label={entity.status.toUpperCase()} />{#if entity.statusReason}<span class:warm={needsYou(entity.status)}>{entity.statusReason}</span>{/if}</div>
+      <div class="state-row"><Status tone={toneOf(entity.status)} label={entity.status} />{#if entity.statusReason}<span class:warm={needsYou(entity.status)}>{entity.statusReason}</span>{/if}</div>
       <!-- the facts as tiles: the label small, the value at reading size; the ones that run long take the full row -->
       <dl class="facts fact-grid">
         {#each Object.entries(entity.facts) as [k, f] (k)}{@const v = show(f)}<div class="fact pressed" class:wide={v.length > 22}><dt>{words(k)}</dt><dd>{v}</dd></div>{/each}
         <div class="fact pressed wide"><dt>observed</dt><dd>{ago(entity.observedAt, now)}{entity.source ? ` · by ${entity.source}` : ""}</dd></div>
       </dl>
-      <h3 class="sub-h"><span>OPEN IN</span></h3>
+      <h3 class="sub-h"><span>Open in</span></h3>
       {#if entity.links.length}
         <div class="links">{#each entity.links as l (l.href)}<a class="back raised" href={l.href} target="_blank" rel="noreferrer">{l.label} ↗</a>{/each}</div>
       {:else}<p class="note">This source reports no links for it yet.</p>{/if}
       {#if entity.actions.length}
-        <h3 class="sub-h"><span>ACTIONS</span></h3>
+        <h3 class="sub-h"><span>Actions</span></h3>
         <div class="acts">{#each entity.actions as a (a.id)}<span class="act-l"><Knob {entity} action={a.id} label={`${a.label} ${entity.name}`} warm={needsYou(entity.status)} /><small>{a.risk}</small></span>{/each}</div>
       {/if}
       {#if history.length}
-        <h3 class="sub-h"><span>RECENT EVENTS</span></h3>
+        <h3 class="sub-h"><span>Recent events</span></h3>
         <!-- its own story, newest first, on one thread: ember for what is still open, moss for what recovered -->
         <ol class="thread">{#each history as h (keyOf(h))}
           {@const hot = heated.hot(h)} {@const back = heated.recovered(h)}

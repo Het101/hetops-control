@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Entity, Event } from "@hetops-control/contracts";
   import { num, type State } from "../lib/api.js";
-  import { ago, BACKUP_WINDOW_H, backupView, countdown, hhmm, needsYou, sourceState, span, str } from "../lib/pages.js";
+  import { heading, ago, BACKUP_WINDOW_H, backupView, countdown, hhmm, needsYou, sourceState, span, str } from "../lib/pages.js";
   import Knob from "../components/Knob.svelte";
   import Drawer from "../components/Drawer.svelte";
   import Waiting from "../components/Waiting.svelte";
@@ -23,22 +23,22 @@
 </script>
 
 <section class="page-intro">
-  <span class="kicker">BACKUPS</span>
-  <h1 tabindex="-1">{!list.length ? "Whether the last backup of everything that matters worked."
-    : needing ? `${needing} backup${needing === 1 ? " needs" : "s need"} you.` : `Every backup succeeded in the last ${BACKUP_WINDOW_H} hours.`}</h1>
+  <span class="kicker">Backups</span>
+  <h1 tabindex="-1">{heading(!list.length ? "Whether the last backup of everything that matters worked."
+    : needing ? `${needing} backup${needing === 1 ? " needs" : "s need"} you.` : `Every backup succeeded in the last ${BACKUP_WINDOW_H} hours.`)}</h1>
 </section>
 
 <div class="grid">
   <section class="mod raised c12 tally" style="--in:.04s" aria-label="Backups at a glance">
-    <div class="tal"><b>{list.length}</b><span class="mono">POLICIES</span></div>
-    <div class="tal"><b class:warm={needing > 0}>{needing}</b><span class="mono">NEED YOU</span></div>
-    <div class="tal"><b>{kept.toLocaleString()}</b><span class="mono">SNAPSHOTS KEPT</span></div>
+    <div class="tal"><b>{list.length}</b><span class="mono">Policies</span></div>
+    <div class="tal"><b class:warm={needing > 0}>{needing}</b><span class="mono">Need you</span></div>
+    <div class="tal"><b>{kept.toLocaleString()}</b><span class="mono">Snapshots kept</span></div>
     <div class="tal"><b>{failed}</b><span class="mono">FAILED, ALL TIME</span></div>
-    <div class="tal"><b class="sm">{soonest === undefined ? "—" : countdown(soonest - t)}</b><span class="mono">NEXT RUN</span></div>
+    <div class="tal"><b class="sm">{soonest === undefined ? "—" : countdown(soonest - t)}</b><span class="mono">Next run</span></div>
   </section>
 
   <section class="mod raised c12 list player" style="--in:.1s" aria-labelledby="b-list">
-    <h2 id="b-list"><span>EVERY POLICY · LAST RESULT</span><span>age against {BACKUP_WINDOW_H} h</span></h2>
+    <h2 id="b-list"><span>Every policy · last result</span><span>age against {BACKUP_WINDOW_H} h</span></h2>
     {#if src.failing.length}<Waiting title={`Can't read snapshots on ${src.failing.map(f => f.server).join(", ")}.`} warm>{src.failing[0]!.error}. The rows below are not current.</Waiting>{/if}
     {#each list as { e, v }, i (e.id)}
       {@const warm = needsYou(e.status)}

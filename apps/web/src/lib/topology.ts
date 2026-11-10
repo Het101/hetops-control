@@ -42,22 +42,22 @@ export const NODES: NodeModel[] = [
 export const EDGES: EdgeModel[] = [
   { id: "public", from: "world", to: "cloudflare", name: "Public HTTPS", via: "HTTPS", d: "M130 80 H600", at: [365, 80],
     facts: [["path", "visitors and Gatus probes → Cloudflare"]], links: [] },
-  { id: "tunnel-lab", from: "cloudflare", to: "lab", name: "Cloudflare Tunnel to the lab", via: "TUNNEL", d: "M600 80 C600 190 230 170 230 300", at: [415, 183],
+  { id: "tunnel-lab", from: "cloudflare", to: "lab", name: "Cloudflare Tunnel to the lab", via: "tunnel", d: "M600 80 C600 190 230 170 230 300", at: [415, 183],
     facts: [["serves", "the public hetops.dev sites"], ["through", "Traefik and Coolify on the lab"]], links: [CF] },
-  { id: "tunnel-ops", from: "cloudflare", to: "ops", name: "Cloudflare Tunnel to ops", via: "TUNNEL", d: "M600 80 C600 190 970 170 970 300", at: [785, 183],
+  { id: "tunnel-ops", from: "cloudflare", to: "ops", name: "Cloudflare Tunnel to ops", via: "tunnel", d: "M600 80 C600 190 970 170 970 300", at: [785, 183],
     facts: [["serves", "control.hetops.dev, kibana-ops.hetops.dev"], ["behind", "Cloudflare Access"]], links: [CF, { label: "Kibana", href: "https://kibana-ops.hetops.dev" }] },
   { id: "agent-lab", from: "ops", to: "lab", name: "Center to the lab agent", via: "TCP 7443", d: "M970 300 Q600 480 230 300", at: [600, 390],
     facts: [["over", "Tailscale, ops → lab"], ["port", "tcp 7443"]], links: [TS] },
-  { id: "gateway", from: "ops", to: "lab", name: "Gatus to the lab gateway", via: "PROBE", d: "M970 300 Q600 560 230 300", at: [600, 430],
+  { id: "gateway", from: "ops", to: "lab", name: "Gatus to the lab gateway", via: "probe", d: "M970 300 Q600 560 230 300", at: [600, 430],
     facts: [["over", "Tailscale, ops → lab"], ["checks", "the lab gateway answers"]], links: [] },
   { id: "logs", from: "lab", to: "ops", name: "Lab logs to ops", via: "9200", d: "M230 300 Q600 640 970 300", at: [600, 470],
     facts: [["over", "Tailscale, lab → ops"], ["port", "9200"], ["ships", "filebeat → Elasticsearch, logs-lab-default and logs-lab-security"]],
     links: [{ label: "Kibana", href: "https://kibana-ops.hetops.dev" }] },
   { id: "agent-staging", from: "ops", to: "staging", name: "Center to the staging agent", via: "TCP 7443", d: "M970 300 L600 290", at: [785, 295],
     facts: [["over", "Tailscale, ops → staging"], ["port", "tcp 7443"]], links: [TS] },
-  { id: "snap-disk", from: "ops", to: "disk", name: "Snapshots to the ops disk", via: "NIGHTLY", d: "M970 300 Q1110 330 1110 455", at: [1075, 355],
+  { id: "snap-disk", from: "ops", to: "disk", name: "Snapshots to the ops disk", via: "nightly", d: "M970 300 Q1110 330 1110 455", at: [1075, 355],
     facts: [["policy", "nightly-all"], ["repository", "local disk on ops"]], links: [{ label: "Backups", href: "/backups" }] },
-  { id: "snap-r2", from: "ops", to: "r2", name: "Security snapshots to R2", via: "NIGHTLY", d: "M970 300 C1070 220 1070 160 1070 80", at: [1058, 190],
+  { id: "snap-r2", from: "ops", to: "r2", name: "Security snapshots to R2", via: "nightly", d: "M970 300 C1070 220 1070 160 1070 80", at: [1058, 190],
     facts: [["policy", "nightly-security"], ["bucket", "hetops-logs-security"]], links: [{ label: "Backups", href: "/backups" }] },
 ];
 
@@ -65,7 +65,7 @@ const MIN = 60_000;
 const RANK: Record<LinkState, number> = { down: 0, attention: 1, unknown: 2, ok: 3, planned: 4 };
 /** the worst of the signals; none at all is unknown */
 export const worst = (s: Signal[]): LinkState => s.length ? s.map(x => x.state).sort((a, b) => RANK[a] - RANK[b])[0]! : "unknown";
-export const WORD: Record<LinkState, string> = { ok: "CARRYING TRAFFIC", attention: "NEEDS A LOOK", down: "DOWN", unknown: "NO SIGNAL", planned: "NOT BUILT YET" };
+export const WORD: Record<LinkState, string> = { ok: "Carrying traffic", attention: "Needs a look", down: "Down", unknown: "No signal", planned: "Not built yet" };
 export const hot = (s: LinkState) => s === "down" || s === "attention";
 
 /** why a server's readings cannot be trusted right now: its agent is unreachable, or the source is failing */

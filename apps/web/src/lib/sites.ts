@@ -52,7 +52,7 @@ export function summary(rows: SiteRow[]): string {
 
 
 export type BoardItem = { key: string; label?: string; cont?: boolean; row?: SiteRow };
-const GROUPS: [string, string][] = [["sites", "SITES"], ["products", "PRODUCTS"]];
+const GROUPS: [string, string][] = [["sites", "Sites"], ["products", "Products"]];
 /**
  * The rows as two balanced columns, each group under its heading: split where the two sides weigh most nearly the same (a heading
  * weighs half a row), and a group that runs on into the right column repeats its heading there, so both columns start level.
