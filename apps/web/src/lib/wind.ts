@@ -1,4 +1,4 @@
-import { hash, rng } from "./forest.js";
+import { hash, rng } from "./seed.js";
 import { drained } from "./later.js";
 
 /**

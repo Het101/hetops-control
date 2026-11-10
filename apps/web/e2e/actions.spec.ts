@@ -113,7 +113,7 @@ test("a failed run's toast is ember, reads in plain words, and stays until dismi
   await expect(toast).toHaveAttribute("data-tone", "failed", { timeout: 10_000 });
   await expect(toast.locator(".toast-h")).toHaveText("No answer from lab");
   await expect(toast.locator(".toast-why")).toHaveText(`No answer in 60 s; the result is unknown, check ${app.name}`);
-  expect(await toast.locator(".tg").evaluate(el => getComputedStyle(el).stroke)).toBe("rgb(240, 88, 42)");   // ember, only here
+  expect(await toast.locator(".tg").evaluate(el => getComputedStyle(el).stroke)).toBe("rgb(255, 122, 47)");   // fire, only here
   await page.waitForTimeout(7000);   // longer than a success stays
   await expect(toast).toBeVisible();
   await toast.getByRole("button", { name: "Dismiss No answer from lab" }).click();
@@ -189,7 +189,7 @@ test("a running toast is quiet silver, has no dismiss, and no link to the page i
   await expect(toast).toHaveAttribute("data-tone", "running");
   await expect(toast.getByRole("button", { name: /Dismiss/ })).toHaveCount(0);
   await expect(toast.getByRole("link")).toHaveCount(0);   // already on Backups
-  expect(await toast.locator(".tg").evaluate(el => getComputedStyle(el).stroke)).toBe("rgb(180, 180, 185)");
+  expect(await toast.locator(".tg").evaluate(el => getComputedStyle(el).stroke)).toBe("rgb(180, 185, 182)");
 });
 
 test("hovering holds a success; leaving lets it go", async ({ page }) => {

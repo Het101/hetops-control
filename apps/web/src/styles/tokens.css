@@ -1,20 +1,23 @@
-/* Tokens, surfaces, type and motion. Unslopped 8 Nov (docs/specs/2026-11-08-unslop.md): a graphite ramp with hairlines instead of
-   neumorphic shadows, one interface family (IBM Plex Sans) with Plex Mono for figures, ember the one chrome accent. */
+/* Tokens, surfaces, type and motion. Fire line (10 Nov, docs/specs/2026-11-10-fire-line.md): a graphite ramp barely leaning to
+   the forest for the chrome, the map the one rich surface; Overpass with Overpass Mono; five states, one colour each. */
 :root{
   /* text never goes below 11px: the smallest labels, tags and captions all sit at that floor */
   /* graphite: rail and wells, page, card, raised (active rows, inputs, the selected step); hairlines are primary text at 8% */
-  --bg:#141415; --bg-deep:#0f0f10; --card:#19191b; --raised:#232325; --line:rgba(237,237,237,.08); --line-2:rgba(237,237,237,.14);
+  --bg:#131514; --bg-deep:#0f1110; --card:#191b1a; --raised:#222524; --line:rgba(236,239,237,.08); --line-2:rgba(236,239,237,.14);
   --hi:rgba(255,255,255,.06); --lo:rgba(0,0,0,.5);
-  /* three text roles (muted is meta only: 4.7:1 even on a raised row) and silver, the neutral that draws history in charts */
-  --ink:#ededed; --ink-2:#a1a1a6; --ink-3:#8c8c92; --quiet:#b4b4b9;
-  --ember-1:#ff9a3c; --ember-2:#f0582a; --ember-3:#c2391a; --ember:#f2702f;
-  /* moss: alive and healthy. The second accent beside ember (needs you): a vivid emerald leaning teal, 7:1 on every surface,
-     and kept well apart from ember for red-green colour vision. It never means "look at this"; only ember does. */
-  --moss:#46d6b0; --moss-2:#2fa587; --moss-dim:rgba(70,214,176,.4);
+  /* three text roles (muted is meta only: 4.6:1 even on a raised row) and silver, the neutral that draws history in charts */
+  --ink:#ecefed; --ink-2:#a2a8a4; --ink-3:#8b918e; --quiet:#b4b9b6;
+  /* the five states (lib/burn.ts). Fire is the only orange and means "needs you"; rain is someone already on it; steam just
+     came back; moss is alive; fog can't be seen. Fire and rain differ in hue and lightness, for every colour vision. */
+  --fire:#ff7a2f; --fire-hot:#ffb547; --fire-ink:#ff9a5a; --rain:#7cc0ff; --rain-ink:#9fd0ff; --steam:#d5dee6; --fog:#6b7a70;
+  --ember-1:#ffb547; --ember-2:#ff7a2f; --ember-3:#c2410c; --ember:var(--fire);
+  --moss:#5fbf8a; --moss-2:#3f9468; --moss-dim:rgba(95,191,138,.4);
+  /* the map's own ground: a night forest, the one surface that carries colour */
+  --map:#0f1512; --stand:#122019; --map-ink:#d6e2d8;
   --ease:cubic-bezier(.22,1,.36,1); --ease-io:cubic-bezier(.65,0,.35,1);
   /* type: the app's own fonts (fonts.css), each followed by a metric-matched local face for the moment before it loads;
      every use keeps its own generic tail, so a glyph the font lacks falls back exactly as it did */
-  --sans:"IBM Plex Sans","IBM Plex Sans fallback"; --serif:var(--sans); --mono:"IBM Plex Mono","IBM Plex Mono fallback";
+  --sans:"Overpass","Overpass fallback"; --serif:var(--sans); --mono:"Overpass Mono","Overpass Mono fallback";
 }
 *{box-sizing:border-box}
 /* one focus ring for everything focusable; components that draw their own keep it the same colour */
@@ -80,9 +83,6 @@ main{padding:24px 32px 40px 8px}
 .ember-btn:hover{background:var(--ember-1)}
 .ember-btn:active{transform:scale(.97)}
 .ember-btn svg{width:16px;height:16px}
-svg.forest{position:absolute;left:0;right:0;bottom:70px;width:100%;height:320px;z-index:1}
-/* its own compositor layer: the wind repaints the forest only, never the hero's gradient and shadows behind it */
-svg.forest{will-change:transform;contain:paint}
 .stations{position:absolute;left:28px;right:28px;bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);z-index:2}
 .st{text-align:center}
 .st b{display:block;font:500 16px var(--sans)}
@@ -129,7 +129,7 @@ svg.forest{will-change:transform;contain:paint}
 .tag{font:400 12px var(--mono);padding:2px 6px;border-radius:4px;color:var(--ink-2)}
 /* a counting number (lib/motion.ts countUp) holds its final width from the first frame: an invisible, zero-height copy
    of the final value sits above the digits, so the box is never narrower than where the count will end */
-[data-final]{display:inline-block}
+[data-final]{display:inline-block;font-variant-numeric:tabular-nums}   /* Overpass digits are proportional: a counting 88 would outgrow a final 91 */
 [data-final]::before{content:attr(data-final);display:block;height:0;overflow:hidden;visibility:hidden}
 /* reduced motion: the OS setting, unless Settings chose (data-motion on stills, off keeps motion) */
 @media (prefers-reduced-motion:reduce){:root:not([data-motion="off"]) *,:root:not([data-motion="off"]) *::before,:root:not([data-motion="off"]) *::after{animation:none!important;transition:none!important}:root:not([data-motion="off"]) .mod{opacity:1;transform:none}}

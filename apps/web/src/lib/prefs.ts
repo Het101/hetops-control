@@ -1,15 +1,14 @@
 import { writable } from "svelte/store";
 
 /** Reduce motion: system follows the OS, on stills everything, off keeps motion even when the OS asks to reduce. */
-/** Home: lookout leads with the forest; watch leads with what needs you, the estate beside it. */
-export type Prefs = { motion: "system" | "on" | "off"; density: "comfortable" | "compact"; home: "lookout" | "watch" };
+export type Prefs = { motion: "system" | "on" | "off"; density: "comfortable" | "compact" };
 const KEY = "hetops-control.prefs";
 
 /** Anything unreadable falls back to the defaults, one field at a time. */
 export function parsePrefs(raw: string | null | undefined): Prefs {
   let p: Partial<Record<keyof Prefs, unknown>> = {};
   try { const v: unknown = JSON.parse(raw ?? "{}"); if (v && typeof v === "object") p = v; } catch { /* defaults */ }
-  return { motion: p.motion === "on" || p.motion === "off" ? p.motion : "system", density: p.density === "compact" ? "compact" : "comfortable", home: p.home === "watch" ? "watch" : "lookout" };
+  return { motion: p.motion === "on" || p.motion === "off" ? p.motion : "system", density: p.density === "compact" ? "compact" : "comfortable" };
 }
 export const reduces = (pref: Prefs["motion"], os: boolean) => pref === "system" ? os : pref === "on";
 

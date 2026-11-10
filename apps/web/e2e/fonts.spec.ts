@@ -9,7 +9,7 @@ test("the fonts are the app's own: no request leaves for Google Fonts, or for an
   // the faces really arrive, from this origin
   await page.evaluate(() => document.fonts.ready);
   const loaded = await page.evaluate(() => [...document.fonts].filter(f => f.status === "loaded").map(f => `${f.family.replace(/"/g, "")} ${f.weight}`).sort());
-  expect(loaded).toEqual(expect.arrayContaining(["IBM Plex Mono 400", "IBM Plex Mono 500", "IBM Plex Sans 400 600"]));
+  expect(loaded).toEqual(expect.arrayContaining(["Overpass 100 900", "Overpass Mono 400", "Overpass Mono 500"]));
   expect(away.filter(u => /fonts\.(googleapis|gstatic)\.com/.test(u))).toEqual([]);
   expect(away).toEqual([]);
 });

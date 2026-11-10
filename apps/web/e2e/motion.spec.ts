@@ -1,81 +1,31 @@
 import { test, expect, type Page } from "@playwright/test";
 import { deployHistory, mockApi, roughEvents, roughNight } from "./fixture.js";
 
-// the forest's wind writes transform attributes from one rAF loop; read a limb, the crown and the grass twice
-const sample = (page: Page) => page.evaluate(() =>
-  [...document.querySelectorAll('svg.forest [data-wind="pivot"], svg.forest [data-wind="grass"]')].slice(0, 12).map(el => el.getAttribute("transform")));
+// Fire line moves only what is live (docs/specs/2026-11-10-fire-line.md): a burning tree's flames, the rain on a tree being put out,
+// the steam off one that just came back. Calm trees and the ground are still: there is no wind loop on the map.
+const running = (page: Page, sel: string) => page.locator(sel).evaluateAll(els => els.flatMap(el => el.getAnimations({ subtree: true })).filter(x => x.playState === "running").length);
 
-test("the forest moves by default: the wind changes its transforms over time", async ({ page }) => {
+test("only live state moves: a burning tree's flames flicker, calm trees stand still", async ({ page }) => {
   await mockApi(page, roughNight(), roughEvents); await page.goto("/");
-  await expect(page.locator(".limb").first()).toBeAttached();
-  // the clock starts once the page has settled
-  await expect.poll(async () => (await sample(page)).every(t => t !== null), { timeout: 5000 }).toBe(true);
-  const a = await sample(page);
-  await page.waitForTimeout(700);
-  const b = await sample(page);
-  expect(a.every(t => t !== null)).toBe(true);
-  expect(b).not.toEqual(a);
-  // the roots breathe and the wind streaks exist only while motion is on
-  await expect(page.locator(".streak")).toHaveCount(5);
-  expect(await page.evaluate(() => document.getAnimations().filter(x => x.playState === "running").length)).toBeGreaterThan(0);
+  await expect(page.locator('.tree[data-burn="fire"] .flames').first()).toBeAttached();
+  expect(await running(page, '.tree[data-burn="fire"]')).toBeGreaterThan(0);
+  expect(await running(page, '.tree[data-burn="calm"]')).toBe(0);
 });
 
-test("motion waits for the page to settle, in its rest pose, then fades in and runs", async ({ page }) => {
-  await mockApi(page, roughNight(), roughEvents);
-  // hold the load event: the preloaded fonts arrive 2.5 s late
-  await page.route("**/*.woff2", async r => { await new Promise(f => setTimeout(f, 2500)); await r.continue(); });
-  // keep the first transform each limb is given
-  await page.addInitScript(() => {
-    const w = window as unknown as { first: string[] }; w.first = []; const seen = new WeakSet<Element>();
-    new MutationObserver(ms => { for (const m of ms) { const el = m.target as Element;
-      if (el.classList?.contains("limb") && !seen.has(el) && el.getAttribute("transform")) { seen.add(el); w.first.push(el.getAttribute("transform")!); } } })
-      .observe(document, { subtree: true, attributes: true, attributeFilter: ["transform"] });
-  });
-  const t0 = Date.now();
-  await page.goto("/", { waitUntil: "commit" });
-  await expect(page.locator(".limb").first()).toBeAttached();
-  await page.waitForTimeout(1200);
-  // before load: drawn, but in the rest pose the markup gives it, and nothing on the clock has moved
-  expect(await page.evaluate(() => document.readyState)).not.toBe("complete");
-  expect((await sample(page)).every(t => t === null)).toBe(true);
-  expect(await page.locator("svg.forest .ember-p").evaluateAll(els => els.every(el => el.getAttribute("fill-opacity") === "0"))).toBe(true);
-  // after load, the last slice and an idle moment: the clock runs, and the motion grows over its first second
-  await expect.poll(async () => (await sample(page)).every(t => t !== null), { timeout: 6000 }).toBe(true);
-  expect(Date.now() - t0).toBeGreaterThan(2500);
-  const a = await sample(page); await page.waitForTimeout(400); const b = await sample(page);
-  expect(b).not.toEqual(a);
-  // the very first tick writes the rest pose itself: the fade starts from zero, so nothing jumps
-  const first = await page.evaluate(() => (window as unknown as { first: string[] }).first);
-  expect(first.length).toBeGreaterThan(3);
-  expect(first.every(t => /^rotate\(-?0\.000 /.test(t))).toBe(true);
-});
-
-test("the embers and falling leaves ride the same 30 Hz loop, not CSS animations", async ({ page }) => {
-  await mockApi(page, roughNight(), roughEvents); await page.goto("/");
-  await expect(page.locator(".ember-p").first()).toBeAttached();
-  const read = () => page.evaluate(() => [...document.querySelectorAll("svg.forest .ember-p, svg.forest .fall")].map(el => `${el.getAttribute("transform")}|${el.getAttribute("fill-opacity")}`));
-  // each particle waits out its seeded delay (up to 3 s for an ember), then moves
-  await page.waitForTimeout(3500);
-  const a = await read(); await page.waitForTimeout(300); const b = await read();
-  expect(a.filter((x, i) => x !== b[i]).length).toBeGreaterThan(a.length / 2);
-  expect(await page.evaluate(() => [...document.querySelectorAll("svg.forest .ember-p, svg.forest .fall")].flatMap(el => el.getAnimations()).length)).toBe(0);
-});
-
-test("a restart that arrives live shakes one ember leaf loose: it falls on the loop, then is gone", async ({ page }) => {
+test("rain falls on the tree while an action on it runs, and the map says so", async ({ page }) => {
   const state = roughNight();
   await mockApi(page, state, roughEvents);
-  const restart = { at: new Date().toISOString(), server: "lab", source: "kubernetes", kind: "restart", entity: "lab/app/chaos/chaos-api", summary: "chaos-api restarted" };
+  const run = { id: "00000000-0000-4000-8000-000000000001", action: "k8s.restart", label: "Restart", server: "lab", target: "lab/app/chaos/chaos-api",
+    targetName: "chaos-api", actor: "patel.x.het@gmail.com", params: {}, state: "running", at: new Date().toISOString() };
   await page.route("**/api/stream", r => r.fulfill({ contentType: "text/event-stream",
-    body: `data: ${JSON.stringify({ type: "state", state })}\n\ndata: ${JSON.stringify({ type: "event", event: restart })}\n\n` }));
+    body: `data: ${JSON.stringify({ type: "state", state })}\n\ndata: ${JSON.stringify({ type: "action", run })}\n\n` }));
   await page.goto("/");
-  const drop = page.locator("svg.forest .drop").first();
-  await expect(drop).toBeAttached();
-  await page.waitForTimeout(600);
-  const t = await drop.getAttribute("transform");
-  expect(t).toMatch(/rotate\([\d.]+ [\d.]+ [\d.]+\)$/); // it spins about its own centre
-  expect(Number(await drop.getAttribute("fill-opacity"))).toBeGreaterThan(0);
-  expect(await drop.evaluate(el => el.getAnimations().length)).toBe(0);
-  await expect(page.locator("svg.forest .drop")).toHaveCount(0, { timeout: 6000 });
+  const t = page.locator('.tree[data-entity="lab/app/chaos/chaos-api"]');
+  await expect(t).toHaveAttribute("data-burn", "rain");
+  await expect(t).toHaveAttribute("aria-label", "chaos-api, being put out: Restart running");
+  await expect(t.locator(".flames")).toHaveCount(0);
+  expect(await t.locator(".drop").count()).toBeGreaterThan(5);
+  expect(await running(page, '.tree[data-burn="rain"]')).toBeGreaterThan(0);
 });
 
 test("the knock map's land is one static layer; its marks move on the same loop", async ({ page }) => {
@@ -112,17 +62,13 @@ test("the hero paints first and the modules that follow move nothing: no layout 
 });
 
 for (const how of ["os", "settings"] as const) {
-  test(`reduced motion (${how}): the forest is still and the weather is gone`, async ({ page }) => {
+  test(`reduced motion (${how}): the fire, rain and steam are still, and nothing else runs`, async ({ page }) => {
     await mockApi(page, roughNight(), roughEvents);
     if (how === "os") await page.emulateMedia({ reducedMotion: "reduce" });
     else { await page.goto("/settings"); await page.getByText("On", { exact: true }).click(); }
     await page.goto("/");
-    await expect(page.locator(".limb").first()).toBeAttached();
-    const a = await sample(page);
-    await page.waitForTimeout(700);
-    expect(await sample(page)).toEqual(a);
-    expect(a.every(t => t === null)).toBe(true);
-    await expect(page.locator(".streak, .mote, .scan")).toHaveCount(0);
+    await expect(page.locator('.tree[data-burn="fire"] .flames').first()).toBeAttached();
+    await page.waitForTimeout(300);
     expect(await page.evaluate(() => document.getAnimations().filter(x => x.playState === "running").length)).toBe(0);
   });
 }

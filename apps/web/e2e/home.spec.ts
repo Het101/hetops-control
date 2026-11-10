@@ -17,16 +17,25 @@ test("the headline renders from the state", async ({ page }) => {
   await expect(page.locator(".needs .need-go")).toHaveAttribute("href", "/apps");
 });
 
-test("three stations with their status words", async ({ page }) => {
-  await expect(page.locator(".st")).toHaveCount(3);
-  await expect(page.locator('.st[data-server="lab"] i')).toHaveText("● Smouldering · 2 restarts");
-  await expect(page.locator('.st[data-server="staging"] i')).toHaveText("● Not connected");
-  await expect(page.locator('.st[data-server="ops"] i')).toHaveText("● Healthy");
+test("three compartments on the map, each saying what it holds; staging is in fog", async ({ page }) => {
+  await expect(page.locator(".map .compartment")).toHaveCount(3);
+  await expect(page.locator('.compartment[data-server="lab"] .c-line')).toHaveText(/^\d+ workloads · 34\/35 pods$/);
+  await expect(page.locator('.compartment[data-server="staging"]')).toHaveAttribute("data-burn", "fog");
+  await expect(page.locator('.compartment[data-server="staging"] .c-line')).toHaveText("in fog · agent not connected");
+  // every workload is a drawn tree, grouped by namespace: roots, trunk, branches and leaves
+  const tree = page.locator('.compartment[data-server="lab"] .tree').first();
+  await expect(tree.locator(".roots")).toHaveCount(1);
+  expect(await tree.locator("use").count()).toBeGreaterThan(60);
 });
 
-test("the struggling app grows ember leaves", async ({ page }) => {
-  await expect(page.locator("circle.leaf").first()).toBeAttached();
-  expect(await page.locator("circle.leaf.ember").count()).toBeGreaterThan(0);
+test("the struggling app burns: its tree is on fire, named under its grove, and says why", async ({ page }) => {
+  const t = page.locator('.tree[data-entity="lab/app/chaos/chaos-api"]');
+  await expect(t).toHaveAttribute("data-burn", "fire");
+  await expect(t.locator(".flames")).toHaveCount(1);
+  await expect(t).toHaveAttribute("aria-label", /^chaos-api, burning/);
+  await expect(page.locator('.t-why[data-burn="fire"]', { hasText: "chaos-api" })).toHaveCount(1);
+  // nothing else burns on a calm night: only orange where the owner is needed
+  await expect(page.locator('.tree[data-burn="fire"]')).toHaveCount(1);
   await expect(page.locator(".list[aria-labelledby=\"h-timeline\"] .row")).toHaveCount(6);
 });
 
@@ -60,13 +69,13 @@ test("a failing event log is said, not shown as empty", async ({ page }) => {
 
 test.describe("reduced motion", () => {
   test("no animation runs", async ({ page }) => {
-    await expect(page.locator("circle.leaf").first()).toBeAttached();
+    await expect(page.locator(".map .tree").first()).toBeAttached();
     expect(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(true);
     expect(await page.evaluate(() => document.getAnimations().filter(a => a.playState === "running").length)).toBe(0);
   });
 
   test("screenshot of the final frame", async ({ page }) => {
-    await expect(page.locator("circle.leaf").first()).toBeAttached();
+    await expect(page.locator(".map .tree").first()).toBeAttached();
     await page.evaluate(() => document.fonts.ready.then(() => undefined));
     await page.screenshot({ path: "e2e/__screens__/home.png", fullPage: true });
     await page.setViewportSize({ width: 1366, height: 900 });
@@ -78,8 +87,8 @@ test("a configured server that never connected reads Unreachable", async ({ page
   const state = StateSchema.parse({ ...fixtureState, servers: { ...fixtureState.servers, staging: { ...fixtureState.servers.staging, configured: true } } });
   await page.route("**/api/state", r => r.fulfill({ json: state }));
   await page.reload();
-  await expect(page.locator('.st[data-server="staging"] i')).toHaveText("● Unreachable");
-  await expect(page.locator('.st[data-server="lab"] i')).not.toHaveText("● Unreachable");
+  await expect(page.locator('.compartment[data-server="staging"] .c-line')).toHaveText("in fog · unreachable");
+  await expect(page.locator('.compartment[data-server="lab"] .c-line')).not.toContainText("unreachable");
 });
 
 test("rail tips sit above the page content", async ({ page }) => {
