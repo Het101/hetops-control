@@ -39,7 +39,7 @@
 <dialog bind:this={dlg} class="act-dlg raised" aria-labelledby="act-h" onclose={() => (ui.open = undefined)}>
   {#if o}
     <form onsubmit={e => { e.preventDefault(); void confirm(); }}>
-      <span class="kicker">{disruptive ? "DISRUPTIVE" : "SAFE"} · {o.entity.server.toUpperCase()}</span>
+      <span class="kicker">{disruptive ? "Disruptive" : "Safe"} · {o.entity.server}</span>
       <h2 id="act-h">{o.descriptor.label} {o.entity.name}</h2>
       {#each fields(o.descriptor.params) as f (f.key)}
         <div class="fld">

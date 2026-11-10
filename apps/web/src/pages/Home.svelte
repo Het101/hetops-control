@@ -54,7 +54,7 @@
   // full-width row, so deploys and the log flow end level with the shorter side
   const wideTimeline = $derived(!(on(budget) && on(cs)));
   const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
-  const fmtWhen = (ms: number) => new Date(ms).toUTCString().slice(0, 11).replace(",", "").toUpperCase();
+  const fmtWhen = (ms: number) => new Date(ms).toUTCString().slice(0, 11).replace(",", "");
   // the river's geometry: a lane per server that deployed (or has one waiting), x along the span held, midnights as faint lines
   const RX0 = 64, RW = $derived(CW - RX0 - 14);
   const rx = (ms: number) => RX0 + (river.end > river.start ? (ms - river.start) / (river.end - river.start) : 1) * RW;
@@ -71,7 +71,7 @@
 
 {#snippet deploysMod()}
   <section class="mod raised c8" style="--in:.16s" aria-labelledby="h-deploys" data-module="deploys">
-      <h2 id="h-deploys"><span>DEPLOYS</span><span>{!eventsError && river.short && deploys ? `since ${fmtWhen(river.start)}` : !eventsError && deploys ? "14 days" : ""}<a class="to" href="/timeline" aria-label="Open the Timeline">open →</a></span></h2>
+      <h2 id="h-deploys"><span>Deploys</span><span>{!eventsError && river.short && deploys ? `since ${fmtWhen(river.start)}` : !eventsError && deploys ? "14 days" : ""}<a class="to" href="/timeline" aria-label="Open the Timeline">open →</a></span></h2>
       {#if eventsError}<Waiting title="Can't read the event log." warm>Deploys come from the Change Timeline; they are not shown until it answers again.</Waiting>
       {:else}
         <div class="focal"><b>{deploys}</b> <span>{deploys === 1 ? "deploy" : "deploys"} in the last {river.short ? span(river.end - river.start) : "14 days"}</span></div>
@@ -80,7 +80,7 @@
           {#each midnights as m (m)}<line class="mid" x1={rx(m)} x2={rx(m)} y1="0" y2={laneOf.length * 30}/>{/each}
           {#each laneOf as server, li (server)}
             {@const y = li * 30 + 15} {@const lane = river.lanes.find(l => l.server === server)}
-            <text x="0" y={y + 4} class="cap-l">{server.toUpperCase()}</text>
+            <text x="0" y={y + 4} class="cap-l">{server}</text>
             <line class="lane" x1={RX0} x2={RX0 + RW} y1={y} y2={y}/>
             {#each lane?.deps ?? [] as d, di (d.at + d.summary)}
               {@const last = d === latest}
@@ -88,7 +88,7 @@
             {/each}
             {#each waiting.filter(w => w.e.server === server) as w (w.e.id)}<circle class="dep hot" cx={RX0 + RW} cy={y} r="6"><title>{w.e.name}: {w.commit} waiting for a deploy</title></circle>{/each}
           {/each}
-          <text x={RX0} y={laneOf.length * 30 + 16} class="cap-l">{fmtWhen(river.start)}</text><text x={RX0 + RW} y={laneOf.length * 30 + 16} text-anchor="end" class="cap-l">NOW</text>
+          <text x={RX0} y={laneOf.length * 30 + 16} class="cap-l">{fmtWhen(river.start)}</text><text x={RX0 + RW} y={laneOf.length * 30 + 16} text-anchor="end" class="cap-l">Now</text>
         </svg>
         {#each waiting.slice(0, 2) as w (w.e.id)}
           <div class="wait-row warm"><span class="sev warm" aria-hidden="true"><i></i></span><span>{w.e.name} has {w.commit} waiting for a deploy<small>{w.e.server}{w.e.source ? ` · ${w.e.source}` : ""}</small></span></div>
@@ -100,7 +100,7 @@
 {/snippet}
 {#snippet budgetMod()}
   <section class="mod raised c4" style="--in:.22s" aria-labelledby="h-budget" data-module="budget">
-        <h2 id="h-budget"><span>ERROR BUDGET</span><span>{slo[0]?.facts.windowDays ? `${slo[0].facts.windowDays.value} d` : ""}<a class="to" href="/alerts" aria-label="Open Alerts">open →</a></span></h2>
+        <h2 id="h-budget"><span>Error budget</span><span>{slo[0]?.facts.windowDays ? `${slo[0].facts.windowDays.value} d` : ""}<a class="to" href="/alerts" aria-label="Open Alerts">open →</a></span></h2>
         {#if budget.fail}<Waiting title="Can't read the error budget." warm>{budget.fail.server}: {budget.fail.error}</Waiting>
         {:else if budget.mode === "empty"}<Waiting title="No SLO reported.">The error budget appears when an SLO is defined.</Waiting>
         {:else}<Budget {slo} />{/if}
@@ -108,7 +108,7 @@
 {/snippet}
 {#snippet logsMod()}
   <section class="mod raised c8 grow" style="--in:.28s" aria-labelledby="h-logs" data-module="logs">
-        <h2 id="h-logs"><span>LOG FLOW → OPS</span><span>{!logs.fail && perMinute(flows[0]) ? `24 h · ${perMinute(flows[0])}/min` : ""}<a class="to" href="/security" aria-label="Open Security">open →</a></span></h2>
+        <h2 id="h-logs"><span>Log flow → ops</span><span>{!logs.fail && perMinute(flows[0]) ? `24 h · ${perMinute(flows[0])}/min` : ""}<a class="to" href="/security" aria-label="Open Security">open →</a></span></h2>
         {#if logs.fail}<Waiting title="Can't read Elasticsearch." warm>{logs.fail.server}: {logs.fail.error}. The log flow is not shown until it answers.</Waiting>
         {:else if logs.mode === "empty"}<Waiting title="No log streams reported.">The default and security streams appear here, per 10 minutes.</Waiting>
         {:else}
@@ -119,7 +119,7 @@
 {/snippet}
 {#snippet knocksMod()}
   <section class="mod raised c4 grow" style="--in:.34s" aria-labelledby="h-knocks" data-module="knocks">
-        <h2 id="h-knocks"><span>WHO KNOCKS · CROWDSEC</span><span>{!cs.fail && decisions.length ? `${decisions.length} banned` : ""}<a class="to" href="/security" aria-label="Open Security">open →</a></span></h2>
+        <h2 id="h-knocks"><span>Who knocks · CrowdSec</span><span>{!cs.fail && decisions.length ? `${decisions.length} banned` : ""}<a class="to" href="/security" aria-label="Open Security">open →</a></span></h2>
         {#if cs.fail}<Waiting title="Can't read CrowdSec." warm>{cs.fail.server}: {cs.fail.error}</Waiting>
         {:else}
           <KnockMap {decisions} w={400} h={170} step={6} labels={false} />
@@ -129,7 +129,7 @@
 {/snippet}
 {#snippet backupsMod()}
   <section class="mod raised c4 list" style="--in:.46s" aria-labelledby="h-backups" data-module="backups">
-        <h2 id="h-backups"><span>BACKUPS · LAST RESULT</span><span><a class="to" href="/backups" aria-label="Open Backups">open →</a></span></h2>
+        <h2 id="h-backups"><span>Backups · last result</span><span><a class="to" href="/backups" aria-label="Open Backups">open →</a></span></h2>
         {#if snaps.fail}<Waiting title="Can't read the snapshots." warm>{snaps.fail.server}: {snaps.fail.error}</Waiting>
         {:else}
           {#each backups as e (e.id)}
@@ -137,7 +137,7 @@
             <a class="row" class:now={warm} href="/backups" data-backup={e.id}>
               <span class="n mono" class:warm>{v.ok ? hhmm(v.ok) : "never"}</span>
               <span class="t">{e.name}<small class:warm>{warm ? (e.statusReason ?? e.status) : `${str(e, "repository") ? `to ${str(e, "repository")} · ` : ""}last ok ${v.ok ? ago(v.ok, t) : "never"}`}</small></span>
-              <Status tone={warm ? "warn" : "ok"} label={warm ? (v.failedLast ? "FAILED" : "OVERDUE") : "OK"} />
+              <Status tone={warm ? "warn" : "ok"} label={warm ? (v.failedLast ? "Failed" : "Overdue") : "OK"} />
             </a>
           {:else}<Waiting title="No snapshot policies reported.">Each policy appears with its last result.</Waiting>{/each}
         {/if}
@@ -145,7 +145,7 @@
 {/snippet}
 {#snippet sitesMod()}
   <section class="mod raised c12" style="--in:.52s" aria-labelledby="h-sites" data-module="sites">
-    <h2 id="h-sites" class="board-h"><span>SITES · 24 H</span><span>{!gatus.fail && rows.length ? summary(rows) : ""}<a class="to" href="/apps" aria-label="Open Apps">open →</a></span></h2>
+    <h2 id="h-sites" class="board-h"><span>Sites · 24 h</span><span>{!gatus.fail && rows.length ? summary(rows) : ""}<a class="to" href="/apps" aria-label="Open Apps">open →</a></span></h2>
     {#if gatus.fail}<Waiting title="Can't read Gatus." warm>{gatus.fail.server}: {gatus.fail.error}</Waiting>
     {:else if gatus.mode === "empty"}<Waiting title="No sites reported.">Public sites and products appear with their last 24 hours.</Waiting>
     <!-- the board is the foot of the page, so it can follow a slice later without moving anything -->

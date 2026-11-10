@@ -35,7 +35,7 @@ test("a calm morning: the modules whose sources report, and none of the ones sti
 test("the sites board: 24 ticks a row, Sites then Products, hollow before a Gatus restart, a drawer and a link per row", async ({ page }) => {
   await mockApi(page); await page.goto("/");
   const board = mod(page, "sites");
-  await expect(board.locator(".board-g")).toHaveText(["SITES · 7", "SITES · CONT.", "PRODUCTS · 3"]);
+  await expect(board.locator(".board-g")).toHaveText(["Sites · 7", "Sites · cont.", "Products · 3"]);
   await expect(board.locator(".site .beats").first().locator("i")).toHaveCount(24);
   await expect(board.locator('[data-site="ops/site/sites_control"] .beats i.unknown')).toHaveCount(7);
   await expect(board.locator('[data-site="ops/site/sites_hetops-dev"] .beats i.dip, [data-site="ops/site/sites_hetops-dev"] .beats i.unknown')).toHaveCount(0);
@@ -61,7 +61,7 @@ test("each module links to its page", async ({ page }) => {
     await expect(mod(page, m).locator("a.to")).toHaveAttribute("href", path);
   await mod(page, "backups").locator("a.row").first().click();
   await expect(page).toHaveURL(/\/backups$/);
-  await expect(page.locator("main h1")).toHaveText("1 backup needs you.");
+  await expect(page.locator("main h1")).toHaveText("1 backup needs you");
   await page.goBack();
   await mod(page, "knocks").getByRole("link", { name: "Open Security" }).click();
   await expect(page).toHaveURL(/\/security$/);
@@ -73,12 +73,12 @@ test("a rough night: the budget, silver bans, and ember only where the owner is 
   await expect(mod(page, "budget").locator(".budget-num b")).toHaveAttribute("data-final", "58");
   await expect(mod(page, "budget").locator(".budget-num.warm")).toHaveCount(0);
   await expect(mod(page, "knocks").locator(".knock")).toHaveCount(7);
-  await expect(mod(page, "knocks").locator(".knock").first()).toHaveCSS("fill", "rgb(201, 199, 193)"); // --quiet, never ember
+  await expect(mod(page, "knocks").locator(".knock").first()).toHaveCSS("fill", "rgb(180, 180, 185)"); // --quiet, never ember
   await expect(mod(page, "knocks").locator("h2")).toContainText("37 banned");
   await expect(mod(page, "deploys").locator(".dep.hot")).toHaveCount(1);   // the waiting deploy sits at "now" in its lane, ember
   await expect(mod(page, "deploys").locator(".wait-row")).toContainText("radar-cloud has 7a5cba8 waiting for a deploy");
   const sec = mod(page, "backups").locator('[data-backup="ops/backup/nightly-security"]');
-  await expect(sec).toHaveClass(/now/); await expect(sec).toContainText("FAILED"); await expect(sec).toContainText("r2-security is not reachable");
+  await expect(sec).toHaveClass(/now/); await expect(sec).toContainText("Failed"); await expect(sec).toContainText("r2-security is not reachable");
   // the down site leads its group in ember, ember on its current hour only; the slow one is named, not ember
   const hot = mod(page, "sites").locator(".site.hot");
   await expect(hot).toHaveCount(1); await expect(hot).toContainText("ThreadVault");
@@ -97,8 +97,8 @@ test("a failing source says so in ember and shows no numbers", async ({ page }) 
   await mockApi(page, s);
   await page.route("**/api/events?*", r => r.fulfill({ status: 503, json: { error: "down" } }));
   await page.goto("/");
-  for (const [m, title] of [["deploys", "Can't read the event log."], ["budget", "Can't read the error budget."], ["logs", "Can't read Elasticsearch."],
-    ["knocks", "Can't read CrowdSec."], ["backups", "Can't read the snapshots."], ["sites", "Can't read Gatus."]] as const) {
+  for (const [m, title] of [["deploys", "Can't read the event log"], ["budget", "Can't read the error budget"], ["logs", "Can't read Elasticsearch"],
+    ["knocks", "Can't read CrowdSec"], ["backups", "Can't read the snapshots"], ["sites", "Can't read Gatus"]] as const) {
     await expect(mod(page, m).locator(".wait.warm")).toContainText(title);
   }
   await expect(page.locator(".river, .terrain, .world, .slider, [data-module] a.row, .site")).toHaveCount(0);
@@ -109,7 +109,7 @@ test("reporting with nothing to show: honest empty states", async ({ page }) => 
   const s = structuredClone(fixtureState);
   s.servers.lab.sources = [...s.servers.lab.sources!, { id: "crowdsec", periodMs: 60_000, ok: true }, { id: "slo", periodMs: 60_000, ok: true }];
   await mockApi(page, s, fixtureEvents.filter(e => e.kind !== "deploy" && e.kind !== "sync")); await page.goto("/");
-  await expect(mod(page, "budget").locator(".wait")).toContainText("No SLO reported.");
+  await expect(mod(page, "budget").locator(".wait")).toContainText("No SLO reported");
   await expect(mod(page, "knocks").locator(".note")).toContainText("Nothing is banned right now");
   await expect(mod(page, "knocks").locator(".knock")).toHaveCount(0);
   await expect(mod(page, "deploys").locator(".note")).toContainText("No deploys in the events held.");

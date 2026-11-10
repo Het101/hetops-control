@@ -2,7 +2,7 @@
   import { ServerIdSchema } from "@hetops-control/contracts";
   import Dial from "./Dial.svelte";
   import { num, type State } from "../lib/api.js";
-  import { needsYou } from "../lib/pages.js";
+  import { sentence, needsYou } from "../lib/pages.js";
   let { state }: { state: State } = $props();
 
   // ember only when a node needs you (its agent says attention or down); a busy CPU on its own is not a reason to look
@@ -16,10 +16,10 @@
 </script>
 
 <section class="mod raised c4" style="--in:.1s" data-module="hostload">
-  <h2><span>HOST LOAD</span><span>now</span></h2>
+  <h2><span>Host load</span><span>now</span></h2>
   <div class="dials">
     {#each loads as l (l.id)}
-      <Dial id={l.id} label={l.id.toUpperCase()} value={l.cpu} hot={l.hot}>
+      <Dial id={l.id} label={sentence(l.id)} value={l.cpu} hot={l.hot}>
         <small>mem {pct(l.mem)}</small><small>disk {pct(l.disk)}</small>
       </Dial>
     {/each}

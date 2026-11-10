@@ -50,6 +50,10 @@ export const levelOf = (e: Event) => e.level ?? "none";
 /** Which status events still need you. A move to attention or down stays hot until a newer event for the same entity moves
  * it on; once it is back to ok it is history (silver), with the time it recovered. Events newest first, as the center serves
  * them: judge them against the full list, not a filtered one, so a filter never hides the recovery. */
+/** A heading never ends in a period (a sentence in a paragraph keeps it) */
+export const heading = (s: string) => s.replace(/\.$/, "");
+/** Sentence case for a status word or label: "NOT CONNECTED" and "not connected" both read "Not connected"; OK stays OK */
+export const sentence = (s: string) => { const t = s.toLowerCase(); return t === "ok" ? "OK" : t.charAt(0).toUpperCase() + t.slice(1); };
 export function heat(events: Event[]) {
   const newer = new Map<Event, Event>(), seen = new Map<string, Event>();
   for (const e of events) if (e.level && e.entity) { const k = `${e.server}|${e.entity}`; const n = seen.get(k); if (n) newer.set(e, n); seen.set(k, e); }

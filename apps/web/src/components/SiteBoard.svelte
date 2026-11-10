@@ -23,7 +23,7 @@
   {#each cols as c (c.key)}
   <div class="board-col">
     {#each c.items as it (it.key)}
-      {#if !it.row}<div class="board-g mono" class:cont={it.cont}>{it.label}{it.cont ? " · CONT." : ""}</div>
+      {#if !it.row}<div class="board-g mono" class:cont={it.cont}>{it.label}{it.cont ? " · cont." : ""}</div>
       {:else}
       {@const r = it.row}
       {@const link = r.e.links[0]}
@@ -49,4 +49,4 @@
   </div>
   {/each}
 </div>
-<p class="note">a bar per hour · green = fully up · silver = some down time · ember = failing now · hollow = not watched · height = response time that hour</p>
+<p class="note">a bar per hour · grey = fully up · silver = some down time · ember = failing now · hollow = not watched · height = response time that hour</p>

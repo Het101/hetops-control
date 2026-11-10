@@ -4,7 +4,7 @@
   import { cubicOut } from "svelte/easing";
   import { reduced } from "../lib/motion.js";
   import { heat, hhmm } from "../lib/pages.js";
-  let { events, error = false, wide = false, title = "TIMELINE · ALL SERVERS" }: { events: Event[]; error?: boolean; wide?: boolean; title?: string } = $props();
+  let { events, error = false, wide = false, title = "Timeline · all servers" }: { events: Event[]; error?: boolean; wide?: boolean; title?: string } = $props();
   const time = (at: string) => at.slice(11, 16);
   // a move to attention or down is something to look at, until the same entity recovers (lib/pages.ts heat)
   const heated = $derived(heat(events));
@@ -21,7 +21,7 @@
       <span class="n" style={warm ? "color:var(--ember)" : undefined}>{time(e.at)}</span>
       <span class="t">{e.summary}<small>{e.server} · {e.source}{e.actor ? ` · ${e.actor}` : ""}</small></span>
       {#if warm}<div class="knob ember" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
-      {:else}<span class="tag pressed" class:ok={!!back}>{back ? `RECOVERED ${hhmm(back)}` : e.server.toUpperCase()}</span>{/if}
+      {:else}<span class="tag pressed" class:ok={!!back}>{back ? `Recovered ${hhmm(back)}` : e.server}</span>{/if}
     </div>
   {:else}
     {#if !error}<div class="empty">No events yet.</div>{/if}

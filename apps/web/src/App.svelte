@@ -85,7 +85,7 @@
   <Rail />
   <main>
     <div class="top">
-      <span class="brand">HETOPS CONTROL</span>
+      <span class="brand">HetOps Control</span>
       {#if estate}<NeedsQueue needs={estate.headline.needs} entities={estate.entities} />{/if}
       <span class="live" class:warm={reconnecting || signedOut} role="status">
         {#key lastMsg}<span class="pulse"></span>{/key}{signedOut ? "signed out" : reconnecting ? "reconnecting" : ago === undefined ? "connecting" : `live · ${ago} s ago`}{#if stale && lastMsg !== undefined}<small>{` · showing ${hhmmUTC(lastMsg)}`}</small>{/if}</span>

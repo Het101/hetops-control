@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Entity, Event, ServerId } from "@hetops-control/contracts";
   import { num, type State } from "../lib/api.js";
-  import { ago, areas, DAY, hhmm, needsLook, needsYou, str, toneOf, workloads } from "../lib/pages.js";
+  import { heading, ago, areas, DAY, hhmm, needsLook, needsYou, str, toneOf, workloads } from "../lib/pages.js";
   import Forest from "../components/Forest.svelte";
   import Dial from "../components/Dial.svelte";
   import Status from "../components/Status.svelte";
@@ -46,13 +46,13 @@
   const line = $derived([str(cluster, "version"), work.length ? plural(work.length, "workload") : undefined,
     num(cluster, "podsRunning") !== undefined ? `${num(cluster, "podsRunning")}/${num(cluster, "podsTotal")} pods` : undefined,
     v?.agentVersion ? `agent ${v.agentVersion}` : undefined].filter(Boolean).join(" · "));
-  const run = (ok: boolean, error?: string, lastRunAt?: string) => ok ? { tone: "ok" as const, word: "OK" } : error || lastRunAt ? { tone: "warn" as const, word: "FAILING" } : { tone: "blind" as const, word: "PENDING" };
+  const run = (ok: boolean, error?: string, lastRunAt?: string) => ok ? { tone: "ok" as const, word: "OK" } : error || lastRunAt ? { tone: "warn" as const, word: "Failing" } : { tone: "blind" as const, word: "Pending" };
   const pct = (x: number | undefined) => (x === undefined ? "—" : `${Math.round(x)}%`);
 </script>
 
 <section class="page-intro">
-  <span class="kicker">SERVER · {id.toUpperCase()}</span>
-  <h1 tabindex="-1">{verdict}</h1>
+  <span class="kicker">Server · {id}</span>
+  <h1 tabindex="-1">{heading(verdict)}</h1>
   {#if line}<p class="intro-line mono">{line}{v?.statusReason ? ` · ${v.statusReason}` : ""}</p>{/if}
 </section>
 
@@ -69,17 +69,17 @@
     <Forest state={estate} {events} only={id} />
   </section>
   <section class="mod raised c4" style="--in:.08s" aria-labelledby="sv-now">
-    <h2 id="sv-now"><span>HOST · NOW</span><span>{nodes.length > 1 ? `busiest of ${nodes.length} nodes` : nodes[0]?.name ?? ""}</span></h2>
+    <h2 id="sv-now"><span>Host · now</span><span>{nodes.length > 1 ? `busiest of ${nodes.length} nodes` : nodes[0]?.name ?? ""}</span></h2>
     <div class="dials">
       <Dial id={`${id}-cpu`} label="CPU" value={most("cpu")} hot={nodes.some(n => needsYou(n.status))} />
-      <Dial id={`${id}-mem`} label="MEMORY" value={most("memory")} />
-      <Dial id={`${id}-disk`} label="DISK" value={most("disk")} />
+      <Dial id={`${id}-mem`} label="Memory" value={most("memory")} />
+      <Dial id={`${id}-disk`} label="Disk" value={most("disk")} />
     </div>
     {#each nodes.filter(n => n.statusReason) as n (n.id)}<p class="note" class:warm={needsYou(n.status)}>{n.name}: {n.statusReason}</p>{/each}
   </section>
 
   <section class="mod raised c12" style="--in:.12s" aria-labelledby="sv-load">
-    <h2 id="sv-load"><span>LOAD · {whole ? "24 H" : `SINCE ${hhmm(from)} UTC`}</span><span>cpu {pct(most("cpu"))} · memory {pct(most("memory"))}</span></h2>
+    <h2 id="sv-load"><span>Load · {whole ? "24 H" : `Since ${hhmm(from)} UTC`}</span><span>cpu {pct(most("cpu"))} · memory {pct(most("memory"))}</span></h2>
     {#if cpuArea?.segments.length || memArea?.segments.length}
       <svg class="load" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={`CPU and memory of the busiest node since ${hhmm(from)} UTC`}>
         {#each [25, 50, 75] as g (g)}<line class="grid-l" x1="0" x2={W} y1={H - g / 100 * (H - 4)} y2={H - g / 100 * (H - 4)}/>{/each}
@@ -94,29 +94,29 @@
   </section>
 
   <section class="mod raised c7 list" style="--in:.16s" aria-labelledby="sv-work">
-    <h2 id="sv-work"><span>WORKLOADS · {work.length}</span><span>{argo.length ? `${argo.filter(a => a.status === "ok").length}/${argo.length} argo healthy` : ""}<a class="to" href="/apps">open →</a></span></h2>
+    <h2 id="sv-work"><span>Workloads · {work.length}</span><span>{argo.length ? `${argo.filter(a => a.status === "ok").length}/${argo.length} argo healthy` : ""}<a class="to" href="/apps">open →</a></span></h2>
     {#each look as e (e.id)}
       {@const r = num(e, "restarts24h") ?? 0} {@const ready = num(e, "pods") ?? 0} {@const want = num(e, "podsDesired") ?? 0}
       <button type="button" class="row" class:now={needsYou(e.status)} onclick={() => (open = e)}>
         <span class="t">{e.name}<small>{str(e, "namespace") ?? ""}{ready < want ? ` · ${ready}/${want} ready` : r ? ` · ${plural(r, "restart")} · last ${ago(str(e, "lastRestartAt") ?? e.observedAt, t)}` : ""}</small></span>
-        <Status tone={toneOf(e.status)} label={e.status.toUpperCase()} />
+        <Status tone={toneOf(e.status)} label={e.status} />
       </button>
     {/each}
     <p class="calm"><i aria-hidden="true"></i>{look.length ? `The other ${work.length - look.length} are healthy` : `All ${work.length} are healthy`}, across {plural(spaces, "namespace")}.</p>
   </section>
 
   <section class="mod raised c5 list" style="--in:.2s" aria-labelledby="sv-src">
-    <h2 id="sv-src"><span>WHAT ITS AGENT READS</span><span>{v.sources?.length ?? 0}</span></h2>
+    <h2 id="sv-src"><span>What its agent reads</span><span>{v.sources?.length ?? 0}</span></h2>
     {#each v.sources ?? [] as x (x.id)}
       {@const r = run(x.ok, x.error, x.lastRunAt)}
       <div class="row"><span class="t">{x.id}<small>{x.lastRunAt ? `last run ${ago(x.lastRunAt, t)}` : "not run yet"}</small>{#if x.error}<small class="warm">{x.error}</small>{/if}</span>
         <Status tone={r.tone} label={r.word} /></div>
     {/each}
     <div class="row"><span class="t">Bedrock drift<small>{drift ? drift.statusReason ?? `checked ${ago(str(drift, "lastRun") ?? drift.observedAt, t)}` : "no nightly drift check for this host yet"}</small></span>
-      {#if drift}<Status tone={drift.facts.drift?.value === true ? "warn" : toneOf(drift.status)} label={drift.facts.drift?.value === true ? "DRIFTED" : "CLEAN"} />{:else}<Status tone="blind" label="NOT RUN" />{/if}</div>
+      {#if drift}<Status tone={drift.facts.drift?.value === true ? "warn" : toneOf(drift.status)} label={drift.facts.drift?.value === true ? "Drifted" : "Clean"} />{:else}<Status tone="blind" label="Not run" />{/if}</div>
   </section>
 
-  <Timeline events={own} wide title={`TIMELINE · ${id.toUpperCase()}`} />
+  <Timeline events={own} wide title={`Timeline · ${id}`} />
 </div>
 {/if}
 

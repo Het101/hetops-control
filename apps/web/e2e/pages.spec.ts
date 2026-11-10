@@ -32,7 +32,7 @@ test.describe("Timeline", () => {
     await page.getByRole("group", { name: "Server" }).getByRole("button", { name: /ops/ }).click();
     const hot = page.locator(".feed button.row.now");
     await expect(hot).toHaveCount(1);   // the chaos site's 06:22 attention recovered at 06:41: history, not ember
-    await expect(page.locator(".feed button.row").filter({ hasText: "chaos.hetops.dev (ops) ok → attention" })).toContainText("RECOVERED 06:41");
+    await expect(page.locator(".feed button.row").filter({ hasText: "chaos.hetops.dev (ops) ok → attention" })).toContainText("Recovered 06:41");
     await hot.filter({ hasText: "chaos-api" }).click();
     const drawer = page.getByRole("dialog");
     await expect(drawer).toBeVisible();
@@ -53,7 +53,7 @@ test.describe("Timeline", () => {
   test("no events: a designed empty state", async ({ page }) => {
     await mockApi(page, fixtureState, []);
     await page.goto("/timeline");
-    await expect(page.locator(".wait")).toContainText("No events yet.");
+    await expect(page.locator(".wait")).toContainText("No events yet");
   });
 
   test("screenshot", async ({ page }) => { await still(page); await page.goto("/timeline"); await expect(page.locator(".feed button.row").first()).toBeVisible(); await shot(page, "timeline"); });
@@ -63,10 +63,10 @@ test.describe("Alerts", () => {
   test("a calm morning: nothing firing, every check passing, sources not yet reporting said honestly", async ({ page }) => {
     await mockApi(page); await page.goto("/alerts");
     // Home's one Needs-you item is not an alert; this page still says it, rather than calling the estate quiet
-    await expect(page.locator("main h1")).toHaveText("Nothing is firing; 1 thing still needs you.");
+    await expect(page.locator("main h1")).toHaveText("Nothing is firing; 1 thing still needs you");
     await expect(page.locator(".row[data-needs]")).toHaveCount(1);
     await expect(page.locator(".row[data-needs]")).toContainText("chaos-api is restarting on lab");
-    await expect(page.locator(".wait").first()).toContainText("No error budget reporting yet.");
+    await expect(page.locator(".wait").first()).toContainText("No error budget reporting yet");
     await expect(page.getByText("Alertmanager is not reporting yet")).toBeVisible();
     await expect(page.locator(".pill")).toHaveCount(19);
     await expect(page.locator(".pill.warm")).toHaveCount(0);
@@ -74,7 +74,7 @@ test.describe("Alerts", () => {
 
   test("a rough night: firing alerts and failing checks by severity, with since and a link out", async ({ page }) => {
     await mockApi(page, roughNight(), roughEvents); await page.goto("/alerts");
-    await expect(page.locator("main h1")).toHaveText("4 things are firing.");
+    await expect(page.locator("main h1")).toHaveText("4 things are firing");
     const rows = page.locator(".row[data-severity]");
     await expect(rows.nth(0)).toContainText("ThreadVault");
     await expect(rows.nth(0)).toHaveAttribute("data-severity", "critical");
@@ -103,9 +103,9 @@ test.describe("Apps", () => {
 
   test("per-server tallies, Argo cards, workload tiles with pods and restarts, and sites with uptime", async ({ page }) => {
     await page.goto("/apps");
-    await expect(page.locator("main h1")).toContainText("1 needs you.");
+    await expect(page.locator("main h1")).toContainText("1 needs you");
     await expect(page.locator('.srv[data-server="lab"]')).toContainText("restarts 24h");
-    await expect(page.locator('.srv[data-server="staging"]')).toContainText("Not connected yet.");
+    await expect(page.locator('.srv[data-server="staging"]')).toContainText("Not connected yet");
     await expect(page.locator(".card")).toHaveCount(5);
     await expect(page.locator('.tile[data-app="lab/app/chaos/chaos-api"]')).toHaveClass(/hot/);
     await expect(page.locator('.tile[data-app="lab/app/chaos/chaos-api"]')).toContainText("2 restarts");
@@ -123,7 +123,7 @@ test.describe("Apps", () => {
     await page.locator('.site[data-site="ops/site/sites_chaos"] .site-open').click();
     await expect(page.getByRole("dialog")).toContainText("uptime 24h");
     await page.keyboard.press("Escape");
-    await expect(page.getByText("Coolify is not reporting yet.")).toBeVisible();
+    await expect(page.getByText("Coolify is not reporting yet")).toBeVisible();
   });
 
   test("search and the state chip filter every section", async ({ page }) => {
@@ -150,7 +150,7 @@ test.describe("Apps", () => {
 test.describe("Backups", () => {
   test("each policy as a player row: age ring, last ok, next run countdown, history", async ({ page }) => {
     await mockApi(page); await page.goto("/backups");
-    await expect(page.locator("main h1")).toHaveText("Every backup succeeded in the last 26 hours.");
+    await expect(page.locator("main h1")).toHaveText("Every backup succeeded in the last 26 hours");
     const row = page.locator('[data-backup="ops/backup/nightly-security"]');
     await expect(row).toContainText("01:45 UTC");
     await expect(row).toContainText("30 kept");
@@ -161,7 +161,7 @@ test.describe("Backups", () => {
 
   test("a failed run is ember and says why", async ({ page }) => {
     await mockApi(page, roughNight(), roughEvents); await page.goto("/backups");
-    await expect(page.locator("main h1")).toHaveText("1 backup needs you.");
+    await expect(page.locator("main h1")).toHaveText("1 backup needs you");
     const row = page.locator('[data-backup="ops/backup/nightly-security"]');
     await expect(row).toHaveClass(/now/);
     await expect(row).toContainText("repository r2-security is not reachable");
@@ -174,7 +174,7 @@ test.describe("Backups", () => {
     const s = structuredClone(fixtureState);
     s.entities = s.entities.filter(e => e.kind !== "backup"); s.servers.ops.sources = s.servers.ops.sources!.filter(x => x.id !== "snapshots");
     await mockApi(page, s); await page.goto("/backups");
-    await expect(page.locator(".wait")).toContainText("No backup source reporting yet.");
+    await expect(page.locator(".wait")).toContainText("No backup source reporting yet");
   });
 
   test("screenshots", async ({ page }) => {
@@ -186,8 +186,8 @@ test.describe("Backups", () => {
 test.describe("Security", () => {
   test("before the lab sources land: the map waits, the security log stream is live", async ({ page }) => {
     await mockApi(page); await page.goto("/security");
-    await expect(page.locator(".overlay")).toContainText("CrowdSec is not reporting yet.");
-    await expect(page.getByText("Bedrock drift is not reporting yet.")).toBeVisible();
+    await expect(page.locator(".overlay")).toContainText("CrowdSec is not reporting yet");
+    await expect(page.getByText("Bedrock drift is not reporting yet")).toBeVisible();
     await expect(page.locator(".terrain path.l1")).toHaveCount(2); // one segment each side of the gap
     await expect(page.locator(".terrain rect.gap")).toHaveCount(1);
     await expect(page.locator(".knock")).toHaveCount(0);
@@ -195,12 +195,12 @@ test.describe("Security", () => {
 
   test("with CrowdSec and Bedrock: bans on the map, scenarios, recent bans, drift and audit", async ({ page }) => {
     await mockApi(page, roughNight(), roughEvents); await page.goto("/security");
-    await expect(page.locator("main h1")).toHaveText("37 sources are banned from 7 countries.");
+    await expect(page.locator("main h1")).toHaveText("37 sources are banned from 7 countries");
     await expect(page.locator(".knock")).toHaveCount(7);
     await expect(page.locator(".map-mod .note")).toContainText("2 without a country");
     await expect(page.locator(".bar-row").first()).toContainText("crowdsecurity/ssh-bf");
     await expect(page.locator(".spark path")).not.toHaveCount(0);
-    await expect(page.locator('[aria-labelledby="s-drift"] .tag.warm')).toHaveText("DRIFTED");
+    await expect(page.locator('[aria-labelledby="s-drift"] .tag.warm')).toHaveText("Drifted");
     await expect(page.getByText("Falco: shell spawned")).toBeVisible();
   });
 

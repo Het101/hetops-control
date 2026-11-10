@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { heading } from "../lib/pages.js";
   import type { State } from "../lib/api.js";
   import { reduced } from "../lib/motion.js";
   import { H, hot, NODES, topology, W, WORD, type EdgeView, type LinkState, type NodeView } from "../lib/topology.js";
@@ -17,15 +18,15 @@
   const close = () => { openNode = undefined; openEdge = undefined; };
   const show = (n?: string, e?: string) => { openNode = n; openEdge = e; };
   // a station's word: a server says how it is, a link-only node says what its links do
-  const word = (n: NodeView) => n.server ? (n.state === "ok" ? "HEALTHY" : n.state === "planned" ? "NOT CONNECTED" : n.state === "down" ? "UNREACHABLE" : WORD[n.state]) : WORD[n.state];
+  const word = (n: NodeView) => n.server ? (n.state === "ok" ? "Healthy" : n.state === "planned" ? "Not connected" : n.state === "down" ? "Unreachable" : WORD[n.state]) : WORD[n.state];
   const chip = (e: EdgeView) => e.perMin ? `${e.via} · ${e.perMin.toLocaleString()}/min` : e.via;
   const dots = (e: EdgeView) => Array.from({ length: e.flow?.dots ?? 0 }, (_, i) => i);
   const LEGEND: [LinkState, string][] = [["ok", "carrying traffic"], ["attention", "needs you"], ["unknown", "no signal"], ["planned", "not built yet"]];
 </script>
 
 <section class="page-intro">
-  <span class="kicker">TOPOLOGY · LIVE ON EVERY LINK</span>
-  <h1 tabindex="-1">{view?.headline ?? "How the three servers connect, and whether each link is carrying traffic."}</h1>
+  <span class="kicker">Topology · live on every link</span>
+  <h1 tabindex="-1">{heading(view?.headline ?? "How the three servers connect, and whether each link is carrying traffic.")}</h1>
 </section>
 
 {#if !view}
@@ -33,11 +34,11 @@
 {:else}
 <div class="grid">
   <section class="mod raised c12 topo-mod" style="--in:.04s" aria-labelledby="t-map">
-    <h2 id="t-map"><span>THE ESTATE · CLOUDFLARE, THE TAILNET, BACKUPS</span><span class:warm={hotN > 0}>{hotN ? `${hotN} link${hotN === 1 ? "" : "s"} need${hotN === 1 ? "s" : ""} you` : `${view.edges.filter(e => e.state === "ok").length} of ${view.edges.length} carrying`}</span></h2>
+    <h2 id="t-map"><span>The estate · Cloudflare, the tailnet, backups</span><span class:warm={hotN > 0}>{hotN ? `${hotN} link${hotN === 1 ? "" : "s"} need${hotN === 1 ? "s" : ""} you` : `${view.edges.filter(e => e.state === "ok").length} of ${view.edges.length} carrying`}</span></h2>
     <div class="topo">
       <svg viewBox={`0 0 ${W} ${H}`} class="wires" aria-hidden="true">
         <rect x="40" y="196" width="1120" height="316" rx="34" class="tailnet"/>
-        <text x="66" y="232" class="net-l">TAILNET · 100.x</text>
+        <text x="66" y="232" class="net-l">Tailnet · 100.x</text>
         {#each view.edges as e (e.id)}
           <path d={e.d} class="groove"/>
           <path d={e.d} class="wire {e.state}"/>
@@ -72,7 +73,7 @@
   </section>
 
   <section class="mod raised c7 list" style="--in:.08s" aria-labelledby="t-links">
-    <h2 id="t-links"><span>EVERY LINK · ITS SIGNAL</span><span>{view.edges.length} links</span></h2>
+    <h2 id="t-links"><span>Every link · its signal</span><span>{view.edges.length} links</span></h2>
     {#each view.edges as e (e.id)}
       <button type="button" class="row" class:now={hot(e.state)} data-link={e.id} onclick={() => show(undefined, e.id)}>
         <i class="pip {e.state}"></i>
@@ -83,7 +84,7 @@
   </section>
 
   <section class="mod raised c5 list" style="--in:.12s" aria-labelledby="t-stn">
-    <h2 id="t-stn"><span>STATIONS</span><span>{view.nodes.length}</span></h2>
+    <h2 id="t-stn"><span>Stations</span><span>{view.nodes.length}</span></h2>
     {#each view.nodes as n (n.id)}
       <button type="button" class="row" class:now={hot(n.state)} onclick={() => show(n.id)}>
         <i class="pip {n.state}"></i>
@@ -101,7 +102,7 @@
   .topo{position:relative;aspect-ratio:1200/540;margin-top:10px}
   .wires{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
   .tailnet{fill:var(--bg-deep);opacity:.55}
-  .net-l{font:600 12px var(--mono);letter-spacing:.14em;fill:var(--ink-3)}
+  .net-l{font:500 12px var(--mono);fill:var(--ink-3)}
   .groove{fill:none;stroke:var(--bg-deep);stroke-width:9;stroke-linecap:round}
   .wire{fill:none;stroke:var(--quiet);stroke-width:2.4;stroke-linecap:round}
   .wire.attention,.wire.down{stroke:var(--ember)}
@@ -114,7 +115,7 @@
   .flow.warm{fill:var(--ember-1)}
   @keyframes run{from{offset-distance:0%;opacity:0}8%{opacity:1}92%{opacity:1}to{offset-distance:100%;opacity:0}}
 
-  .link-chip{position:absolute;transform:translate(-50%,-50%);border:0;cursor:pointer;padding:4px 10px;min-height:24px;border-radius:999px;font:600 11px var(--mono);letter-spacing:.08em;
+  .link-chip{position:absolute;transform:translate(-50%,-50%);border:0;cursor:pointer;padding:4px 10px;min-height:24px;border-radius:999px;font:500 12px var(--mono);
     color:var(--ink-2);background:var(--bg-deep);box-shadow:inset 0 0 0 1px var(--ink-3);white-space:nowrap;transition:transform .3s var(--ease)}
   .link-chip:hover{transform:translate(-50%,-50%) scale(1.06)}
   .link-chip.attention,.link-chip.down{color:var(--ember);box-shadow:inset 0 0 0 1px var(--ember)}
@@ -122,14 +123,14 @@
   .link-chip:focus-visible,.stn:focus-visible,.row:focus-visible{outline:2px solid var(--quiet);outline-offset:3px}
 
   .stn{position:absolute;transform:translate(-50%,-50%);border:0;cursor:pointer;color:var(--ink);font:inherit;text-align:left;display:flex;gap:10px;align-items:center;
-    padding:10px 16px;border-radius:20px;transition:transform .35s var(--ease)}
+    padding:10px 16px;border-radius:16px;transition:transform .35s var(--ease)}
   .stn:hover{transform:translate(-50%,-50%) translateY(-2px)}
-  .stn.srv{padding:12px 18px 12px 14px;border-radius:24px}
+  .stn.srv{padding:12px 18px 12px 14px;border-radius:16px}
   .stn.planned{background:var(--bg);box-shadow:none;outline:1.5px dashed var(--ink-3);outline-offset:-1.5px}
-  .stn-t b{display:block;font:600 15px var(--serif),Georgia,serif}
+  .stn-t b{display:block;font:500 15px var(--sans),system-ui,sans-serif}
   .stn.srv .stn-t b{font-size:18px}
-  .stn-t small{display:block;font-size:11px;color:var(--ink-3);margin-top:2px;white-space:nowrap}
-  .stn-t i{display:block;font-style:normal;font-size:11px;letter-spacing:.1em;color:var(--quiet);margin-top:5px}
+  .stn-t small{display:block;font-size:12px;color:var(--ink-3);margin-top:2px;white-space:nowrap}
+  .stn-t i{display:block;font-style:normal;font-size:12px;color:var(--quiet);margin-top:5px}
   .stn-t i.warm{color:var(--ember)}
   .tree{width:30px;height:32px;flex:none;fill:none;stroke:var(--quiet);stroke-width:1.6;stroke-linecap:round}
   .tree circle{fill:var(--ink-3);fill-opacity:.35}
@@ -138,7 +139,7 @@
   .planned .tree,.unknown .tree{stroke:var(--ink-3);stroke-dasharray:2 2.5}
   .planned .tree circle,.unknown .tree circle{fill:none}
 
-  .legend{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;margin-top:12px;font-size:11px;color:var(--ink-3)}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;margin-top:12px;font-size:12px;color:var(--ink-3)}
   .legend span{display:flex;align-items:center;gap:8px}
   .legend svg{width:34px;height:10px}
   .legend .note-l{margin-left:auto}
@@ -148,7 +149,7 @@
   .pip.unknown{background:none;box-shadow:inset 0 0 0 1.5px var(--ink-3)}
   .pip.planned{background:none;outline:1.5px dashed var(--ink-3);outline-offset:-1.5px}
   .why{flex:none;max-width:46%;text-align:right;font-size:12px;color:var(--ink-2)}
-  .why small{display:block;font-size:11px;color:var(--ink-3);margin-top:2px;overflow-wrap:anywhere}
+  .why small{display:block;font-size:12px;color:var(--ink-3);margin-top:2px;overflow-wrap:anywhere}
   .why.warm,.why.warm small{color:var(--ember)}
 
   /* the map needs room: on narrow screens the two lists carry every link and station instead */

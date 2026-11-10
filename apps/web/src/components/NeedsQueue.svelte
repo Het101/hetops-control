@@ -38,7 +38,7 @@
     <i aria-hidden="true"></i>{needs.length} need{needs.length === 1 ? "s" : ""} you</button>
 {/if}
 <dialog bind:this={dlg} class="q-dlg raised" aria-labelledby="q-h" onkeydown={move}>
-  <h2 id="q-h"><span>NEEDS YOU · {needs.length}</span><button type="button" class="q-x" aria-label="Close" onclick={() => dlg?.close()}>×</button></h2>
+  <h2 id="q-h"><span>Needs you · {needs.length}</span><button type="button" class="q-x" aria-label="Close" onclick={() => dlg?.close()}>×</button></h2>
   <div class="q-list" bind:this={list}>
     {#each items as i, k (i.n.entity + k)}
       <button type="button" class="q-row" onclick={() => act(i)}>
