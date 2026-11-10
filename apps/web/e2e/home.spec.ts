@@ -13,7 +13,7 @@ test("the headline renders from the state", async ({ page }) => {
   await expect(page.locator(".headline")).toContainText("The estate is healthy");
   await expect(page.locator(".headline em")).toHaveText("1 thing is waiting on you");
   await expect(page.locator(".needs h2")).toHaveText("Needs you · 1");
-  await expect(page.locator(".needs .need-go")).toHaveText("Open Apps →");   // no action here: its page, never a dead button
+  await expect(page.locator(".needs .need-go")).toHaveText(/^Open Appss*→$/);   // no action here: its page, never a dead button
   await expect(page.locator(".needs .need-go")).toHaveAttribute("href", "/apps");
 });
 

@@ -100,7 +100,7 @@
   </section>
   <div class="watch-side">
     <section class="hero strip raised" aria-label="The estate"><Forest state={estate} {events} /></section>
-    <ul class="tiles" aria-label="Instruments">
+    <ul class="figs" aria-label="Instruments">
       {#each tiles as x (x.k)}
         <li><a class="tile-fig" class:warm={x.warm} href={x.href} data-tile={x.k}><span class="tf-l">{x.label}</span><b class="tf-v">{x.v}</b><small>{x.sub}</small></a></li>
       {/each}

@@ -210,3 +210,4 @@ h1:focus{outline:none}
 
 /* the headline's counted numbers stand out by colour, not weight: the metric-matched fallback face only matches regular
    weight, so a heavier number measured differently while the web font loaded and the sentence re-broke (a layout shift) */
+.nw{white-space:nowrap}

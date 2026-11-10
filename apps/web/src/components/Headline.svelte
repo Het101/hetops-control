@@ -15,7 +15,10 @@
   // the season and the hour where the viewer is: the same sky the scene draws
   const season = $derived.by(() => { const s = pinned(sky(now, place()), new URLSearchParams(typeof location === "undefined" ? "" : location.search)); return `${s.ritu.name} · ${s.phase}`; });
   // standalone integers count up; times (03:12), versions and hashes stay as written
-  const parts = $derived(headline.detail.split(/(?<![\w:.])(\d+)(?![\w:.])/));
+  // each number carries the text glued to it ("91" with "%") in one unbreakable span: the counting box is an inline-block,
+  // and a line may otherwise break right after it, leaving "91" on one line and "% full" on the next
+  const parts = $derived(headline.detail.split(/(?<![\w:.])(\d+)(?![\w:.])/).map((p, i, all) =>
+    i % 2 ? { n: Number(p), glue: /^\S*/.exec(all[i + 1] ?? "")![0] } : { text: i ? p.replace(/^\S*/, "") : p }));
 </script>
 
 <div class="hero-copy">
@@ -30,5 +33,5 @@
     </p>
   {/if}
   <h1 class="headline" tabindex="-1">{heading(headline.title)}{#if headline.emphasis}<br><em>{heading(headline.emphasis)}</em>{/if}</h1>
-  <div class="sub">{#each parts as p, i}{#if i % 2}<b use:countUp={Number(p)}></b>{:else}{p}{/if}{/each}</div>
+  <div class="sub">{#each parts as p}{#if p.n !== undefined}<span class="nw"><b use:countUp={p.n}></b>{p.glue}</span>{:else}{p.text}{/if}{/each}</div>
 </div>

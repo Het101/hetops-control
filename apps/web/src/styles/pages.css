@@ -566,7 +566,7 @@ body{background-image:linear-gradient(var(--tint),var(--tint));background-attach
 .need-act{border:0;cursor:pointer;min-height:32px;padding:0 12px;border-radius:8px;background:var(--ember);color:#1a0d06;font:500 13px var(--sans);
   transition:background-color .15s var(--ease),transform .15s var(--ease)}
 .need-act:hover{background:var(--ember-1)}.need-act:active{transform:scale(.97)}
-.need-go{min-height:32px;display:inline-flex;align-items:center;padding:0 4px;color:var(--ink-2);font:400 13px var(--sans);text-decoration:none;white-space:nowrap;border-radius:6px;transition:color .15s var(--ease)}
+.need-go{min-height:32px;display:inline-flex;align-items:center;gap:.3em;padding:0 4px;color:var(--ink-2);font:400 13px var(--sans);text-decoration:none;white-space:nowrap;border-radius:6px;transition:color .15s var(--ease)}
 .need-go:hover{color:var(--ink)}
 .need-more{margin-top:8px;border:0;background:none;padding:4px 0;color:var(--ink-2);font:400 13px var(--sans);cursor:pointer;display:inline-flex;gap:8px;align-items:center}
 .need-more:hover{color:var(--ink)}
@@ -620,12 +620,14 @@ button.row.incident{width:100%;border:0;background:none;color:inherit;font:inher
 .watch-tonight .needs{position:static;width:auto;margin-top:16px;padding:0;background:none;box-shadow:none}
 .watch-side{display:grid;gap:16px;min-width:0}
 .hero.strip{min-height:360px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;list-style:none;margin:0;padding:0}
-.tiles li{display:grid}
+/* the instruments: one row of equal figures, however many are on; two a row on a phone (.figs, not .tiles: those are the Server page workloads) */
+.figs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:12px;list-style:none;margin:0;padding:0}
+.figs li{display:grid}
+@media (max-width:720px){.figs{grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr))}}
 .tile-fig{display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:12px;background:var(--card);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);text-decoration:none;transition:background-color .15s var(--ease)}
 .tile-fig:hover{background:var(--raised)}
 .tf-l{font:400 12px var(--sans);color:var(--ink-3)}
-.tf-v{font:500 28px/1.1 var(--sans);font-variant-numeric:tabular-nums}
+.tf-v{font:500 26px/1.1 var(--sans);font-variant-numeric:tabular-nums}
 .tile-fig small{font-size:12px;color:var(--ink-2)}
 .tile-fig.warm{box-shadow:inset 0 0 0 1px rgba(242,112,47,.4)}
 .tile-fig.warm .tf-v,.tile-fig.warm small{color:var(--ember)}

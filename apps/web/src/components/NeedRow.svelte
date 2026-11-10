@@ -14,6 +14,6 @@
     <button type="button" class="need-act" onclick={() => { ui.open = { entity: row.e!, ...row.o! }; }}
       aria-label={`${row.o.descriptor.label} ${row.e.name}`}>{row.o.descriptor.label}</button>
   {:else}
-    <a class="need-go" href={row.page.href} aria-label={`${row.n.text}: open ${row.page.label}`}>Open {row.page.label}{" "}<span aria-hidden="true">→</span></a>
+    <a class="need-go" href={row.page.href} aria-label={`${row.n.text}: open ${row.page.label}`}>Open {row.page.label}<span aria-hidden="true">→</span></a>
   {/if}
 </div>
